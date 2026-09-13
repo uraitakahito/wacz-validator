@@ -210,6 +210,14 @@ export interface FixtureOptions {
    */
   dismissal?: Record<string, unknown>;
   /**
+   * `browserhive:capture.settle` をそのまま書き込む。undefined なら member ごと
+   * 書かない —— **settle は profile 1.7.0 の必須**なので、その不在自体が検査の対象になる。
+   *
+   * 中身は検査しない。時刻を省いた形も、null の隣に quiet を書いた形も、そのまま通す ——
+   * それを問題と呼ぶかは rule が決める。
+   */
+  settle?: Record<string, unknown>;
+  /**
    * `behaviors/custom.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、
    * 文字列ならそのまま書く (JSON として読めない行を作るため)。undefined なら
    * エントリごと作らない —— **不在は「持ち込みを置かなかった」で、正しい形**。
@@ -656,6 +664,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.dismissal !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["dismissal"] = options.dismissal;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.settle !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["settle"] = options.settle;
     datapackage["browserhive:capture"] = capture;
   }
   const datapackageBytes = Buffer.from(`${JSON.stringify(datapackage, null, 2)}\n`, "utf-8");

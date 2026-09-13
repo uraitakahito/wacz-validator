@@ -16,6 +16,8 @@ import { browserhiveUrlPoliciesRule } from "./browserhive-url-policies.js";
 import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
+import { browserhiveSettleDeadlineRule } from "./browserhive-settle-deadline.js";
+import { browserhiveSettleShapeRule } from "./browserhive-settle-shape.js";
 import { browserhiveStorageInventoryRule } from "./browserhive-storage-inventory.js";
 import { browserhiveStorageShapeRule } from "./browserhive-storage-shape.js";
 import { browserhiveTlsSanRule } from "./browserhive-tls-san.js";
@@ -99,6 +101,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveBehaviorsShapeRule,
   browserhiveDismissalShapeRule,
   browserhiveSettingsShapeRule,
+  // 読み込み後の待ちの終わり方。形は MUST、期限に当たったことは warning で見せる。
+  browserhiveSettleShapeRule,
+  browserhiveSettleDeadlineRule,
   browserhiveUrlPoliciesRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
