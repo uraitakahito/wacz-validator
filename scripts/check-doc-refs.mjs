@@ -1,10 +1,10 @@
 /**
  * Verify that the Starlight docs in docs-site/ stay honest.
  *
- * `astro build` catches one kind of drift on its own: a BrowserHive pin that
- * disagrees across the four files carrying it throws out of
- * docs-site/src/lib/extract.ts while rendering, and that does fail the build.
- * Everything else is this script's job:
+ * `astro build` catches one kind of drift on its own: a rule that is not
+ * registered in rules/index.ts, or whose name or severity cannot be read, throws
+ * out of docs-site/src/lib/extract.ts while rendering, and that does fail the
+ * build. Everything else is this script's job:
  *
  *   1. Missing translations — an English page with no Japanese counterpart, or
  *      a Japanese page with no English original. Starlight silently falls back
@@ -19,6 +19,9 @@
  *      type checker.
  *   4. Dead source paths — a `packages/….ts` written in a code span that has
  *      since been renamed or deleted.
+ *   5. Stale calls into BrowserHive. The breaking tutorial drives BrowserHive,
+ *      which this repository's CI cannot run, so its commands are guarded by
+ *      spelling — each forbidden form is one way that page actually rotted.
  *
  * Only page *existence* is checked for translations, never their structure.
  * Forcing the same headings on both languages makes for bad Japanese; keeping
@@ -69,7 +72,10 @@ for (const file of walk(DOCS).filter((f) => isPage(f))) {
   const text = readFileSync(file, "utf8");
   const rel = relative(ROOT, file);
 
-  for (const [, path] of text.matchAll(/`(src\/[A-Za-z0-9_\-/]+\.ts)`/g)) {
+  // Sources live under packages/*/. This used to look for `src/….ts` — the
+  // layout of the repositories it was copied from — and matched nothing here,
+  // so the check passed green while reading no path at all.
+  for (const [, path] of text.matchAll(/`(packages\/[A-Za-z0-9_\-/.]+\.ts)`/g)) {
     if (!existsSync(resolve(ROOT, path))) {
       problems.push(`${rel}: \`${path}\` does not exist (renamed or moved?)`);
     }
@@ -133,6 +139,64 @@ for (const file of walk(DOCS).filter((f) => isPage(f))) {
   }
 }
 
+// ─── 4. Calls into BrowserHive ─────────────────────────────────────────────
+// breaking.md has the reader capture with BrowserHive, and nothing in this
+// repository can run those commands. On 2026-09-13 the page had rotted in all of
+// these ways at once: it called an RPC removed in BrowserHive v9.0.0, spoke
+// plaintext to a dev stack that has used TLS since v9.2.0, assembled the
+// artifact key by hand (and got its underscores wrong), and printed pass counts
+// that had moved as rules were added.
+//
+// [forbidden, why, a sample it must match, a sample it must not match]. The
+// samples are checked first: a pattern that matches nothing passes green
+// forever, and one that also matches the correct spelling makes the fix
+// impossible.
+const BROWSERHIVE_CALLS = [
+  [
+    /CaptureService\/(?!(?:Capture|GetServerStatus)\b)\w+/,
+    "an RPC BrowserHive does not serve (it has Capture and GetServerStatus)",
+    "browserhive.v1.CaptureService/SubmitCapture",
+    "browserhive.v1.CaptureService/Capture",
+  ],
+  [
+    /-plaintext\b/,
+    "plaintext gRPC — the dev stack speaks TLS, pass -cacert dev-stack/tls/insecure-dev-tls-ca.crt",
+    "grpcurl -plaintext -import-path src/rpc/proto",
+    "grpcurl -cacert dev-stack/tls/insecure-dev-tls-ca.crt",
+  ],
+  [
+    /s3:\/\/browserhive\/</,
+    "an artifact key assembled by hand — take the location from report.artifacts in the response",
+    "s3://browserhive/<taskId>_chain-demo.wacz",
+    "s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz",
+  ],
+  [
+    /"passed":\s*\d+/,
+    "a pass count, which moves whenever a rule is added — show failed instead",
+    'summary: {"passed":23,"failed":0}',
+    "failed: 0",
+  ],
+];
+
+const unsound = BROWSERHIVE_CALLS.filter(([re, , hit, miss]) => !re.test(hit) || re.test(miss));
+if (unsound.length > 0) {
+  console.error("✗ doc-ref check: a BrowserHive-call pattern disagrees with its own samples:");
+  for (const [re, , hit, miss] of unsound) {
+    console.error(`  - ${String(re)} must match "${hit}" and must not match "${miss}"`);
+  }
+  process.exit(1);
+}
+
+for (const file of walk(DOCS).filter((f) => isPage(f))) {
+  const rel = relative(ROOT, file);
+  for (const [i, line] of readFileSync(file, "utf8").split("\n").entries()) {
+    for (const [re, why] of BROWSERHIVE_CALLS) {
+      const match = re.exec(line);
+      if (match !== null) problems.push(`${rel}:${String(i + 1)}: "${match[0]}" — ${why}`);
+    }
+  }
+}
+
 // ─── Report ────────────────────────────────────────────────────────────────
 if (problems.length > 0) {
   console.error(`✗ doc-ref check failed (${problems.length} problem(s)):`);
@@ -145,5 +209,5 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `✓ doc-ref check passed: ${String(en.length)} pages in English and Japanese, ${String(knownRules.size)} rules referenced correctly, all source paths resolve`,
+  `✓ doc-ref check passed: ${String(en.length)} pages in English and Japanese, ${String(knownRules.size)} rules referenced correctly, all source paths resolve, no stale BrowserHive calls`,
 );

@@ -33,12 +33,26 @@ neither sharing nor substitution is visible.
 cd ~/projects/crawler/browserhive
 pnpm run stack:up
 
-grpcurl -plaintext -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
+WACZ=$(grpcurl -cacert dev-stack/tls/insecure-dev-tls-ca.crt \
+  -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
   -d '{"url":"https://www.iana.org/","labels":["chain-demo"],
        "captureFormats":{"png":false,"webp":false,"html":false,
                          "links":false,"mhtml":false,"wacz":true}}' \
-  browserhive.browserhive:50051 browserhive.v1.CaptureService/SubmitCapture
+  browserhive.browserhive:50051 browserhive.v1.CaptureService/Capture \
+  | jq -r .report.artifacts.wacz)
+echo "$WACZ"
 ```
+
+```
+s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
+```
+
+The dev stack speaks TLS, so grpcurl is given the stack's development CA.
+`Capture` answers once the capture has finished — seconds for this page — and the
+response says where the WACZ went. **Take the location from the response rather
+than assembling the key yourself**: the name carries slots you would have to know
+about (the empty correlation id is why there are two underscores). Stay in this
+shell; the next step reads `$WACZ`.
 
 :::caution
 The `san` check needs an archive captured by **BrowserHive 3.7.0 or later**.
@@ -49,9 +63,9 @@ behaviour. Chain verification itself does not depend on the version.
 ## 2. Pull it down
 
 ```sh
+cd ~/projects/crawler/wacz-validator
 AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
-  aws --endpoint-url http://seaweedfs.browserhive:8333 s3 cp \
-  s3://browserhive/<taskId>_chain-demo.wacz ./demo.wacz
+  aws --endpoint-url http://seaweedfs.browserhive:8333 s3 cp "$WACZ" ./demo.wacz
 ```
 
 ## 3. Take a baseline
@@ -61,15 +75,18 @@ pnpm install && pnpm -r build
 
 node packages/validate-cli/dist/wacz-validator-validate.js \
   --profile browserhive ./demo.wacz \
-  | jq -r '"summary: \(.summary)",
+  | jq -r '"failed: \(.summary.failed)",
            (.issues[] | select(.rule|startswith("browserhive/tls"))
             | "  [\(.severity)] \(.message)")'
 ```
 
 ```
-summary: {"passed":23,"failed":0,"warnings":2,"info":1,"durationMs":61}
+failed: 0
   [info] 4 host の証明書チェーンを検証しました
 ```
+
+The full `summary` also counts the rules that passed. That count grows every time
+a rule is added, so this page shows only `failed`.
 
 Two things to look at.
 
@@ -118,12 +135,12 @@ is a finding a reader will chase.
 ```sh
 node packages/validate-cli/dist/wacz-validator-validate.js \
   --profile browserhive ./demo-broken.wacz \
-  | jq -r '"summary: \(.summary)",
+  | jq -r '"failed: \(.summary.failed)",
            (.issues[] | select(.severity=="error") | "  [\(.severity)] \(.message)")'
 ```
 
 ```
-summary: {"passed":22,"failed":2,"warnings":2,"info":1,"durationMs":57}
+failed: 2
   [error] cse.google.com: 0 番目の証明書が次と繋がっていません(発行者 WR2 / 次の subject WE2)
   [error] clients1.google.com: 0 番目の証明書が次と繋がっていません(発行者 WR2 / 次の subject WE2)
 ```
