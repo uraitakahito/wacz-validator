@@ -35,7 +35,10 @@ name: wacz-validator
 
 services:
   seaweedfs:
-    image: docker.io/chrislusf/seaweedfs:4.23
+    # 版は seaweedfs/ (submodule) の docker-compose.yml と揃える —— check:seaweedfs-pin が
+    # 比べて、ずれたら落とす。上げるときは先に submodule 側の scripts/verify.sh を回す。
+    # 4.27 未満に戻さないこと: 空にしたバケットが再起動で書けなくなる (上流 #9563)。
+    image: docker.io/chrislusf/seaweedfs:4.46
     # The entrypoint also creates the bucket (background retry loop) — there is
     # no separate one-shot init container to order around.
     entrypoint: ["/etc/seaweedfs/entrypoint.sh"]
