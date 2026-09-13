@@ -32,12 +32,25 @@ validator の「緑」は 2 通りの意味を持ちます ― 検査して問�
 cd ~/projects/crawler/browserhive
 pnpm run stack:up
 
-grpcurl -plaintext -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
+WACZ=$(grpcurl -cacert dev-stack/tls/insecure-dev-tls-ca.crt \
+  -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
   -d '{"url":"https://www.iana.org/","labels":["chain-demo"],
        "captureFormats":{"png":false,"webp":false,"html":false,
                          "links":false,"mhtml":false,"wacz":true}}' \
-  browserhive.browserhive:50051 browserhive.v1.CaptureService/SubmitCapture
+  browserhive.browserhive:50051 browserhive.v1.CaptureService/Capture \
+  | jq -r .report.artifacts.wacz)
+echo "$WACZ"
 ```
+
+```
+s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
+```
+
+dev スタックは TLS で話すので、grpcurl にはスタックの開発用 CA を渡します。
+`Capture` は取り込みが終わってから答え(このページなら数秒)、応答が WACZ の
+置き場所を持っています。**鍵は自分で組み立てず、応答から取ってください** ―
+名前には知っていないと組めない枠があります(correlation id が空なので、
+`_` が 2 つ続きます)。次の段で `$WACZ` を読むので、同じ shell のまま進みます。
 
 :::caution
 `san` の検査には **BrowserHive 3.7.0 以降**で撮ったものが要ります。それ未満では
@@ -48,9 +61,9 @@ grpcurl -plaintext -import-path src/rpc/proto -proto browserhive/v1/capture.prot
 ## 2. S3 から手元へ落とす
 
 ```sh
+cd ~/projects/crawler/wacz-validator
 AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
-  aws --endpoint-url http://seaweedfs.browserhive:8333 s3 cp \
-  s3://browserhive/<taskId>_chain-demo.wacz ./demo.wacz
+  aws --endpoint-url http://seaweedfs.browserhive:8333 s3 cp "$WACZ" ./demo.wacz
 ```
 
 ## 3. 基準を取る
@@ -60,15 +73,18 @@ pnpm install && pnpm -r build
 
 node packages/validate-cli/dist/wacz-validator-validate.js \
   --profile browserhive ./demo.wacz \
-  | jq -r '"summary: \(.summary)",
+  | jq -r '"failed: \(.summary.failed)",
            (.issues[] | select(.rule|startswith("browserhive/tls"))
             | "  [\(.severity)] \(.message)")'
 ```
 
 ```
-summary: {"passed":23,"failed":0,"warnings":2,"info":1,"durationMs":61}
+failed: 0
   [info] 4 host の証明書チェーンを検証しました
 ```
+
+`summary` 全体には pass した rule の数も入っています。その数は rule が増えるたびに
+変わるので、このページでは `failed` だけを見せます。
 
 見るところは 2 つです。
 
@@ -122,12 +138,12 @@ node packages/devtools/dist/break-wacz.js \
 ```sh
 node packages/validate-cli/dist/wacz-validator-validate.js \
   --profile browserhive ./demo-broken.wacz \
-  | jq -r '"summary: \(.summary)",
+  | jq -r '"failed: \(.summary.failed)",
            (.issues[] | select(.severity=="error") | "  [\(.severity)] \(.message)")'
 ```
 
 ```
-summary: {"passed":22,"failed":2,"warnings":2,"info":1,"durationMs":57}
+failed: 2
   [error] cse.google.com: 0 番目の証明書が次と繋がっていません(発行者 WR2 / 次の subject WE2)
   [error] clients1.google.com: 0 番目の証明書が次と繋がっていません(発行者 WR2 / 次の subject WE2)
 ```
