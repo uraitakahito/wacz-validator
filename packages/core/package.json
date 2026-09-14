@@ -31,12 +31,12 @@
   },
   "dependencies": {
     "@waxlens/contract": "workspace:*",
-    "@aws-sdk/client-s3": "^3.1107.0",
+    "@aws-sdk/client-s3": "^3.1130.0",
     "ajv": "^8.20.0",
     "ajv-draft-04": "^1.0.0",
-    "intl-messageformat": "^11.2.13",
+    "intl-messageformat": "^11.2.14",
     "yauzl-promise": "^4.0.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@types/archiver": "^8.0.0",
