@@ -40,12 +40,12 @@
   },
   "devDependencies": {
     "@types/archiver": "^8.0.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.5.1",
     "@types/yauzl-promise": "^4.0.1",
     "archiver": "^8.0.0",
     "aws-sdk-client-mock": "^4.1.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.10.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.5"
+    "vitest": "^5.0.0"
   }
 }
