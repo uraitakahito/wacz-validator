@@ -11,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # check:seaweedfs-pin runs seaweedfs/scripts/check-pin.sh against the submodule's
-          # docker-compose.yml. The submodule is public, so the default token clones it.
+          # check:store-name runs seaweedfs/scripts/check-store-name.sh from the submodule.
+          # The submodule is public, so the default token clones it.
           submodules: true
       # pnpm-setup must precede setup-node so `cache: pnpm` finds
       # pnpm on PATH when computing the cache key.

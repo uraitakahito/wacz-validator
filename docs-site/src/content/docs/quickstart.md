@@ -38,7 +38,7 @@ local file. For a WACZ in the bundled SeaweedFS, point the AWS SDK's default
 chain at it:
 
 ```sh
-export AWS_ENDPOINT_URL_S3=http://seaweedfs.wacz-validator:8333
+export AWS_ENDPOINT_URL_S3=http://seaweedfs.crawler-storage:8333
 export AWS_REGION=us-east-1
 export AWS_ACCESS_KEY_ID=wacz-validator AWS_SECRET_ACCESS_KEY=wacz-validator
 
