@@ -1,16 +1,16 @@
 ---
 title: Apple Container スタック
-description: bundled SeaweedFS を使って s3:// の WACZ を検証する。
+description: 共有の SeaweedFS を使って s3:// の WACZ を検証する。
 ---
 
-stack file は `docker-compose.yml` 1 本で、[Apple Container](https://github.com/apple/container)
+この repo に stack file は無い。S3 API を話す [SeaweedFS](https://github.com/seaweedfs/seaweedfs)
+は **crawler の repo が共有する 1 つの store**（submodule の
+[seaweedfs](https://github.com/uraitakahito/seaweedfs)）で、[Apple Container](https://github.com/apple/container)
 の上で [container-compose](https://github.com/Mcrich23/Container-Compose) が動かす。
-中身は service 1 つ — S3 API を話す [SeaweedFS](https://github.com/seaweedfs/seaweedfs) だけ。
-archive を生成する側、つまり
-BrowserHive や browser は含まれない。
+archive を生成する側、つまり BrowserHive や browser は含まれない。
 これが、wacz-validator が「誰が書いた WACZ か」に依存しないための土台になっている。
 
-wacz-validator 自身はこの file の service ではない。Apple Container の compose は
+wacz-validator 自身も service ではない。Apple Container の compose は
 subcommand が `up` / `down` / `build` / `version` の 4 つしかなく、one-shot の
 service を駆動する手段が無いため。wacz-validator は host で動かすか、`container run`
 で叩くかのどちらかで、両方とも以下に示す。
@@ -29,23 +29,25 @@ git submodule update --init --recursive
 
 ```sh
 brew install mcrich23/formulae/container-compose
-sudo container system dns create wacz-validator
+sudo container system dns create crawler-storage
 ```
 
-domain 名は `docker-compose.yml` の `name:` と一致していなければならない。これに
-よって container が `seaweedfs.wacz-validator` として platform DNS に登録され、
+domain 名は共有 store の `docker-compose.yml` の `name:` と一致していなければならない。
+これによって store が `seaweedfs.crawler-storage` として platform DNS に登録され、
 **他の container からだけでなく host からも解決できる**ようになる。開発用の
 container を用意していないのはこれが理由。
 
 ## store を起動する
 
+**この repo に store は無い。** crawler の 3 つの repo が共有する 1 つの store を使う
+（`wacz-validator` bucket はそこに在る）。submodule から起こす:
+
 ```sh
-container-compose up -d -b
+sh seaweedfs/scripts/stack.sh up
 ```
 
-`wacz-validator` bucket は container 自身の entrypoint 内の retry ループが作る。順序を
-待つ init container は無い — ここでは `depends_on` は起動順のみで、
-`healthcheck:` はそもそも読まれないため。bucket を使う前に master を待つ:
+bucket は store の entrypoint 内の retry ループが作る。順序を待つ init container は無い。
+bucket を使う前に master を待つ:
 
 ```sh
 until curl -sf http://localhost:9333/cluster/status >/dev/null; do sleep 1; done
@@ -59,7 +61,7 @@ sidecar の AWS CLI container を使えば、host に何も入れずに済む:
 container run --rm \
   -v "$(pwd)/samples:/samples" \
   -e AWS_ACCESS_KEY_ID=wacz-validator -e AWS_SECRET_ACCESS_KEY=wacz-validator \
-  -e AWS_REGION=us-east-1 -e AWS_ENDPOINT_URL_S3=http://seaweedfs.wacz-validator:8333 \
+  -e AWS_REGION=us-east-1 -e AWS_ENDPOINT_URL_S3=http://seaweedfs.crawler-storage:8333 \
   docker.io/amazon/aws-cli s3 cp /samples/wikipedia.wacz s3://wacz-validator/wikipedia.wacz
 ```
 
@@ -72,7 +74,7 @@ CLI をそのまま動かす:
 
 ```sh
 unset AWS_PROFILE          # 下記参照 — profile が設定されていると負ける
-export AWS_ENDPOINT_URL_S3=http://seaweedfs.wacz-validator:8333
+export AWS_ENDPOINT_URL_S3=http://seaweedfs.crawler-storage:8333
 export AWS_REGION=us-east-1
 export AWS_ACCESS_KEY_ID=wacz-validator AWS_SECRET_ACCESS_KEY=wacz-validator
 export WACZ_VALIDATOR_S3_FORCE_PATH_STYLE=true
@@ -108,7 +110,7 @@ CDXJ index が gzip されており、この profile はそれを拒否するた
 container build -t wacz-validator:latest .
 
 container run --rm \
-  -e AWS_ENDPOINT_URL_S3=http://seaweedfs.wacz-validator:8333 \
+  -e AWS_ENDPOINT_URL_S3=http://seaweedfs.crawler-storage:8333 \
   -e AWS_REGION=us-east-1 \
   -e AWS_ACCESS_KEY_ID=wacz-validator -e AWS_SECRET_ACCESS_KEY=wacz-validator \
   -e WACZ_VALIDATOR_S3_FORCE_PATH_STYLE=true \
@@ -125,12 +127,15 @@ image の entrypoint が CLI なので、image 名より後ろはそのまま CL
 
 ## 片付ける
 
+store は共有なので、立てたままにしておくのが普通（他の repo が使っているかもしれない）。
+
 ```sh
-container-compose down
+sh seaweedfs/scripts/stack.sh down     # 共有 store を全員のぶん止める
+pnpm run store:wipe                    # あるいは、この repo の bucket だけ空にする
 ```
 
-named volume は残るので、upload した archive は次回もそのまま使える。空の状態から
-始めたい場合は `seaweedfs-data` も消す。
+中身を消す・見る・store ごと作り直す手順は 1 か所にまとまっている:
+[seaweedfs の operations](https://github.com/uraitakahito/seaweedfs/blob/main/docs/operations.ja.md)。
 
 ## credential がどう wacz-validator に届くか
 

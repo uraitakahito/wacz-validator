@@ -63,7 +63,7 @@ dev スタックは TLS で話すので、grpcurl にはスタックの開発用
 ```sh
 cd ~/projects/crawler/wacz-validator
 AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
-  aws --endpoint-url http://seaweedfs.browserhive:8333 s3 cp "$WACZ" ./demo.wacz
+  aws --endpoint-url http://seaweedfs.crawler-storage:8333 s3 cp "$WACZ" ./demo.wacz
 ```
 
 ## 3. 基準を取る

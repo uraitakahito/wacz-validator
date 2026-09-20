@@ -20,12 +20,13 @@
     "test:ui": "vitest --ui",
     "test:report": "vitest run --reporter=html",
     "lint": "pnpm -r lint",
-    "check": "pnpm run check:seaweedfs-pin && pnpm audit --audit-level=moderate && pnpm --filter @wacz-validator/contract check && pnpm --filter @wacz-validator/core check && pnpm --filter @wacz-validator/validate-cli check && pnpm --filter @wacz-validator/protocol check && pnpm --filter @wacz-validator/daemon check && pnpm --filter @wacz-validator/devtools check && pnpm --filter @wacz-validator/tui check",
+    "check": "pnpm run check:store-name && pnpm audit --audit-level=moderate && pnpm --filter @wacz-validator/contract check && pnpm --filter @wacz-validator/core check && pnpm --filter @wacz-validator/validate-cli check && pnpm --filter @wacz-validator/protocol check && pnpm --filter @wacz-validator/daemon check && pnpm --filter @wacz-validator/devtools check && pnpm --filter @wacz-validator/tui check",
     "site:dev": "npm --prefix docs-site run dev",
     "site:build": "npm --prefix docs-site run build",
     "site:preview": "npm --prefix docs-site run preview",
     "site:check": "npm run site:build && node scripts/check-doc-refs.mjs",
-    "check:seaweedfs-pin": "sh seaweedfs/scripts/check-pin.sh docker-compose.yml"
+    "check:store-name": "sh seaweedfs/scripts/check-store-name.sh crawler-storage",
+    "store:wipe": "sh seaweedfs/scripts/wipe.sh wacz-validator"
   },
   "//scripts": [
     "test:ui / test:report use the root vitest.config.ts, whose `projects` point at",
@@ -33,10 +34,11 @@
     "than needing three. `pnpm test` is unchanged and still goes through `pnpm -r test`.",
     "test:report writes html/ and cannot be opened over file:// — serve it, e.g.",
     "`npx vite preview --outDir html`.",
-    "check:seaweedfs-pin fails when the SeaweedFS image in docker-compose.yml differs from the one",
-    "the seaweedfs submodule pins (seaweedfs/scripts/check-pin.sh). container-compose reads neither",
-    "include: nor extends:, so this service block is a copy and nothing else notices a stale one —",
-    "it sat on 4.23, which leaves an emptied bucket unwritable after a restart (upstream #9563)."
+    "This repo no longer runs a store of its own: the WACZ files live in the shared store",
+    "(seaweedfs.crawler-storage), brought up by seaweedfs/scripts/stack.sh. So there is no",
+    "docker-compose.yml here and no image pin to compare — check:store-name is what remains,",
+    "and it fails when a page or a comment still names a per-repo store (seaweedfs.<project>).",
+    "store:wipe empties this repo's bucket in the shared store."
   ],
   "//@types/node": [
     "Root-level eslint.config.js uses `// @ts-check` plus `import.meta.dirname`",
