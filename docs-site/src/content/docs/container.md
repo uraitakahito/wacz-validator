@@ -138,7 +138,7 @@ pnpm run store:wipe                    # or: empty this repo's bucket and leave 
 ```
 
 Emptying it, looking inside, and recreating it from scratch are documented in one place:
-[seaweedfs's operations page](https://github.com/uraitakahito/seaweedfs/blob/main/docs/operations.md).
+[seaweedfs's operations page](https://uraitakahito.github.io/seaweedfs/operations/).
 
 ## How the credentials reach wacz-validator
 
