@@ -67,7 +67,10 @@ container run --rm \
   docker.io/amazon/aws-cli s3 cp /samples/wikipedia.wacz s3://wacz-validator/wikipedia.wacz
 ```
 
-Uploaded archives are browsable at `http://localhost:8888/buckets/wacz-validator/`.
+Uploaded archives are listed, newest first, at
+`http://localhost:8888/ui/index.html?bucket=wacz-validator` — see
+[Finding artifacts](https://uraitakahito.github.io/seaweedfs/store-ui/). The filer's plain
+listing under `/buckets/wacz-validator/` only comes back in name order.
 
 ## Validate — on the host
 

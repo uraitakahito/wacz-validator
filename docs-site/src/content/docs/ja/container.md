@@ -65,7 +65,9 @@ container run --rm \
   docker.io/amazon/aws-cli s3 cp /samples/wikipedia.wacz s3://wacz-validator/wikipedia.wacz
 ```
 
-upload した archive は `http://localhost:8888/buckets/wacz-validator/` で確認できる。
+upload した archive は `http://localhost:8888/ui/index.html?bucket=wacz-validator` で
+**新しい順に**並ぶ（[成果物を探す](https://uraitakahito.github.io/seaweedfs/ja/store-ui/)）。
+`/buckets/wacz-validator/` の素の一覧は名前順にしか返らない。
 
 ## 検証する — host で
 
