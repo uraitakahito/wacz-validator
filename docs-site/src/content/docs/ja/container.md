@@ -135,7 +135,7 @@ pnpm run store:wipe                    # あるいは、この repo の bucket �
 ```
 
 中身を消す・見る・store ごと作り直す手順は 1 か所にまとまっている:
-[seaweedfs の operations](https://github.com/uraitakahito/seaweedfs/blob/main/docs/operations.ja.md)。
+[seaweedfs の operations](https://uraitakahito.github.io/seaweedfs/ja/operations/)。
 
 ## credential がどう wacz-validator に届くか
 
