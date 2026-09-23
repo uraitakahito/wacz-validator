@@ -10,9 +10,9 @@ description: Why wacz-validator is seven packages and a stateless daemon.
 | `@wacz-validator/contract` | — | The vocabulary every surface agrees on: rule profiles, locales, and the CLI exit-code contract. Depends on nothing, so a browser client can use it without pulling in the engine. |
 | `@wacz-validator/core` | — | The validation engine. Reads a WACZ, runs the rules, produces a machine-readable report. A library: it carries no bin and no `commander`. |
 | `@wacz-validator/validate-cli` | `wacz-validator-validate` | The non-interactive command over core. Parses the arguments, writes the JSON report, sets the exit code. Usable directly from CI without the rest. |
-| `@wacz-validator/daemon` | `wacz-validator-daemon` | A stateless HTTP/WS daemon that owns core and answers with a resolved report (message, spec URL and conformance inlined). |
+| `@wacz-validator/daemon` | `wacz-validator-daemon` | A stateless HTTP/WS daemon that owns core and answers with a resolved report (message, spec URL and conformance inlined). It also serves an archive's contents in windows — a range of lines, one line split into fields, the WARC records, one record. |
 | `@wacz-validator/tui` | `wacz-validator` | The interactive terminal UI — a thin client of the daemon. |
-| `@wacz-validator/protocol` | — | The wire types and CLI contract the clients and the daemon share. Runtime-independent of core, so it is browser-safe. |
+| `@wacz-validator/protocol` | — | The wire types and CLI contract the clients and the daemon share: `validate`, `readLines`, `readLine`, `readRecords`, `readRecord`, `ping`. Runtime-independent of core, so it is browser-safe. |
 | `@wacz-validator/devtools` | `wacz-validator-break` | Development only, never published (`private`). Breaks a WACZ on purpose so you can watch a rule turn red — a validator's green means nothing until you have seen it go red. |
 
 `wacz-validator` starts `wacz-validator-daemon` as a child process by default. Point it at a
@@ -27,7 +27,7 @@ frontend can present the same report**:
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser(["browser (planned)"]) -.->|"WS"| daemon
+    browser["dashboard (a browser client)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli"] -->|validates with| core["@wacz-validator/core"]
     daemon -->|validates with| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -38,13 +38,16 @@ flowchart LR
     cli -->|import| shared
 
     classDef shared fill:#fff3cd,stroke:#d4a72c,color:#5c4500;
-    classDef future fill:#eeeeee,stroke:#999999,color:#666666;
     class shared,protocol shared;
-    class browser future;
 ```
 
 The daemon holding no state is what makes that cheap: a second frontend is a new
-client, not a new copy of the engine.
+client, not a new copy of the engine. The second frontend exists — the crawler's
+[dashboard](https://github.com/uraitakahito/dashboard) talks to the same handlers over
+plain HTTP (`POST /validate`, `/lines`, `/line`, `/records`, `/record`, `/record/body`)
+and never imports core. Where the TUI walks an archive's contents over the
+WebSocket, the dashboard walks them over REST; both draw the tree from the same
+report and the same fields the daemon split.
 
 ## Why core carries no prose
 
