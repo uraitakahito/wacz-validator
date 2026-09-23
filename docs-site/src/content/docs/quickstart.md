@@ -60,6 +60,31 @@ the access key above. Either `unset AWS_PROFILE` or prefix the command with
 Starting the store and uploading an archive to it is covered in
 [Container](/wacz-validator/container/).
 
+## Pass a URL
+
+**To validate without holding any keys**, pass the URL itself. A signed URL (an
+S3 presigned URL, say) is fine too — its query never reaches the report.
+
+```sh
+wacz-validator-validate "https://example.com/archives/wikipedia.wacz"
+```
+
+It reads by **range GET**: only the ZIP central directory and the entries the
+rules need, so nothing downloads the whole file. **It does not use `HEAD`** — a
+presigned URL's signature is made for GET, and HEAD comes back 403. The total
+size is read from the `Content-Range` of the first range GET.
+
+:::caution[A server that ignores Range cannot be opened]
+When a server ignores `Range` and answers `200` with the whole body, validation
+**stops before it starts**. Treating that body as the requested range would mean
+reading the ZIP central directory from the start of the file, and reporting a
+perfectly good WACZ as broken. What is broken there is the server's range
+support, not the archive.
+:::
+
+The report's `source` becomes `{ "kind": "http", "url": "https://…" }` — **with
+the query stripped**.
+
 For an interactive read of the same report, use the TUI:
 
 ```sh

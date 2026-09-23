@@ -57,6 +57,30 @@ access key を無視します。`unset AWS_PROFILE` するか、コマンドの�
 
 ストアの起動と archive の upload は[コンテナ](/wacz-validator/ja/container/)にあります。
 
+## URL で渡す
+
+**鍵を持たずに検証したいとき**は、URL をそのまま渡せます。署名付き URL
+（S3 の presigned URL など）でも構いません —— query は報告に載りません。
+
+```sh
+wacz-validator-validate "https://example.com/archives/wikipedia.wacz"
+```
+
+読むのは **range GET** です。ZIP の中央ディレクトリと、rule が要る entry だけを
+取るので、全体を落とす必要はありません。**`HEAD` は使いません** —— 署名付き URL の
+署名は GET に対して作られており、HEAD は 403 になるからです。総サイズは最初の
+range GET の `Content-Range` から読みます。
+
+:::caution[Range を返さない相手は開けません]
+`Range` を無視して `200` で全体を返すサーバでは、**検証を始めずに止まります**。
+その応答を「指定した範囲」として読むと ZIP の中央ディレクトリを本文の先頭から
+読むことになり、壊れていない WACZ を「壊れている」と報告してしまうためです。
+壊れているのは相手の Range 対応であって、archive ではありません。
+:::
+
+report の `source` は `{ "kind": "http", "url": "https://…" }` になります
+（**query は落とした形**）。
+
 同じ report を対話的に読むなら TUI を使います。
 
 ```sh

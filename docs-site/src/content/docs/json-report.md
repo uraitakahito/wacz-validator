@@ -29,6 +29,22 @@ wacz-validator-validate a.wacz | jq '.summary.failed == 0'
 `issues` are in rule registration order, which means the structural checks come
 first and the most likely producer bug tends to be near the top.
 
+### `source` — which archive this was
+
+It takes one of three shapes.
+
+| `kind` | field | example |
+| --- | --- | --- |
+| `file` | `path` | `/var/archives/a.wacz` (an **absolute** path) |
+| `s3` | `uri` | `s3://bucket/key.wacz` |
+| `http` | `url` | `https://example.com/a.wacz` |
+
+**The `http` form has its query stripped.** When a signed URL
+(`?X-Amz-Signature=…`) was validated, leaving that signature in the report would
+let anyone who can read the report read the archive until it expires. A
+signature is a credential, not an answer to "which archive is this" — the same
+reason `s3` carries no connection settings (`forcePathStyle`) in its `uri`.
+
 ## Summary
 
 ```ts file="packages/core/src/validate/domain.ts#report-summary"
