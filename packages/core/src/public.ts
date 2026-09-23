@@ -8,6 +8,8 @@
  * 引き込まれない。human-readable な rendering は @wacz-validator/tui 側。
  */
 export { WaczReader } from "./wacz/reader.js";
+export type { LineStream } from "./wacz/reader.js";
+export type { Line } from "./wacz/lines.js";
 export { fileTransport, httpTransport, s3Transport } from "./wacz/transport.js";
 export type { ResolvedHttpSource, ResolvedS3Source, WaczTransport } from "./wacz/transport.js";
 export { DEFAULT_PROFILE, runValidation } from "./validate/engine.js";

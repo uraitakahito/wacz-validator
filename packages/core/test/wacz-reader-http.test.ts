@@ -23,7 +23,8 @@ import { httpTransport } from "../src/wacz/transport.js";
 import { totalFromContentRange } from "../src/wacz/http-range-reader.js";
 import { buildWacz } from "./fixtures/generator.js";
 
-const RANGE_RE = /^bytes=(\d+)-(\d+)$/;
+/** `bytes=A-B` と、末尾からの `bytes=-N` (reader が最初に送る) の両方。 */
+const RANGE_RE = /^bytes=(?:(\d+)-(\d+)|-(\d+))$/;
 
 let running: Server | undefined;
 
@@ -31,13 +32,16 @@ let running: Server | undefined;
 const serve = async (bytes: Buffer, honourRange: boolean): Promise<string> => {
   const server = createServer((request, reply) => {
     const match = RANGE_RE.exec(request.headers.range ?? "");
-    if (!honourRange || !match?.[1] || !match[2]) {
+    if (!honourRange || match === null) {
       reply.writeHead(200, { "content-length": String(bytes.length) });
       reply.end(bytes);
       return;
     }
-    const start = Number(match[1]);
-    const end = Math.min(Number(match[2]), bytes.length - 1);
+    const suffix = match[3];
+    const start =
+      suffix === undefined ? Number(match[1] ?? "0") : Math.max(0, bytes.length - Number(suffix));
+    const end =
+      suffix === undefined ? Math.min(Number(match[2] ?? "0"), bytes.length - 1) : bytes.length - 1;
     const slice = bytes.subarray(start, end + 1);
     reply.writeHead(206, {
       "content-range": `bytes ${String(start)}-${String(end)}/${String(bytes.length)}`,
