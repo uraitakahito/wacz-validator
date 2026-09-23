@@ -5,8 +5,9 @@
  * validation は自前で行わず、stateless な `@wacz-validator/daemon` を spawn
  * (or `--server URL` に接続)し、WS で `wacz-validator/validate` を呼ぶ。daemon が
  * core を所有し、`renderJson(report, locale)` で解決済みの `WireReport` を返す
- * ので、tui はそれを interactive に render する。Layout で enter すると
- * `wacz-validator/readEntry` でファイル内容を取り、右ペインに表示する。wacz-validator は対話 TUI
+ * ので、tui はそれを interactive に render する。Layout で enter すると窓の口
+ * (`wacz-validator/readLines` / `readLine` / `readRecords` / `readRecord`)でファイルの
+ * 中身を取り、全幅で表示する。wacz-validator は対話 TUI
  * 専用で、stdout / stdin が TTY でない(パイプ / CI 等)場合は描画できないので、
  * daemon を起動する前に `wacz-validator-validate`(core の bin)を案内して exit 2 で終わる。
  * 非対話・機械可読な出力は `wacz-validator-validate` の領分。
@@ -15,7 +16,7 @@
  * `@wacz-validator/protocol` 由来で、validation engine も i18n カタログも読み込まない。
  *
  * daemon の寿命は action が所有する: spawn → validate → (TUI の間は接続維持で
- * readEntry) → waitUntilExit → client.close → daemon.close(child の exit を待つ)
+ * 窓の読み) → waitUntilExit → client.close → daemon.close(child の exit を待つ)
  * → `process.exitCode`。child を待ってから exitCode を確定するので、死にかけの
  * child handle と event loop が競合して exit code が 0 に化けるレースを避ける。
  */
@@ -34,7 +35,10 @@ import {
   describeCause,
   type CliOutcome,
   type HealthStatus,
-  type ReadEntryResult,
+  type ReadLineResult,
+  type ReadLinesResult,
+  type ReadRecordResult,
+  type ReadRecordsResult,
   type ProfileSelector,
   type WireReport,
 } from "@wacz-validator/protocol";
@@ -46,7 +50,7 @@ import {
 } from "./daemon-client.js";
 import { BUILD_INFO } from "./generated/build-info.js";
 import { ServerEndpoint } from "./server-url.js";
-import type { BuildPair } from "./app.js";
+import type { BuildPair, ContentBridge } from "./app.js";
 
 /** 描画(tui)と検証(daemon)の双方のビルド識別。Header の SHA 表示・不一致警告に使う。 */
 interface BuildInfo {
@@ -67,7 +71,21 @@ interface CliOptions {
   server?: ServerEndpoint;
 }
 
-type RequestContent = (path: string) => Promise<ReadEntryResult>;
+/**
+ * 窓の口への橋。どれも同じ source を運ぶ (daemon は状態を持たないので、毎回言う)。
+ */
+const bridgeFor = (client: DaemonClient, uri: string): ContentBridge => {
+  const source = { kind: "uri" as const, uri };
+  return {
+    lines: (path, from, count) =>
+      client.request<ReadLinesResult>("wacz-validator/readLines", { source, path, from, count }),
+    line: (path, n) => client.request<ReadLineResult>("wacz-validator/readLine", { source, path, n }),
+    records: (path, from, count) =>
+      client.request<ReadRecordsResult>("wacz-validator/readRecords", { source, path, from, count }),
+    record: (path, offset, length) =>
+      client.request<ReadRecordResult>("wacz-validator/readRecord", { source, path, offset, length }),
+  };
+};
 
 /**
  * CLI 引数を daemon に渡す source URI に正規化する。`s3://` はそのまま、
@@ -138,9 +156,7 @@ program
           daemon: { version: health.version, gitSha: health.gitSha },
         };
         const outcome = await validateOnce(client, uri, filePath, options);
-        const requestContent: RequestContent = (path) =>
-          client.request<ReadEntryResult>("wacz-validator/readEntry", { source: { kind: "uri", uri }, path });
-        await dispatch(outcome, requestContent, build);
+        await dispatch(outcome, bridgeFor(client, uri), build);
         // session は finally で release し(spawn 時は kill + exit 待ち)、その後に
         // process が終わる(exitCode を確定後に child が残らないようにするため)。
         process.exitCode = exitCodeFor(outcome);
@@ -188,16 +204,16 @@ async function validateOnce(
   }
 }
 
-/** outcome に従って TUI / stderr を発火する。TUI には readEntry ブリッジとバージョン情報を渡す。 */
+/** outcome に従って TUI / stderr を発火する。TUI には窓の橋とバージョン情報を渡す。 */
 async function dispatch(
   outcome: CliOutcome<WireReport>,
-  requestContent: RequestContent,
+  bridge: ContentBridge,
   build: BuildInfo,
 ): Promise<void> {
   switch (outcome.kind) {
     case "valid":
     case "invalid":
-      await runTui(outcome.report, requestContent, build);
+      await runTui(outcome.report, bridge, build);
       return;
     case "openFailed": {
       // **ここでは `describeCause` を通さない。** ここに来る cause は
@@ -219,7 +235,7 @@ async function dispatch(
 
 async function runTui(
   report: WireReport,
-  requestContent: RequestContent,
+  bridge: ContentBridge,
   build: BuildInfo,
 ): Promise<void> {
   const [{ render }, { createElement }, { App }] = await Promise.all([
@@ -227,6 +243,6 @@ async function runTui(
     import("react"),
     import("./app.js"),
   ]);
-  const instance = render(createElement(App, { report, requestContent, build }));
+  const instance = render(createElement(App, { report, bridge, build }));
   await instance.waitUntilExit();
 }

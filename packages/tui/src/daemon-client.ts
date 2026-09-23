@@ -9,13 +9,11 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { WebSocket, type RawData } from "ws";
 import type {
-  PingParams,
-  ReadEntryParams,
   RpcError,
   RpcMethod,
+  RpcParams,
   RpcRequest,
   RpcResponse,
-  ValidateParams,
 } from "@wacz-validator/protocol";
 import { ServerEndpoint } from "./server-url.js";
 
@@ -104,7 +102,7 @@ interface Pending {
 export interface DaemonClient {
   request: <R>(
     method: RpcMethod,
-    params: ValidateParams | ReadEntryParams | PingParams,
+    params: RpcParams,
   ) => Promise<R>;
   close: () => void;
 }
@@ -146,7 +144,7 @@ export const connect = async (endpoint: ServerEndpoint): Promise<DaemonClient> =
   return {
     request: <R>(
       method: RpcMethod,
-      params: ValidateParams | ReadEntryParams | PingParams,
+      params: RpcParams,
     ): Promise<R> =>
       new Promise<R>((resolveReq, rejectReq) => {
         const id = nextId++;

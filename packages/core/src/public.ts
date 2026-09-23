@@ -10,6 +10,15 @@
 export { WaczReader } from "./wacz/reader.js";
 export type { LineStream } from "./wacz/reader.js";
 export type { Line } from "./wacz/lines.js";
+export { explodeLine } from "./wacz/line-fields.js";
+export type { Field } from "./wacz/line-fields.js";
+export { httpHeader, mimeOf, parseRecord, summarizeMember } from "./wacz/records.js";
+export type { HttpBlock, ParsedRecord, WarcRecordSummary } from "./wacz/records.js";
+export { iterateWarcMembers } from "./wacz/warc-iter.js";
+export type { WarcMember } from "./wacz/warc-iter.js";
+export type { WarcHeader } from "./wacz/warc-header.js";
+export { parseCdxj } from "./wacz/cdxj-parser.js";
+export type { CdxjEntry } from "./wacz/cdxj-parser.js";
 export { fileTransport, httpTransport, s3Transport } from "./wacz/transport.js";
 export type { ResolvedHttpSource, ResolvedS3Source, WaczTransport } from "./wacz/transport.js";
 export { DEFAULT_PROFILE, runValidation } from "./validate/engine.js";

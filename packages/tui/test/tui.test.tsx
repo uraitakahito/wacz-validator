@@ -10,13 +10,14 @@
  * 実 terminal は関わらない(in-memory frame)。byte 単位 snapshot は取らず、
  * substring assertion で意味論的 surface を cover する。
  */
+import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
 import { render } from "ink-testing-library";
 import { render as inkRender } from "ink";
 import { describe, expect, it } from "vitest";
 import type { ReactElement } from "react";
-import type { AbsolutePath, ExpectedBy, ReadEntryResult, WireReport } from "@wacz-validator/protocol";
-import { App } from "../src/app.js";
+import type { AbsolutePath, ExpectedBy, Field, RecordSummary, WireLine, WireReport } from "@wacz-validator/protocol";
+import { App, type ContentBridge } from "../src/app.js";
 
 /**
  * 端末サイズ(columns × rows)を明示して App を描く小さなハーネス。
@@ -455,32 +456,93 @@ describe("tui — layout view", () => {
   });
 });
 
-describe("tui — content view (実測スクロール)", () => {
+const REAL_CDXJ =
+    'org,wikimedia,upload)/wikipedia/commons/4/4d/icon_pdf_file.png 20220831121514 {"url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Icon_pdf_file.png", "mime": "image/png", "status": "200", "digest": "sha1:UKKPFYIP53NFMQTHRDY2CQERNZXKXWY3", "length": "1320", "offset": "5504", "filename": "rec-20220831121514140372-203de340fdad.warc.gz", "recordDigest": "sha256:9a5ad858a5a8730074545095192ad070224dcb489d0d6b4e48926a0f7ea89fb7", "referrer": "https://en.wikipedia.org/"}';
+
+describe("tui — content view (行の窓)", () => {
   // ルート直下のファイル 1 つ。tab→Layout 直後の focus=0 がこのファイル行になる。
-  const reportWithFile = (): WireReport =>
+  // 名前は .warc.gz にしない —— それはレコードの一覧へ行く。
+  const reportWithFile = (path = "index.cdxj"): WireReport =>
     makeReport({
       entries: [
         {
-          path: "data.warc.gz",
+          path,
           present: true,
           uncompressedSize: 92700,
-          compressionMethod: 0,
+          compressionMethod: 8,
           expectedBy: ["datapackage"],
           issues: [],
         },
       ],
     });
 
-  const warcText =
-    "WARC/1.0\nWARC-Type: response\nWARC-Target-URI: https://en.wikipedia.org/wiki/World_Wide_Web";
-  const requestContent = (): Promise<ReadEntryResult> =>
-    Promise.resolve({ kind: "text", content: warcText, truncated: false, gunzipped: true });
+  const wire = (n: number, text: string): WireLine => ({
+    n,
+    text,
+    cut: false,
+    binary: false,
+    bytes: Buffer.byteLength(text),
+  });
+
+  /** daemon が割って返す fields の代わり。実物の 1 行だけ割り、他は割らない。 */
+  const fieldsOf = (text: string): Field[] =>
+    text === REAL_CDXJ
+      ? [
+          { label: "key", value: "org,wikimedia,upload)/wikipedia/commons/4/4d/icon_pdf_file.png", fromJson: false },
+          { label: "timestamp", value: "20220831121514  (2022-08-31 12:15:14 UTC)", fromJson: false },
+          { label: "url", value: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Icon_pdf_file.png", fromJson: true },
+          { label: "mime", value: "image/png", fromJson: true },
+          { label: "status", value: "200", fromJson: true },
+          { label: "digest", value: "sha1:UKKPFYIP53NFMQTHRDY2CQERNZXKXWY3", fromJson: true },
+          { label: "length", value: "1320", fromJson: true },
+          { label: "offset", value: "5504", fromJson: true },
+          { label: "filename", value: "rec-20220831121514140372-203de340fdad.warc.gz", fromJson: true },
+          {
+            label: "recordDigest",
+            value: "sha256:9a5ad858a5a8730074545095192ad070224dcb489d0d6b4e48926a0f7ea89fb7",
+            fromJson: true,
+          },
+          { label: "referrer", value: "https://en.wikipedia.org/", fromJson: true },
+        ]
+      : [{ label: "line", value: text, fromJson: false }];
+
+  /** daemon の代わり。行の列を窓で返し、頼まれた窓を記録する。 */
+  const bridgeOf = (lines: string[], window = 500): { bridge: ContentBridge; asked: string[] } => {
+    const asked: string[] = [];
+    const bridge: ContentBridge = {
+      lines: (_path, from, count) => {
+        asked.push(`lines:${String(from)}`);
+        const take = Math.min(count, window);
+        const slice = lines.slice(from, from + take).map((text, i) => wire(from + i, text));
+        return Promise.resolve({
+          lines: slice,
+          next: from + take < lines.length ? from + take : null,
+          gunzipped: true,
+        });
+      },
+      line: (_path, n) => {
+        asked.push(`line:${String(n)}`);
+        const text = lines[n] ?? "";
+        return Promise.resolve({ ...wire(n, text), fields: fieldsOf(text), gunzipped: true });
+      },
+      records: () => Promise.reject(new Error("not a WARC")),
+      record: () => Promise.reject(new Error("not a WARC")),
+    };
+    return { bridge, asked };
+  };
+
+  const warcLines = [
+    "WARC/1.0",
+    "WARC-Type: response",
+    "WARC-Target-URI: https://en.wikipedia.org/wiki/World_Wide_Web",
+  ];
 
   const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 60));
 
   it("Layout で enter: 全幅 content view に開く(ツリーは消える)", async () => {
+    const { bridge } = bridgeOf(warcLines);
     const { lastFrame, stdin } = render(
-      <App report={reportWithFile()} requestContent={requestContent} build={buildStub} />,
+      <App report={reportWithFile()} bridge={bridge} build={buildStub} />,
     );
     stdin.write("\t"); // → Layout
     await tick();
@@ -489,27 +551,27 @@ describe("tui — content view (実測スクロール)", () => {
     const frame = lastFrame() ?? "";
     expect(frame).toContain("content (gzip 展開)"); // content ビューのヘッダ
     expect(frame).toContain("WARC/1.0"); // 内容(スクロール窓内)
-    expect(frame).not.toContain("data.warc.gz"); // ツリーは別ビューなので描かれない
+    expect(frame).not.toContain("index.cdxj"); // ツリーは別ビューなので描かれない
   });
 
   it("content view で esc: Layout に戻る", async () => {
+    const { bridge } = bridgeOf(warcLines);
     const { lastFrame, stdin } = render(
-      <App report={reportWithFile()} requestContent={requestContent} build={buildStub} />,
+      <App report={reportWithFile()} bridge={bridge} build={buildStub} />,
     );
     stdin.write("\t");
     await tick();
     stdin.write("\r"); // → content view
     await tick();
-    stdin.write(""); // esc → Layout
+    stdin.write("\u001B"); // esc → Layout
     await tick();
-    expect(lastFrame() ?? "").toContain("data.warc.gz"); // ツリーが戻る
+    expect(lastFrame() ?? "").toContain("index.cdxj"); // ツリーが戻る
   });
 
   it("content をスクロールできる(G で末尾へ・先頭行が窓から外れる)", async () => {
-    const many = Array.from({ length: 100 }, (_, i) => `row-${String(i).padStart(3, "0")}`).join("\n");
-    const reqMany = (): Promise<ReadEntryResult> =>
-      Promise.resolve({ kind: "text", content: many, truncated: false, gunzipped: true });
-    const { lastFrame, stdin } = render(<App report={reportWithFile()} requestContent={reqMany} build={buildStub} />);
+    const many = Array.from({ length: 100 }, (_, i) => `row-${String(i).padStart(3, "0")}`);
+    const { bridge } = bridgeOf(many);
+    const { lastFrame, stdin } = render(<App report={reportWithFile()} bridge={bridge} build={buildStub} />);
     stdin.write("\t");
     await tick();
     stdin.write("\r"); // → content view(先頭行が窓内)
@@ -522,18 +584,38 @@ describe("tui — content view (実測スクロール)", () => {
     expect(frame).not.toContain("row-000"); // 先頭行は窓から外れた
   });
 
+  it("窓の末尾に着いたら、続きを頼んで足す(next が null になるまで)", async () => {
+    // 25 行を 10 行ずつ。開いた直後は 10 行 (+ は続きがある印)、G で末尾に着くと次の窓。
+    const lines = Array.from({ length: 25 }, (_, i) => `line-${String(i).padStart(2, "0")}`);
+    const { bridge, asked } = bridgeOf(lines, 10);
+    const { lastFrame, stdin } = render(<App report={reportWithFile()} bridge={bridge} build={buildStub} />);
+    stdin.write("\t");
+    await tick();
+    stdin.write("\r");
+    await tick();
+    expect(lastFrame() ?? "").toContain("line 1/10+");
+    expect(asked).toEqual(["lines:0"]);
+    stdin.write("G"); // 末尾へ → 続きを頼む
+    await tick();
+    expect(asked).toEqual(["lines:0", "lines:10"]);
+    expect(lastFrame() ?? "").toContain("/20+");
+    stdin.write("G");
+    await tick();
+    expect(asked).toEqual(["lines:0", "lines:10", "lines:20"]);
+    expect(lastFrame() ?? "").toContain("/25 "); // 末尾まで届いたので + が消える
+  });
+
   // どの端末高でも、Layout でも content(100 行ロード)でも、App のフレーム行数が
   // 端末行数を超えないこと(=Ink の縦はみ出し崩れが起きない)を、rows を固定して検証。
   // ※ ink-testing-library は rows を持たず実端末サイズへフォールバックするので renderAt を使う。
   for (const rows of [20, 30, 50]) {
     it(`端末 ${String(rows)} 行: App はその行数を超えない`, async () => {
-      const many = Array.from({ length: 100 }, (_, i) => `line-${String(i)}`).join("\n");
-      const reqMany = (): Promise<ReadEntryResult> =>
-        Promise.resolve({ kind: "text", content: many, truncated: false, gunzipped: true });
+      const many = Array.from({ length: 100 }, (_, i) => `line-${String(i)}`);
+      const { bridge } = bridgeOf(many);
       const { lastFrame, stdin, unmount } = renderAt(
         120,
         rows,
-        <App report={reportWithFile()} requestContent={reqMany} build={buildStub} />,
+        <App report={reportWithFile()} bridge={bridge} build={buildStub} />,
       );
       stdin.write("\t"); // → Layout
       await tick();
@@ -554,32 +636,21 @@ describe("tui — content view (実測スクロール)", () => {
   // 見る。ink-testing-library の既定幅では実端末に引きずられ、たまたま全部
   // 収まってしまって検出力が消えるので renderAt を使う。
   //
-  // 標本は samples/wikipedia.wacz の実データ(476 文字)。
-  const REAL_CDXJ =
-    'org,wikimedia,upload)/wikipedia/commons/4/4d/icon_pdf_file.png 20220831121514 {"url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Icon_pdf_file.png", "mime": "image/png", "status": "200", "digest": "sha1:UKKPFYIP53NFMQTHRDY2CQERNZXKXWY3", "length": "1320", "offset": "5504", "filename": "rec-20220831121514140372-203de340fdad.warc.gz", "recordDigest": "sha256:9a5ad858a5a8730074545095192ad070224dcb489d0d6b4e48926a0f7ea89fb7", "referrer": "https://en.wikipedia.org/"}';
+  // fields は daemon が割って返す (fieldsOf が代わり)。tui は割り方を持たない。
 
   const openCdxjLine = async (): Promise<{
     lastFrame: () => string;
     stdin: FakeIn;
     unmount: () => void;
+    asked: string[];
   }> => {
-    const reqCdxj = (): Promise<ReadEntryResult> =>
-      Promise.resolve({
-        kind: "text",
-        content: `${REAL_CDXJ}\nsecond line\nthird line`,
-        truncated: false,
-        gunzipped: true,
-      });
-    const h = renderAt(
-      80,
-      40,
-      <App report={reportWithFile()} requestContent={reqCdxj} build={buildStub} />,
-    );
+    const { bridge, asked } = bridgeOf([REAL_CDXJ, "second line", "third line"]);
+    const h = renderAt(80, 40, <App report={reportWithFile()} bridge={bridge} build={buildStub} />);
     h.stdin.write("\t"); // → Layout
     await tick();
     h.stdin.write("\r"); // → content
     await tick();
-    return h;
+    return { ...h, asked };
   };
 
   it("content では長い行が端末幅で切られている(前提の確認)", async () => {
@@ -591,20 +662,23 @@ describe("tui — content view (実測スクロール)", () => {
     expect(frame).not.toContain("rec-20220831121514140372");
   });
 
-  it("content で enter: その 1 行がラベル付きで開き、切れていた値が見える", async () => {
-    const { lastFrame, stdin, unmount } = await openCdxjLine();
+  it("content で enter: daemon が割った 1 行がラベル付きで開き、切れていた値が見える", async () => {
+    const { lastFrame, stdin, unmount, asked } = await openCdxjLine();
     stdin.write("\r"); // → line ビュー
     await tick();
     const frame = lastFrame();
     unmount();
 
-    // ── ① 実際に割れていること。
+    // ── ① 1 行を daemon に頼んでいる (content の窓を使い回さない —— 窓の行は切れうる)。
+    expect(asked).toContain("line:0");
+
+    // ── ② 実際に割れていること。
     // `filename` や `rec-…` は **生の JSON 文字列にも現れる** ので、それを
     // 見ても整形の有無を区別できない。JSON の記法そのものが消えたかを見る。
     expect(frame).not.toContain('{"url"');
     expect(frame).not.toContain('", "mime": "');
 
-    // ── ② 切らずに折り返していること。
+    // ── ③ 切らずに折り返していること。
     // recordDigest は `sha256:` + 64 桁 = 71 文字。ラベル欄が 14 桁なので値の幅は
     // 66 桁しかなく、67 文字目以降は次の行へ回る。**折り返しは改行を挟む**ので
     // 全長を 1 つの文字列としては assert できない。先頭側と、回り込んだ末尾の
@@ -612,13 +686,13 @@ describe("tui — content view (実測スクロール)", () => {
     expect(frame).toContain("sha256:9a5ad858a5a87300745450951"); // 1 行目に載る側
     expect(frame).toContain("89fb7"); // 66 桁を超えて 2 行目へ回った側
 
-    // ── ③ content では切られていた値。
+    // ── ④ content では切られていた値。
     expect(frame).toContain("rec-20220831121514140372");
     expect(frame).toContain("5504");
 
-    // ── ④ 見出しに位置と長さ。
+    // ── ⑤ 見出しに位置と長さ。
     expect(frame).toContain("line 1 / 3");
-    expect(frame).toContain("476 chars");
+    expect(frame).toContain("476 bytes");
   });
 
   it("line ビューで esc: content に戻り、カーソル位置が保たれる", async () => {
@@ -636,8 +710,8 @@ describe("tui — content view (実測スクロール)", () => {
     expect(frame).toContain("line 2/3"); // カーソルは 2 行目のまま
   });
 
-  it("line ビューのまま ↑↓ で前後の行に移れる", async () => {
-    const { lastFrame, stdin, unmount } = await openCdxjLine();
+  it("line ビューのまま ↑↓ で前後の行に移れる(その行も daemon に頼む)", async () => {
+    const { lastFrame, stdin, unmount, asked } = await openCdxjLine();
     stdin.write("\r"); // → line (1 行目)
     await tick();
     stdin.write("j"); // 次の行へ(開いたまま)
@@ -646,9 +720,10 @@ describe("tui — content view (実測スクロール)", () => {
     unmount();
     expect(frame).toContain("line 2 / 3");
     expect(frame).toContain("second line");
+    expect(asked.filter((a) => a.startsWith("line:"))).toEqual(["line:0", "line:1"]);
   });
 
-  it("CDXJ でない行は割らずにそのまま見せる", async () => {
+  it("割られていない行は、そのまま 1 つの field で見せる", async () => {
     const { lastFrame, stdin, unmount } = await openCdxjLine();
     stdin.write("G"); // 末尾行(third line)へ
     await tick();
@@ -659,7 +734,147 @@ describe("tui — content view (実測スクロール)", () => {
     expect(frame).toContain("third line");
     expect(frame).not.toContain("filename");
   });
+
+  it("切れた行・binary の行は、一覧にその印が出る", async () => {
+    const bridge: ContentBridge = {
+      lines: () =>
+        Promise.resolve({
+          lines: [
+            { n: 0, text: "head of a long line", cut: true, binary: false, bytes: 404_696 },
+            { n: 1, text: "", cut: false, binary: true, bytes: 9_930 },
+          ],
+          next: null,
+          gunzipped: false,
+        }),
+      line: () => Promise.reject(new Error("unused")),
+      records: () => Promise.reject(new Error("unused")),
+      record: () => Promise.reject(new Error("unused")),
+    };
+    const { lastFrame, stdin, unmount } = renderAt(
+      100,
+      20,
+      <App report={reportWithFile()} bridge={bridge} build={buildStub} />,
+    );
+    stdin.write("\t");
+    await tick();
+    stdin.write("\r");
+    await tick();
+    const frame = lastFrame();
+    unmount();
+    expect(frame).toContain("head of a long line …");
+    expect(frame).toContain("(binary · 9.7 KB)");
+  });
 });
+
+describe("tui — records view (WARC はレコードの一覧で開く)", () => {
+  const reportWithWarc = (): WireReport =>
+    makeReport({
+      entries: [
+        {
+          path: "data.warc.gz",
+          present: true,
+          uncompressedSize: 6_338_608,
+          compressionMethod: 0,
+          expectedBy: ["datapackage"],
+          issues: [],
+        },
+      ],
+    });
+
+  const rows: RecordSummary[] = [
+    { offset: 0, length: 250, type: "warcinfo", contentType: "application/warc-fields", indexed: false },
+    {
+      offset: 250,
+      length: 10_791,
+      type: "response",
+      uri: "https://news-pctr.c.yimg.jp/t/a.jpg",
+      status: 200,
+      mime: "image/jpeg",
+      indexed: true,
+    },
+    {
+      offset: 11_041,
+      length: 300,
+      type: "metadata",
+      uri: "https://www.googletagmanager.com/gtm.js",
+      contentType: "application/warc-fields",
+      indexed: false,
+    },
+  ];
+
+  const bridge: ContentBridge = {
+    lines: () => Promise.reject(new Error("a WARC opens as records")),
+    line: () => Promise.reject(new Error("a WARC opens as records")),
+    records: () => Promise.resolve({ records: rows, next: null, total: rows.length }),
+    record: (_path, offset) =>
+      Promise.resolve(
+        offset === 250
+          ? {
+              warc: [
+                { name: "WARC-Type", value: "response" },
+                { name: "WARC-Target-URI", value: "https://news-pctr.c.yimg.jp/t/a.jpg" },
+              ],
+              http: { status: "HTTP/1.1 200 OK", headers: [{ name: "content-type", value: "image/jpeg" }] },
+              body: { kind: "image", mime: "image/jpeg", byteLength: 9_926 },
+            }
+          : {
+              warc: [{ name: "WARC-Type", value: "metadata" }],
+              body: { kind: "text", content: "action: no-archive\npattern: *://*.googletagmanager.com/*", truncated: false },
+            },
+      ),
+  };
+
+  const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 60));
+
+  it("enter で一覧: 種別・状態・content-type・URI と、索引の印", async () => {
+    const { lastFrame, stdin, unmount } = renderAt(
+      120,
+      30,
+      <App report={reportWithWarc()} bridge={bridge} build={buildStub} />,
+    );
+    stdin.write("\t");
+    await tick();
+    stdin.write("\r"); // → records
+    await tick();
+    const frame = lastFrame();
+    unmount();
+    expect(frame).toContain("records 1/3");
+    expect(frame).toContain("▪ response 200 image/jpeg");
+    expect(frame).toContain("▫ metadata");
+    expect(frame).toContain("https://www.googletagmanager.com/gtm.js");
+    expect(frame).not.toContain("data.warc.gz"); // ツリーは別ビュー
+  });
+
+  it("レコードを選んで enter: 見出しと本文。画像は大きさだけ", async () => {
+    const { lastFrame, stdin, unmount } = renderAt(
+      120,
+      30,
+      <App report={reportWithWarc()} bridge={bridge} build={buildStub} />,
+    );
+    stdin.write("\t");
+    await tick();
+    stdin.write("\r"); // → records
+    await tick();
+    stdin.write("j"); // 2 件目 (応答)
+    await tick();
+    stdin.write("\r"); // → record
+    await tick();
+    const opened = lastFrame();
+    expect(opened).toContain("WARC-Type: response");
+    expect(opened).toContain("HTTP/1.1 200 OK");
+    expect(opened).toContain("(image image/jpeg · 9.7 KB — 端末では出せない)");
+    stdin.write("\u001B"); // esc → 一覧へ
+    await tick();
+    stdin.write("j"); // 3 件目 (撮らなかった記録)
+    await tick();
+    stdin.write("\r");
+    await tick();
+    const meta = lastFrame();
+    unmount();
+    expect(meta).toContain("action: no-archive");
+  });
+});
+
 
 describe("tui — layout view: 右枠の幅はコンテンツに依存しない", () => {
   // 枠線 ─ の最長連続数 = 枠の内側幅。端末幅が同じなら短/長メタで一致するはず。
