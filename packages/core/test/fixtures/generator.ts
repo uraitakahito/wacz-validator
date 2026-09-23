@@ -107,6 +107,13 @@ export interface FixtureOptions {
   omitArchive?: boolean;
   omitIndexes?: boolean;
   /**
+   * `WARC-Type: response` のレコード (HTTP の状態行・見出し・本文つき) を warcinfo の
+   * 後ろに足す。CDXJ にも offset / length つきの行が並ぶので、索引から 1 メンバを
+   * 切り出す読み (`WaczReader.member`) や、レコードの中身を返す口の試験に使う。
+   * 既定の標本には無い —— 応答レコードを持つ標本が無かったので足した。
+   */
+  warcResponses?: WarcResponseSpec[];
+  /**
    * When true, store the WARC entry as DEFLATE rather than STORE
    * (browserhive's invariant from packager.ts). Triggers rule #6.
    */
@@ -275,6 +282,25 @@ interface DatapackageResource {
   bytes: number;
 }
 
+/** `warcResponses` の 1 件。body は HTTP の entity body そのもの。 */
+export interface WarcResponseSpec {
+  uri: string;
+  mime: string;
+  body: Buffer | string;
+  /** HTTP の状態コード。既定 200。 */
+  status?: number;
+}
+
+/** 組み立てた WARC の各メンバ (gzip 1 つ = レコード 1 つ) の位置。 */
+export interface WarcRecordInfo {
+  type: "warcinfo" | "response" | "metadata";
+  offset: number;
+  length: number;
+  uri?: string;
+  mime?: string;
+  status?: number;
+}
+
 // ---------------------------------------------------------------------------
 // WARC コンテンツ — 単一の最小 `warcinfo` レコード。CDXJ が参照する
 // には十分で、必要なら test 内で手計算できる程度には小さい。形状は
@@ -336,6 +362,42 @@ const buildIncompleteMetadataBytes = (
   return Buffer.concat([Buffer.from(headers, "utf-8"), body, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
+/**
+ * `WARC-Type: response` レコードを 1 件組み立てる。形は BrowserHive の書く応答と
+ * 同じ: WARC の見出し → 空行 → HTTP の状態行と見出し → 空行 → entity body → `\r\n\r\n`。
+ * `WARC-Payload-Digest` は entity body の sha256 (rule `warc/payload-digest` が pass する)。
+ */
+const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
+  const body = typeof spec.body === "string" ? Buffer.from(spec.body, "utf-8") : spec.body;
+  const status = spec.status ?? 200;
+  const http = Buffer.concat([
+    Buffer.from(
+      [
+        `HTTP/1.1 ${String(status)} ${status === 200 ? "OK" : "Status"}`,
+        `content-type: ${spec.mime}`,
+        `content-length: ${String(body.byteLength)}`,
+        "",
+        "",
+      ].join("\r\n"),
+      "utf-8",
+    ),
+    body,
+  ]);
+  const headers = [
+    "WARC/1.1",
+    "WARC-Type: response",
+    `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx + 200).padStart(12, "0")}>`,
+    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Target-URI: ${spec.uri}`,
+    `WARC-Payload-Digest: ${sha256Base32(body)}`,
+    "Content-Type: application/http;msgtype=response",
+    `Content-Length: ${String(http.byteLength)}`,
+    "",
+    "",
+  ].join("\r\n");
+  return Buffer.concat([Buffer.from(headers, "utf-8"), http, Buffer.from("\r\n\r\n", "utf-8")]);
+};
+
 const buildWarcGz = (
   software: string,
   opts: {
@@ -343,8 +405,9 @@ const buildWarcGz = (
     corruptAt?: number;
     incompleteRecords?: number;
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
+    responses?: WarcResponseSpec[];
   },
-): { bytes: Buffer; recordLength: number; offset: number } => {
+): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
   const raw = buildWarcInfoBytes(software, opts.payloadDigestBad);
   const gz = gzipSync(raw);
   // bit を 1 つ反転して gzip member が decode できないようにする。
@@ -357,19 +420,51 @@ const buildWarcGz = (
     // ここでの index アクセスは意図的な fixture mutation。
     gz[opts.corruptAt] = (gz[opts.corruptAt] ?? 0) ^ 0xff;
   }
-  // テスト用: 未完了 metadata を別 gzip member として連結。warcinfo の
-  // offset(0)/length は不変なので、CDXJ・warc-offsets は影響を受けない。
-  const members: Buffer[] = [gz];
+  // メンバを順に積み、それぞれの位置を記録する。warcinfo は常に offset 0 なので、
+  // CDXJ・warc-offsets の既存の期待は変わらない。
+  const members: Buffer[] = [];
+  const records: WarcRecordInfo[] = [];
+  let at = 0;
+  const push = (member: Buffer, info: Omit<WarcRecordInfo, "offset" | "length">): void => {
+    members.push(member);
+    records.push({ ...info, offset: at, length: member.byteLength });
+    at += member.byteLength;
+  };
+  push(gz, { type: "warcinfo" });
+  // 応答レコードは warcinfo の直後。索引にも offset / length つきで並ぶ。
+  (opts.responses ?? []).forEach((spec, i) => {
+    push(gzipSync(buildResponseBytes(i, spec)), {
+      type: "response",
+      uri: spec.uri,
+      mime: spec.mime,
+      status: spec.status ?? 200,
+    });
+  });
+  // テスト用: 未完了 metadata を別 gzip member として連結。
   const plainCount = opts.incompleteRecords ?? 0;
   for (let i = 0; i < plainCount; i++) {
-    members.push(gzipSync(buildIncompleteMetadataBytes(i)));
+    push(gzipSync(buildIncompleteMetadataBytes(i)), { type: "metadata" });
   }
   // リッチ版(resourceType / blockedReason 付き)は plain の後ろに連結。
   // idx は衝突しないよう plainCount からの連番にする。
   (opts.incompleteSpec ?? []).forEach((spec, i) => {
-    members.push(gzipSync(buildIncompleteMetadataBytes(plainCount + i, spec)));
+    push(gzipSync(buildIncompleteMetadataBytes(plainCount + i, spec)), { type: "metadata" });
   });
-  return { bytes: Buffer.concat(members), recordLength: gz.byteLength, offset: 0 };
+  return { bytes: Buffer.concat(members), recordLength: gz.byteLength, offset: 0, records };
+};
+
+/** 応答レコード 1 件ぶんの CDXJ 行。offset / length は組み立てたメンバの実位置。 */
+const buildResponseCdxjLine = (filename: string, record: WarcRecordInfo): string => {
+  const json = JSON.stringify({
+    url: record.uri,
+    mime: record.mime,
+    status: String(record.status ?? 200),
+    digest: "sha256:0000",
+    length: String(record.length),
+    offset: String(record.offset),
+    filename,
+  });
+  return `${record.uri ?? ""} 20260513000000 ${json}\n`;
 };
 
 // sha256:<base32> 用ヘルパ — fixture generator を self-contained に
@@ -439,6 +534,8 @@ const sha256Hex = (bytes: Buffer): string =>
 
 export interface BuiltFixture {
   bytes: Buffer;
+  /** WARC の各メンバの位置 (warcinfo・応答・metadata の順)。 */
+  warcRecords: WarcRecordInfo[];
 }
 
 /** WACZ を完全にメモリ上で組み立てる。ZIP の bytes を返す。 */
@@ -463,6 +560,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     ...(options.warcIncompleteSpec !== undefined && {
       incompleteSpec: options.warcIncompleteSpec,
     }),
+    ...(options.warcResponses !== undefined && { responses: options.warcResponses }),
   });
 
   const cdxjFilename = options.cdxjFilenameOverride ?? "data.warc.gz";
@@ -471,6 +569,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   // pageUrl を使う。
   // cdxjOverride が指定されたら、well-formed な CDXJ 組み立てを丸ごと
   // バイパスして生の文字列を本文にする(非CDXJ を再現 → index-valid-data)。
+  // 応答レコードがあれば、その行を warcinfo の行の後ろに並べる。
   const cdxjBody =
     options.cdxjOverride ??
     buildCdxjLine(cdxjFilename, warc.recordLength, warc.offset, pageUrl, {
@@ -480,7 +579,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
       ...(options.cdxjLengthMismatch !== undefined && {
         lengthMismatch: options.cdxjLengthMismatch,
       }),
-    });
+    }) +
+      warc.records
+        .filter((record) => record.type === "response")
+        .map((record) => buildResponseCdxjLine(cdxjFilename, record))
+        .join("");
   const cdxjBytesPlain = Buffer.from(cdxjBody, "utf-8");
 
   // Index レイアウト — producer + legacy な `cdxjGzipped` knob に依存。
@@ -764,7 +867,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   await zip.finalize();
   await finished;
 
-  return { bytes: Buffer.concat(chunks) };
+  return { bytes: Buffer.concat(chunks), warcRecords: warc.records };
 };
 
 /** 便利関数: WACZ を組み立ててディスクに書き出す。 */

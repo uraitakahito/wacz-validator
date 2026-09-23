@@ -64,14 +64,15 @@ export interface ResolvedHttpSource {
  *
  * **HEAD を使わない。** 署名は GET に対して作られているので、署名付き URL への
  * HEAD は 403 になる (実測)。総サイズは最初の range GET の `Content-Range` から
- * 取る (`probeSize`)。S3 版が `HeadObjectCommand` を 1 回挟むのと同じ位置の往復。
+ * 取る (`openTail`)。S3 版が `HeadObjectCommand` を 1 回挟むのと同じ位置の往復で、
+ * こちらはその 1 往復で末尾 64 KiB も手に入れる (中央ディレクトリの読みが往復しない)。
  */
 export const httpTransport = (source: ResolvedHttpSource): WaczTransport => ({
   // **query を剥がして identity にする。** 署名は資格情報で、identity ではない。
   source: { kind: "http", url: stripUrlQuery(source.url) },
   openZip: async () => {
     const reader = new HttpRangeReader(source.url);
-    const size = await reader.probeSize();
+    const size = await reader.openTail();
     return fromReader(reader, size);
   },
 });

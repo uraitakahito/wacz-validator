@@ -11,8 +11,11 @@
  * `runValidation` は `Report.source` をここから取るので、caller は
  * runValidation に source を別途渡す必要がない (single source of truth)。
  */
+import type { Readable } from "node:stream";
+import { createGunzip, createInflateRaw } from "node:zlib";
 import type { Entry, ZipFile } from "yauzl-promise";
 import type { ReportSource } from "../validate/domain.js";
+import { decompress, splitLines, type Line } from "./lines.js";
 import type { WaczTransport } from "./transport.js";
 
 /**
@@ -29,10 +32,31 @@ export interface ZipEntryMeta {
   uncompressedSize: number;
 }
 
+/** `openLines` が返す、行の流れ。先頭の chunk を見てから返すので `gunzipped` は確定している。 */
+export interface LineStream {
+  /** 中身が gzip だったので展開している (`.warc.gz` 等)。 */
+  gunzipped: boolean;
+  lines: AsyncGenerator<Line>;
+}
+
+/** 先頭 2 バイトが gzip のマジック (1f 8b) か。 */
+const isGzip = (bytes: Buffer): boolean => bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+
+/** stream を最後まで読んで 1 つの Buffer に。 */
+const collect = async (stream: Readable): Promise<Buffer> => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
+};
+
 export class WaczReader {
   readonly source: ReportSource;
   private readonly zip: ZipFile;
   private readonly entries: Map<string, Entry>;
+  /** `openLines` が開いた元の stream。閉じ忘れは `close()` が片付ける。 */
+  private readonly open = new Set<Readable>();
 
   private constructor(zip: ZipFile, entries: Map<string, Entry>, source: ReportSource) {
     this.zip = zip;
@@ -107,15 +131,105 @@ export class WaczReader {
   async readEntry(name: string): Promise<Buffer | undefined> {
     const entry = this.entries.get(name);
     if (!entry) return undefined;
-    const stream = await entry.openReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk as Buffer);
+    return collect(await entry.openReadStream());
+  }
+
+  /**
+   * entry を行で**流す**。呼び手が途中で止めれば、その先は読まない —— `readEntry` が
+   * 丸ごと積むのに対し、こちらは要る行ぶんの GET で済む (transport が流す形なら)。
+   *
+   * 展開はここでやる (`decompress: false` で生のまま受ける)。yauzl の CRC 検査は
+   * 末尾まで読まないと意味を持たず、途中で止める読みには要らない。中身が gzip
+   * (`.warc.gz` 等) なら、先頭 2 バイトを見て展開する —— node の gunzip は
+   * 連結メンバも順に解く。
+   *
+   * 止めるときは、**元の stream を先に閉じる**。中の段 (展開・行割り) から畳むと、
+   * 次の chunk を待っている段が「相手が黙っている間」戻らない。元を閉じれば
+   * その待ちが戻り、そこから畳める。yauzl は「読んでいる最中の close」を assert で
+   * 止める (`Reader.readCount`) ので、閉じ忘れは `close()` も拾う。
+   */
+  async openLines(name: string, lineCap: number): Promise<LineStream | undefined> {
+    const entry = this.entries.get(name);
+    if (!entry) return undefined;
+    const source = await entry.openReadStream({ decompress: false, validateCrc32: false });
+    this.open.add(source);
+    source.once("close", () => {
+      this.open.delete(source);
+    });
+    const raw = source as AsyncIterable<Buffer>;
+    const inflated =
+      entry.compressionMethod === ZIP_COMPRESSION_DEFLATE
+        ? decompress(raw, createInflateRaw)
+        : raw;
+    const iterator = inflated[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    const gunzipped = !first.done && isGzip(first.value);
+    // 先頭の chunk を見てから、残りを続ける列。元が閉じられて待ちが失敗しても、
+    // それは止めた側の都合なので、静かに終わる。
+    const rest = async function* (): AsyncGenerator<Buffer> {
+      if (first.done) return;
+      yield first.value;
+      for (;;) {
+        let next: IteratorResult<Buffer>;
+        try {
+          next = await iterator.next();
+        } catch (cause) {
+          if (source.destroyed) return;
+          throw cause;
+        }
+        if (next.done) return;
+        yield next.value;
+      }
+    };
+    const inner = splitLines(gunzipped ? decompress(rest(), createGunzip) : rest(), lineCap);
+    const lines = async function* (): AsyncGenerator<Line> {
+      try {
+        for (;;) {
+          const line = await inner.next();
+          if (line.done) return;
+          yield line.value;
+        }
+      } finally {
+        if (!source.destroyed) source.destroy();
+        await inner.return(undefined);
+      }
+    };
+    return { gunzipped, lines: lines() };
+  }
+
+  /**
+   * STORE の entry から範囲を切る。WARC の 1 メンバ (索引の offset / length) を
+   * 1 往復で読むための口。DEFLATE の entry は先頭から展開しないと位置が決まらない
+   * ので、名指しで断る。
+   */
+  async member(name: string, offset: number, length: number): Promise<Buffer> {
+    const entry = this.entries.get(name);
+    if (!entry) throw new Error(`no entry: ${name}`);
+    if (entry.compressionMethod !== ZIP_COMPRESSION_STORE) {
+      throw new Error(
+        `${name} is not STORE (method ${String(entry.compressionMethod)}) — a range cannot be cut from a compressed entry`,
+      );
     }
-    return Buffer.concat(chunks);
+    if (offset < 0 || length <= 0 || offset + length > entry.compressedSize) {
+      throw new Error(
+        `range ${String(offset)}+${String(length)} is outside ${name} (${String(entry.compressedSize)} B)`,
+      );
+    }
+    // yauzl の start / end は「展開しない・CRC を見ない」ときだけ許される。STORE でも
+    // validateCrc32 の既定は true なので、明示して外す (外さないと assert で落ちる)。
+    const stream = await entry.openReadStream({
+      start: offset,
+      end: offset + length,
+      validateCrc32: false,
+    });
+    return collect(stream);
   }
 
   async close(): Promise<void> {
+    for (const stream of this.open) {
+      if (!stream.destroyed) stream.destroy();
+    }
+    this.open.clear();
     await this.zip.close();
   }
 }
