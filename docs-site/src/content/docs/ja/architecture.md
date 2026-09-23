@@ -10,9 +10,9 @@ description: なぜ 7 つの package と stateless な daemon なのか。
 | `@wacz-validator/contract` | — | すべての面が従う共有語彙。rule profile・locale・CLI の exit code 契約。何にも依存しないので、browser クライアントが engine を引き込まずに使える。 |
 | `@wacz-validator/core` | — | Validation engine。WACZ を読み、rule を実行し、machine-readable な report を返す。library であり、bin も `commander` も持たない。 |
 | `@wacz-validator/validate-cli` | `wacz-validator-validate` | core の上に載る非対話コマンド。引数を解釈し、JSON report を書き、exit code を立てる。他を使わず CI から直接呼べる。 |
-| `@wacz-validator/daemon` | `wacz-validator-daemon` | stateless な HTTP/WS daemon。core を所有し、解決済み(message / specUrl / conformance を inline した)report を返す。 |
+| `@wacz-validator/daemon` | `wacz-validator-daemon` | stateless な HTTP/WS daemon。core を所有し、解決済み(message / specUrl / conformance を inline した)report を返す。archive の中身も**窓**で返す —— 行の範囲、field に割った 1 行、WARC のレコードの一覧、1 レコード。 |
 | `@wacz-validator/tui` | `wacz-validator` | 対話的な terminal UI。daemon の薄いクライアント。 |
-| `@wacz-validator/protocol` | — | クライアントと daemon が共有する wire 型と CLI 契約。runtime では core に依存しないので browser-safe。 |
+| `@wacz-validator/protocol` | — | クライアントと daemon が共有する wire 型と CLI 契約: `validate`・`readLines`・`readLine`・`readRecords`・`readRecord`・`ping`。runtime では core に依存しないので browser-safe。 |
 | `@wacz-validator/devtools` | `wacz-validator-break` | 開発用。publish しない(`private`)。WACZ をわざと壊し、rule が赤くなるところを見るための道具 —— validator の緑は、赤くなるところを見るまで意味を持たない。 |
 
 `wacz-validator` は既定で `wacz-validator-daemon` を子プロセスとして起動します。常駐 daemon に
@@ -27,7 +27,7 @@ validator は単一バイナリでも作れます。分離しているのは、*
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser(["browser (将来)"]) -.->|"WS"| daemon
+    browser["dashboard (browser のクライアント)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli"] -->|"検証に使う"| core["@wacz-validator/core"]
     daemon -->|"検証に使う"| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -38,13 +38,15 @@ flowchart LR
     cli -->|import| shared
 
     classDef shared fill:#fff3cd,stroke:#d4a72c,color:#5c4500;
-    classDef future fill:#eeeeee,stroke:#999999,color:#666666;
     class shared,protocol shared;
-    class browser future;
 ```
 
 daemon が state を持たないことが、それを安価にしています。2 つ目の frontend は
-新しいクライアントであって、engine の複製ではありません。
+新しいクライアントであって、engine の複製ではありません。その 2 つ目は既に在ります ——
+crawler の [dashboard](https://github.com/uraitakahito/dashboard) は同じハンドラを素の
+HTTP（`POST /validate`・`/lines`・`/line`・`/records`・`/record`・`/record/body`）で叩き、
+core を import しません。TUI は WebSocket で、dashboard は REST で archive の中身を
+歩きますが、木は同じ report から、field は daemon が割った同じものから描きます。
 
 ## core が prose を持たない理由
 

@@ -120,6 +120,13 @@ the number differs on every start. Fix it with `--port` or
 port to guess.
 :::
 
+The same daemon answers over plain HTTP too — the same handlers, one route each:
+`POST /validate`, and windows onto an archive's contents (`POST /lines`, `/line`,
+`/records`, `/record`, and `/record/body` for the bytes of a raster image). Every
+request carries the archive's URI, so the daemon keeps nothing between calls. In the
+TUI, `tab` switches to the layout, `enter` opens a file (lines) or a WARC (records),
+and `enter` again opens one line split into fields, or one record.
+
 ## Choose how strict to be
 
 The default profile is `spec`. An archive that exits 0 under it is expected to
