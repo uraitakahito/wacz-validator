@@ -28,6 +28,22 @@ wacz-validator-validate a.wacz | jq '.summary.failed == 0'
 `issues` は rule の登録順で、構造的な check が先に来るため、最も可能性の高い
 producer バグが上の方に上がります。
 
+### `source` — どこの archive か
+
+3 つの形があります。
+
+| `kind` | 欄 | 例 |
+| --- | --- | --- |
+| `file` | `path` | `/var/archives/a.wacz`（**絶対パス**） |
+| `s3` | `uri` | `s3://bucket/key.wacz` |
+| `http` | `url` | `https://example.com/a.wacz` |
+
+**`http` の `url` からは query を落としてあります。** 署名付き URL
+（`?X-Amz-Signature=…`）で検証したとき、その署名が報告に残ると、報告を見られる
+相手が期限内は archive を読めてしまいます。署名は資格情報であって、
+「どこの何か」ではありません。`s3` の `uri` に接続設定（`forcePathStyle`）を
+載せないのと同じ判断です。
+
 ## Summary
 
 ```ts file="packages/core/src/validate/domain.ts#report-summary"
