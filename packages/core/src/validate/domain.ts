@@ -257,7 +257,8 @@ export type AbsolutePath = string & { readonly [AbsolutePathBrand]: true };
  */
 export type ParseSourceError =
   | { kind: "invalid-s3-uri"; raw: string }
-  | { kind: "not-absolute-path"; raw: string };
+  | { kind: "not-absolute-path"; raw: string }
+  | { kind: "invalid-http-url"; raw: string };
 
 export const parseAbsolutePath = (
   raw: string,
@@ -281,6 +282,43 @@ export const parseS3Uri = (raw: string): Result<S3Uri, ParseSourceError> => {
   return ok(raw as S3Uri);
 };
 
+declare const HttpUrlBrand: unique symbol;
+export type HttpUrl = string & { readonly [HttpUrlBrand]: true };
+
+/**
+ * `http(s)://` の WACZ を指す URL。**query を持ったまま brand する** —— 署名付き
+ * URL (`?X-Amz-Signature=…`) をそのまま開けることが、この transport の用途だから。
+ *
+ * wire に載せるときは query を落とす ({@link stripUrlQuery})。署名は資格情報であって
+ * identity ではなく、`Report.source` は画面にも JSON にも出る。
+ */
+export const parseHttpUrl = (raw: string): Result<HttpUrl, ParseSourceError> => {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return err({ kind: "invalid-http-url", raw });
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return err({ kind: "invalid-http-url", raw });
+  }
+  return ok(raw as HttpUrl);
+};
+
+/**
+ * 報告に載せる形へ落とす。**query を捨てる。**
+ *
+ * 署名付き URL の query には `X-Amz-Signature` が入っている。`Report.source` は
+ * wire format なので、そのまま載せると報告を見られる相手が object を読めてしまう ——
+ * 期限内であれば誰でも。identity として要るのは「どこの何か」だけ。
+ */
+export const stripUrlQuery = (url: HttpUrl): HttpUrl => {
+  const parsed = new URL(url);
+  parsed.search = "";
+  parsed.hash = "";
+  return parsed.toString() as HttpUrl;
+};
+
 export const s3UriToBucketKey = (uri: S3Uri): { bucket: string; key: string } => {
   const m = S3_URI_RE.exec(uri);
   // parseS3Uri を通過しているので必ず match する。
@@ -301,10 +339,21 @@ export interface S3Source {
 }
 
 /**
- * 検証対象 WACZ の identity。`Report.source` / `WaczReader.source` の
- * wire format。transport ごとの variant は {@link FileSource} / {@link S3Source}。
+ * http(s) 上の WACZ source。`url` は **query を落としたもの** ——
+ * 実際に叩く URL (署名つきでありうる) は runtime だけが持つ
+ * (`ResolvedHttpSource`)。理由は {@link stripUrlQuery}。
  */
-export type ReportSource = FileSource | S3Source;
+export interface HttpSource {
+  kind: "http";
+  url: HttpUrl;
+}
+
+/**
+ * 検証対象 WACZ の identity。`Report.source` / `WaczReader.source` の
+ * wire format。transport ごとの variant は {@link FileSource} / {@link S3Source} /
+ * {@link HttpSource}。
+ */
+export type ReportSource = FileSource | S3Source | HttpSource;
 
 export const parseReportSource = (
   raw: string,
@@ -313,6 +362,14 @@ export const parseReportSource = (
     const u = parseS3Uri(raw);
     if (!u.ok) return u;
     return ok({ kind: "s3", uri: u.value });
+  }
+  // **絶対パスの判定より前に置く。** 後ろに置くと `http://…` は
+  // `parseAbsolutePath` に落ち、cwd からの相対パスとして解決されて
+  // `ENOENT: … /wacz-validator/http:/127.0.0.1:8333/…` になる (実測)。
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    const u = parseHttpUrl(raw);
+    if (!u.ok) return u;
+    return ok({ kind: "http", url: u.value });
   }
   const p = parseAbsolutePath(raw);
   if (!p.ok) return p;
@@ -331,6 +388,8 @@ export const formatParseSourceError = (e: ParseSourceError): string => {
       return `invalid s3:// URI: ${e.raw}`;
     case "not-absolute-path":
       return `expected absolute path, got: ${e.raw}`;
+    case "invalid-http-url":
+      return `invalid http(s) URL: ${e.raw}`;
   }
 };
 

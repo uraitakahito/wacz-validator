@@ -513,7 +513,13 @@ const Header: FC<{ report: WireReport; view: View; build: AppProps["build"] }> =
   view,
   build,
 }) => {
-  const sourceLabel = report.source.kind === "file" ? report.source.path : report.source.uri;
+  // http は query を落とした identity が届く（署名は daemon が剥がしている）。
+  const sourceLabel =
+    report.source.kind === "file"
+      ? report.source.path
+      : report.source.kind === "http"
+        ? report.source.url
+        : report.source.uri;
   // tui(描画)と daemon(検証)の SHA 不一致 = どちらかが古いプロセス。
   // 一致なら SHA を 1 つ、食い違えば daemon 側を警告色で添える。
   const drift = build.tui.gitSha !== build.daemon.gitSha;
