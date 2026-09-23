@@ -1,4 +1,4 @@
-// @module-tag tui
+// @module-tag cdxj
 /**
  * `explodeLine` の単体テスト。
  *
@@ -8,7 +8,7 @@
  * key に `)` や `?` が混じる、といった点は作った例では再現しにくい。
  */
 import { describe, expect, it } from "vitest";
-import { explodeLine } from "../src/line-fields.js";
+import { explodeLine } from "../src/wacz/line-fields.js";
 
 /** samples/wikipedia.wacz の indexes/index.cdx.gz 2 行目 (476 文字)。 */
 const REAL_CDXJ_LINE =

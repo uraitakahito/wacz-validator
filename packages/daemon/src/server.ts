@@ -2,24 +2,42 @@
  * stateless な HTTP/WS サーバ。
  *
  * WS は相関 id つきの request/response(セッション/購読は持たない)。
- * REST `POST /validate` も用意(serverless / 単発用)。どのリクエストも
- * ハンドラが open→処理→close するだけで、サーバは可変状態を持たない。
+ * REST は WS と**同じハンドラ**を指す —— 口が 2 つでも、答えを作るのは 1 か所。
+ * どのリクエストもハンドラが open→処理→close するだけで、サーバは可変状態を持たない。
+ *
+ * REST の口:
+ *   GET  /healthz       生存
+ *   POST /validate      検証の報告
+ *   POST /lines         行の窓          POST /line     1 行 (fields つき)
+ *   POST /records       レコードの一覧  POST /record   1 レコード
+ *   POST /record/body   画像の実体 (raster だけ bytes で。他は 415)
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { WebSocketServer, type RawData } from "ws";
 import type {
   HealthStatus,
-  ReadEntryParams,
-  ReadEntryResult,
+  ReadLineParams,
+  ReadLinesParams,
+  ReadRecordParams,
+  ReadRecordsParams,
   RpcError,
   RpcRequest,
   RpcResponse,
+  RpcResult,
   ValidateParams,
-  WireReport,
 } from "@wacz-validator/protocol";
 import { BUILD_INFO } from "./generated/build-info.js";
 import { describeCause } from "@wacz-validator/contract";
-import { DaemonError, readEntry, validate } from "./handlers.js";
+import {
+  DaemonError,
+  NotRasterError,
+  readLine,
+  readLines,
+  readRecord,
+  readRecordBody,
+  readRecords,
+  validate,
+} from "./handlers.js";
 
 const healthStatus = (): HealthStatus => ({
   status: "ok",
@@ -29,14 +47,32 @@ const healthStatus = (): HealthStatus => ({
   uptimeSec: Math.round(process.uptime()),
 });
 
-const dispatch = async (
-  method: string,
-  params: unknown,
-): Promise<WireReport | ReadEntryResult | HealthStatus> => {
-  if (method === "wacz-validator/ping") return healthStatus();
-  if (method === "wacz-validator/validate") return validate(params as ValidateParams);
-  if (method === "wacz-validator/readEntry") return readEntry(params as ReadEntryParams);
-  throw new DaemonError("badRequest", `unknown method: ${method}`);
+const dispatch = async (method: string, params: unknown): Promise<RpcResult> => {
+  switch (method) {
+    case "wacz-validator/ping":
+      return healthStatus();
+    case "wacz-validator/validate":
+      return validate(params as ValidateParams);
+    case "wacz-validator/readLines":
+      return readLines(params as ReadLinesParams);
+    case "wacz-validator/readLine":
+      return readLine(params as ReadLineParams);
+    case "wacz-validator/readRecords":
+      return readRecords(params as ReadRecordsParams);
+    case "wacz-validator/readRecord":
+      return readRecord(params as ReadRecordParams);
+    default:
+      throw new DaemonError("badRequest", `unknown method: ${method}`);
+  }
+};
+
+/** REST の JSON の口。path → WS と同じハンドラ。 */
+const JSON_ROUTES: Record<string, (params: never) => Promise<RpcResult>> = {
+  "/validate": validate,
+  "/lines": readLines,
+  "/line": readLine,
+  "/records": readRecords,
+  "/record": readRecord,
 };
 
 const toError = (cause: unknown): RpcError =>
@@ -51,6 +87,24 @@ const rawToString = (raw: RawData): string =>
       ? raw.toString("utf8")
       : Buffer.from(raw).toString("utf8");
 
+/**
+ * 本文はネットワーク越しに複数チャンクへ割れて届く。chunk ごとに toString せず、
+ * Buffer.concat で連結してから一度だけ decode する。マルチバイト文字(UTF-8 で複数
+ * バイト)がチャンク境界をまたぐと、半端なバイトが U+FFFD に化けて値が静かに壊れる
+ * ため(JSON 構造文字は ASCII なので JSON.parse は素通りし、例外も出ない)。
+ */
+const readBody = async (req: IncomingMessage): Promise<string> => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
+};
+
+const replyError = (res: ServerResponse, status: number, cause: unknown): void => {
+  res.statusCode = status;
+  res.setHeader("content-type", "application/json");
+  res.end(JSON.stringify(toError(cause)));
+};
+
 const handleRest = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   if (req.method === "GET" && req.url === "/healthz") {
     res.statusCode = 200;
@@ -58,26 +112,43 @@ const handleRest = async (req: IncomingMessage, res: ServerResponse): Promise<vo
     res.end(JSON.stringify(healthStatus()));
     return;
   }
-  if (req.method !== "POST" || req.url !== "/validate") {
+  const url = req.url ?? "";
+  if (req.method !== "POST" || !(url === "/record/body" || Object.hasOwn(JSON_ROUTES, url))) {
     res.statusCode = 404;
     res.end();
     return;
   }
-  // 本文はネットワーク越しに複数チャンクへ割れて届く。chunk ごとに toString せず、
-  // Buffer.concat で連結してから一度だけ decode する。マルチバイト文字(UTF-8 で複数
-  // バイト)がチャンク境界をまたぐと、半端なバイトが U+FFFD に化けて値が静かに壊れる
-  // ため(JSON 構造文字は ASCII なので JSON.parse は素通りし、例外も出ない)。
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
+  const body = await readBody(req);
+  if (url === "/record/body") {
+    // 画像の実体だけを bytes で返す。raster 以外は 415 —— 撮った HTML や SVG を
+    // そのまま返すと、受け取った画面のオリジンで動いてしまう。
+    try {
+      const { mime, bytes } = await readRecordBody(JSON.parse(body) as ReadRecordParams);
+      res.writeHead(200, {
+        "content-type": mime,
+        "content-length": String(bytes.length),
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "sandbox",
+        "cache-control": "no-store",
+      });
+      res.end(bytes);
+    } catch (cause) {
+      replyError(res, cause instanceof NotRasterError ? 415 : 400, cause);
+    }
+    return;
+  }
+  const handler = JSON_ROUTES[url];
+  if (handler === undefined) {
+    res.statusCode = 404;
+    res.end();
+    return;
+  }
   try {
-    const params = JSON.parse(Buffer.concat(chunks).toString("utf8")) as ValidateParams;
-    const report = await validate(params);
+    const result = await handler(JSON.parse(body) as never);
     res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify(report));
+    res.end(JSON.stringify(result));
   } catch (cause) {
-    res.statusCode = 400;
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify(toError(cause)));
+    replyError(res, 400, cause);
   }
 };
 

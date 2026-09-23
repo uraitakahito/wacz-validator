@@ -117,6 +117,16 @@ describe("decompress", () => {
     expect(await gather(decompress(chunks([raw]), createInflateRaw))).toBe("deflate-raw works");
   });
 
+  it("出力が 16 KiB を超えても固まらない (Transform の backpressure)", async () => {
+    // 1 chunk の入力から 200 KB が出る。読まずに write の callback を待つ形だと、
+    // highWaterMark (16 KiB) で zlib が callback を止め、互いに待って戻らない。
+    const text = "0123456789abcdef".repeat(200 * 64);
+    const one = gzipSync(text);
+    expect(await gather(decompress(chunks([one]), createGunzip))).toBe(text);
+    const raw = deflateRawSync(Buffer.from(text));
+    expect(await gather(decompress(chunks([raw]), createInflateRaw))).toBe(text);
+  });
+
   it("壊れた入力は throw する (黙って空にしない)", async () => {
     await expect(gather(decompress(chunks(["not gzip at all"]), createGunzip))).rejects.toThrow();
   });

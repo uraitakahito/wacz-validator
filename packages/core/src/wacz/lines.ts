@@ -20,7 +20,11 @@ import type { Transform } from "node:stream";
  * chunk の列を zlib の stream (gunzip / inflateRaw) に通す。**pipe を使わない** ——
  * 読み手が途中で止めたとき、pipe の連鎖は「誰がいつ閉じるか」が stream の
  * 内部事情で決まり、閉じ損ねた片方が 'error' を投げて落ちる。ここでは chunk を
- * 1 つ書いて出てきた分を読む、を繰り返すだけ。止めれば finally で捨てる。
+ * 1 つ書いて出てきた分を返す、を繰り返すだけ。止めれば finally で捨てる。
+ *
+ * 出てきた分は 'data' で受ける (流れる形)。読まずに write の callback を待つと、
+ * 出力が 16 KiB (highWaterMark) を超えたところで Transform が callback を止め、
+ * 互いに待って固まる —— 実物の datapackage.json (展開 73 KB) で実際に固まった。
  *
  * gunzip は連結メンバ (WARC.gz) も順に解く (node の既定)。壊れた入力は throw。
  */
@@ -29,6 +33,10 @@ export async function* decompress(
   make: () => Transform,
 ): AsyncGenerator<Buffer> {
   const z = make();
+  const out: Buffer[] = [];
+  z.on("data", (piece: Buffer) => {
+    out.push(piece);
+  });
   // 壊れた入力で zlib が落ちると、書き込みの callback は来ない (stream が destroy
   // される)。'error' と競わせて、どちらが先でも待ちが戻るようにする。
   const failure: { cause?: Error } = {};
@@ -47,9 +55,9 @@ export async function* decompress(
     ]);
   const drain = function* (): Generator<Buffer> {
     for (;;) {
-      const out = z.read() as Buffer | null;
-      if (out === null) return;
-      yield out;
+      const piece = out.shift();
+      if (piece === undefined) return;
+      yield piece;
     }
   };
   try {
@@ -62,10 +70,12 @@ export async function* decompress(
       if (failure.cause !== undefined) throw failure.cause;
       yield* drain();
     }
+    // 'end' は readable 側の印 —— 出てきた分をすべて 'data' で渡し終えている。
     await settle((done) => {
-      z.end(() => {
+      z.once("end", () => {
         done();
       });
+      z.end();
     });
     if (failure.cause !== undefined) throw failure.cause;
     yield* drain();

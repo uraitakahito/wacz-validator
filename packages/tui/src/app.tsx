@@ -5,9 +5,11 @@
  * {@link WireReport} を受け取るので、ここでは core の i18n も lookup も呼ばず
  * 解決済みフィールドをそのまま描く(`@wacz-validator/core` を import しない)。
  *
- * Layout ビューでファイルを選んで `enter` を押すと、`requestContent`(daemon の
- * `wacz-validator/readEntry` への薄いブリッジ)でそのファイルの内容を取得し、右ペインに
- * 表示する。`requestContent` 未指定(テスト等)なら no-op。
+ * Layout ビューでファイルを選んで `enter` を押すと、`bridge`(daemon の窓の口への
+ * 薄いブリッジ)でそのファイルの中身を取り、全幅で表示する —— 行の窓 (`readLines`)、
+ * 1 行を丸ごと (`readLine`、fields は daemon が割る)、WARC ならレコードの一覧
+ * (`readRecords`) と 1 レコード (`readRecord`)。窓の続きは末尾に着いたときに頼む。
+ * `bridge` 未指定(テスト等)なら no-op。
  *
  * Exit code の経路: CLI は `render(...)` の後に `instance.waitUntilExit()` を
  * await し、その後 `process.exitCode` をセットする。
@@ -22,10 +24,21 @@ import {
   useWindowSize,
   type DOMElement,
 } from "ink";
-import type { ReadEntryResult, ReportEntry, ResolvedDocLink, WireIssue, WireReport } from "@wacz-validator/protocol";
+import type {
+  Field,
+  ReadLineResult,
+  ReadLinesResult,
+  ReadRecordResult,
+  ReadRecordsResult,
+  RecordSummary,
+  ReportEntry,
+  ResolvedDocLink,
+  WireIssue,
+  WireLine,
+  WireReport,
+} from "@wacz-validator/protocol";
 import { buildEntryTree, entryMarker, flattenTree, type TreeRow } from "./render/tree.js";
 import { codecName, entryIssues, expectedLabel } from "./render/detail.js";
-import { explodeLine } from "./line-fields.js";
 import { scrollWindow } from "./scroll.js";
 
 /** version + 短い git SHA の組。TUI 自身と daemon の双方を持つ。 */
@@ -34,10 +47,18 @@ export interface BuildPair {
   gitSha: string;
 }
 
+/** daemon の窓の口への橋。cli.ts が WS の request で組み、App はこれしか知らない。 */
+export interface ContentBridge {
+  lines: (path: string, from: number, count: number) => Promise<ReadLinesResult>;
+  line: (path: string, n: number) => Promise<ReadLineResult>;
+  records: (path: string, from: number, count: number) => Promise<ReadRecordsResult>;
+  record: (path: string, offset: number, length: number) => Promise<ReadRecordResult>;
+}
+
 interface AppProps {
   report: WireReport;
-  /** Layout で enter 時に呼ぶ内容取得ブリッジ(daemon の readEntry)。省略可。 */
-  requestContent?: (path: string) => Promise<ReadEntryResult>;
+  /** Layout で enter 時に呼ぶ、中身の窓への橋。省略可。 */
+  bridge?: ContentBridge;
   /**
    * 描画側(tui)と検証側(daemon)のビルド識別。Header に SHA を出し、
    * 食い違い(= どちらかが古いプロセス)を警告するのに使う。
@@ -45,7 +66,29 @@ interface AppProps {
   build: { tui: BuildPair; daemon: BuildPair };
 }
 
-type View = "issues" | "layout" | "content" | "line";
+type View = "issues" | "layout" | "content" | "line" | "records" | "record";
+
+/** 1 回に頼む窓の大きさ (daemon の上限と同じ)。 */
+const WINDOW = 500;
+
+/** 開いたファイルの行の窓。 */
+interface ContentState {
+  path: string;
+  lines: WireLine[];
+  next: number | null;
+  gunzipped: boolean;
+}
+
+/** 開いた WARC のレコードの一覧 (窓)。 */
+interface RecordsState {
+  path: string;
+  records: RecordSummary[];
+  next: number | null;
+  total: number;
+}
+
+/** WARC はレコードの一覧で開く (行で開いても本文の途中で binary になるだけ)。 */
+const isWarc = (path: string): boolean => path.endsWith(".warc.gz") || path.endsWith(".warc");
 
 /** Layout の右ペイン(詳細)に最低限残す桁数(枠 + 余白 + 内容)。 */
 const MIN_DETAIL_WIDTH = 30;
@@ -82,7 +125,7 @@ const ScrollList: FC<{
   );
 };
 
-export const App: FC<AppProps> = ({ report, requestContent, build }) => {
+export const App: FC<AppProps> = ({ report, bridge, build }) => {
   const { exit } = useApp();
   // root を端末サイズに固定(resize 追従)。これと body の flexGrow + 各ビューの実測
   // スクロールにより、フレーム行数が端末を超えない=Ink の縦はみ出し崩れが起きない。
@@ -90,36 +133,130 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
   const [view, setView] = useState<View>("issues");
   const [focused, setFocused] = useState(0);
   const [expanded, setExpanded] = useState<ReadonlySet<number>>(new Set());
-  // enter で開いたファイル内容と、その content ビューのスクロール位置・実測高。
-  const [content, setContent] = useState<ReadEntryResult | null>(null);
+  // enter で開いたファイルの行の窓と、その content ビューのスクロール位置・実測高。
+  // 窓の末尾に着いたら、daemon に続きを頼んで足す (next が null になるまで)。
+  const [content, setContent] = useState<ContentState | null>(null);
   const [contentOffset, setContentOffset] = useState(0);
   const [contentH, setContentH] = useState(0);
   // content ビューの行カーソル。scrollWindow が focused 追従で offset を補正するので、
   // カーソルを動かすだけでスクロールも付いてくる(issues / layout と同じ形)。
   const [contentFocused, setContentFocused] = useState(0);
+  // 開いた 1 行。fields は daemon が割って返す (tui は割り方を持たない)。
+  const [line, setLine] = useState<ReadLineResult | null>(null);
+  // WARC のレコードの一覧 (窓) と、開いた 1 レコード。
+  const [records, setRecords] = useState<RecordsState | null>(null);
+  const [recordsFocused, setRecordsFocused] = useState(0);
+  const [recordsH, setRecordsH] = useState(0);
+  const [record, setRecord] = useState<ReadRecordResult | null>(null);
+  const [recordOffset, setRecordOffset] = useState(0);
+  const [recordH, setRecordH] = useState(0);
+  // 窓の続きを取りに行っている最中は、二重に頼まない。
+  const loading = useRef(false);
 
   const issues = report.issues;
   // §5.1 風ツリーの行(report が変わらない限り再計算しない)。
   const layoutRows = useMemo(() => flattenTree(buildEntryTree(report.entries)), [report.entries]);
   const rowCount = view === "issues" ? issues.length : layoutRows.length;
-  const contentLines = content?.kind === "text" ? content.content.split("\n").length : 0;
+  const contentLines = content?.lines.length ?? 0;
+  const recordRows = records?.records.length ?? 0;
+  const recordLineCount = record === null ? 0 : recordLines(record).length;
+
+  /** 行の窓の続きを足す (next があるときだけ)。 */
+  const extendContent = (): void => {
+    if (!bridge || loading.current || content === null) return;
+    const { path, next } = content;
+    if (next === null) return;
+    loading.current = true;
+    void bridge.lines(path, next, WINDOW).then(
+      (page) => {
+        loading.current = false;
+        setContent((prev) =>
+          prev?.path === path
+            ? { ...prev, lines: [...prev.lines, ...page.lines], next: page.next }
+            : prev,
+        );
+      },
+      () => {
+        loading.current = false;
+      },
+    );
+  };
+
+  /** レコードの一覧の続きを足す。 */
+  const extendRecords = (): void => {
+    if (!bridge || loading.current || records === null) return;
+    const { path, next } = records;
+    if (next === null) return;
+    loading.current = true;
+    void bridge.records(path, next, WINDOW).then(
+      (page) => {
+        loading.current = false;
+        setRecords((prev) =>
+          prev?.path === path
+            ? { ...prev, records: [...prev.records, ...page.records], next: page.next }
+            : prev,
+        );
+      },
+      () => {
+        loading.current = false;
+      },
+    );
+  };
+
+  /** content の n 行目を丸ごと取って line ビューへ。 */
+  const openLine = (n: number): void => {
+    if (!bridge || content === null) return;
+    const { path } = content;
+    void bridge.line(path, n).then(
+      (result) => {
+        setLine(result);
+        setContentFocused(n);
+        setView("line");
+      },
+      () => {
+        setLine({ n, text: "(content unavailable)", cut: false, binary: false, bytes: 0, fields: [], gunzipped: false });
+        setContentFocused(n);
+        setView("line");
+      },
+    );
+  };
+
+  /** 一覧の i 番目のレコードを開く。 */
+  const openRecord = (i: number): void => {
+    if (!bridge || records === null) return;
+    const row = records.records[i];
+    if (row === undefined) return;
+    void bridge.record(records.path, row.offset, row.length).then(
+      (result) => {
+        setRecord(result);
+        setRecordOffset(0);
+        setView("record");
+      },
+      () => {
+        setRecord({ warc: [], body: { kind: "text", content: "(record unavailable)", truncated: false } });
+        setRecordOffset(0);
+        setView("record");
+      },
+    );
+  };
 
   useInput((input, key) => {
+    if (input === "q" && view !== "issues" && view !== "layout") {
+      exit();
+      return;
+    }
     // line ビュー: 1 行を開いたまま前後に移れる。esc で content の一覧へ戻る。
     if (view === "line") {
       if (key.escape) {
         setView("content");
         return;
       }
-      if (input === "q") {
-        exit();
-        return;
-      }
-      const step = (d: number): void => {
-        setContentFocused((f) => Math.min(Math.max(0, contentLines - 1), Math.max(0, f + d)));
+      const to = (d: number): void => {
+        const n = Math.min(Math.max(0, contentLines - 1), Math.max(0, contentFocused + d));
+        if (n !== contentFocused) openLine(n);
       };
-      if (key.downArrow || input === "j") step(1);
-      else if (key.upArrow || input === "k") step(-1);
+      if (key.downArrow || input === "j") to(1);
+      else if (key.upArrow || input === "k") to(-1);
       return;
     }
     // content ビュー: 行カーソルを動かし、enter でその 1 行を開く。
@@ -128,16 +265,14 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
         setView("layout");
         return;
       }
-      if (input === "q") {
-        exit();
-        return;
-      }
       const page = Math.max(1, contentH - 1);
       const move = (d: number): void => {
-        setContentFocused((f) => Math.min(Math.max(0, contentLines - 1), Math.max(0, f + d)));
+        const to = Math.min(Math.max(0, contentLines - 1), Math.max(0, contentFocused + d));
+        setContentFocused(to);
+        if (to >= contentLines - 1) extendContent(); // 末尾に着いたら続きを頼む
       };
       if (key.return) {
-        if (contentLines > 0) setView("line");
+        if (contentLines > 0) openLine(contentFocused);
         return;
       }
       if (key.downArrow || input === "j") move(1);
@@ -145,7 +280,50 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
       else if (key.pageDown || input === " ") move(page);
       else if (key.pageUp) move(-page);
       else if (input === "g") setContentFocused(0);
-      else if (input === "G") setContentFocused(Math.max(0, contentLines - 1));
+      else if (input === "G") move(contentLines);
+      return;
+    }
+    // records ビュー: レコードを選んで enter で開く。
+    if (view === "records") {
+      if (key.escape) {
+        setView("layout");
+        return;
+      }
+      const page = Math.max(1, recordsH - 1);
+      const move = (d: number): void => {
+        const to = Math.min(Math.max(0, recordRows - 1), Math.max(0, recordsFocused + d));
+        setRecordsFocused(to);
+        if (to >= recordRows - 1) extendRecords();
+      };
+      if (key.return) {
+        if (recordRows > 0) openRecord(recordsFocused);
+        return;
+      }
+      if (key.downArrow || input === "j") move(1);
+      else if (key.upArrow || input === "k") move(-1);
+      else if (key.pageDown || input === " ") move(page);
+      else if (key.pageUp) move(-page);
+      else if (input === "g") setRecordsFocused(0);
+      else if (input === "G") move(recordRows);
+      return;
+    }
+    // record ビュー: 見出しと本文をスクロール。esc で一覧へ。
+    if (view === "record") {
+      if (key.escape) {
+        setView("records");
+        return;
+      }
+      const page = Math.max(1, recordH - 1);
+      const max = Math.max(0, recordLineCount - recordH);
+      const scroll = (d: number): void => {
+        setRecordOffset((o) => Math.min(max, Math.max(0, o + d)));
+      };
+      if (key.downArrow || input === "j") scroll(1);
+      else if (key.upArrow || input === "k") scroll(-1);
+      else if (key.pageDown || input === " ") scroll(page);
+      else if (key.pageUp) scroll(-page);
+      else if (input === "g") setRecordOffset(0);
+      else if (input === "G") setRecordOffset(max);
       return;
     }
     if (input === "q" || key.escape) {
@@ -156,6 +334,7 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
       setView((prev) => (prev === "issues" ? "layout" : "issues"));
       setFocused(0);
       setContent(null);
+      setRecords(null);
       return;
     }
     if (key.upArrow && rowCount > 0) {
@@ -176,19 +355,45 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
       });
       return;
     }
-    if (key.return && view === "layout" && requestContent) {
+    if (key.return && view === "layout" && bridge) {
       const entry = layoutRows[focused]?.entry;
       if (entry?.present !== true) return;
-      // enter で全幅スクロール content ビューへ(インラインプレビューは廃止)。
-      const show = (r: ReadEntryResult): void => {
-        setContent(r);
+      const path = entry.path;
+      // WARC はレコードの一覧へ、それ以外は行の窓へ。どちらも全幅ビュー。
+      if (isWarc(path)) {
+        void bridge.records(path, 0, WINDOW).then(
+          (page) => {
+            setRecords({ path, ...page });
+            setRecordsFocused(0);
+            setView("records");
+          },
+          () => {
+            setRecords({ path, records: [], next: null, total: 0 });
+            setRecordsFocused(0);
+            setView("records");
+          },
+        );
+        return;
+      }
+      const show = (page: ContentState): void => {
+        setContent(page);
         setContentOffset(0);
         setContentFocused(0);
         setView("content");
       };
-      void requestContent(entry.path).then(show, () => {
-        show({ kind: "text", content: "(content unavailable)", truncated: false, gunzipped: false });
-      });
+      void bridge.lines(path, 0, WINDOW).then(
+        (page) => {
+          show({ path, ...page });
+        },
+        () => {
+          show({
+            path,
+            lines: [{ n: 0, text: "(content unavailable)", cut: false, binary: false, bytes: 0 }],
+            next: null,
+            gunzipped: false,
+          });
+        },
+      );
     }
   });
 
@@ -196,19 +401,19 @@ export const App: FC<AppProps> = ({ report, requestContent, build }) => {
     <Box flexDirection="column" width={columns} height={rows}>
       <Header report={report} view={view} build={build} />
       <Box flexGrow={1} minHeight={0} marginTop={1}>
-        {view === "line" && content?.kind === "text" ? (
-          <LineView
-            line={content.content.split("\n")[contentFocused] ?? ""}
-            index={contentFocused}
-            total={contentLines}
-          />
+        {view === "line" && line !== null ? (
+          <LineView line={line} total={contentLines} more={content?.next !== null} />
         ) : view === "content" && content !== null ? (
           <ContentView
-            result={content}
+            content={content}
             offset={contentOffset}
             focused={contentFocused}
             onHeight={setContentH}
           />
+        ) : view === "records" && records !== null ? (
+          <RecordsView records={records} focused={recordsFocused} onHeight={setRecordsH} />
+        ) : view === "record" && record !== null ? (
+          <RecordView record={record} offset={recordOffset} onHeight={setRecordH} />
         ) : view === "issues" ? (
           <IssuesView issues={issues} focused={focused} expanded={expanded} />
         ) : (
@@ -343,34 +548,43 @@ const DetailPane: FC<{
       <IssueList entry={entry} report={report} />
       {entry.present ? (
         <Box marginTop={1}>
-          <Text dimColor>enter で内容を表示</Text>
+          <Text dimColor>{isWarc(entry.path) ? "enter でレコードの一覧" : "enter で内容を表示"}</Text>
         </Box>
       ) : null}
     </Box>
   );
 };
 
-/** enter で取得したファイル内容を、全幅・実測スクロールで表示する(縦はみ出ししない)。 */
+/** 1 行の一覧向けの見た目。binary は大きさだけ、cut は末尾に印。 */
+const lineText = (line: WireLine): string => {
+  if (line.binary) return `(binary · ${formatBytes(line.bytes)})`;
+  if (line.text === "") return " ";
+  return line.cut ? `${line.text} …` : line.text;
+};
+
+/** enter で取得した行の窓を、全幅・実測スクロールで表示する(縦はみ出ししない)。 */
 const ContentView: FC<{
-  result: ReadEntryResult;
+  content: ContentState;
   offset: number;
   focused: number;
   onHeight: (h: number) => void;
-}> = ({ result, offset, focused, onHeight }) => {
-  if (result.kind === "binary") {
+}> = ({ content, offset, focused, onHeight }) => {
+  const { lines, next, gunzipped } = content;
+  if (lines.length === 0) {
     return (
       <Box>
-        <Text dimColor>{`(バイナリ · ${formatBytes(result.byteLength)} · プレビュー不可)`}</Text>
+        <Text dimColor>(empty)</Text>
       </Box>
     );
   }
-  const lines = result.content.split("\n");
-  const head = result.gunzipped ? "content (gzip 展開)" : "content";
+  const head = gunzipped ? "content (gzip 展開)" : "content";
+  // 窓の続きがあるうちは行数に + を付ける。末尾に着いたら次を頼む。
+  const total = `${String(lines.length)}${next === null ? "" : "+"}`;
   // 行は端末幅で切る。全部を見る手段は enter (LineView) 側に持たせてある。
   return (
     <Box flexDirection="column" flexGrow={1} minHeight={0} width="100%">
       <Text dimColor>
-        {`${head}  line ${String(focused + 1)}/${String(lines.length)}  ↑↓/jk PgUp/PgDn g/G · enter 詳細 · esc back`}
+        {`${head}  line ${String(focused + 1)}/${total}  ↑↓/jk PgUp/PgDn g/G · enter 詳細 · esc back`}
       </Text>
       <ScrollList
         count={lines.length}
@@ -378,13 +592,13 @@ const ContentView: FC<{
         focused={focused}
         onHeight={onHeight}
         renderRange={(start, end) =>
-          lines.slice(start, end).map((line, k) => (
+          lines.slice(start, end).map((row, k) => (
             <Text
               key={`content-${String(start + k)}`}
               inverse={start + k === focused}
               wrap="truncate-end"
             >
-              {line === "" ? " " : line}
+              {lineText(row)}
             </Text>
           ))
         }
@@ -399,14 +613,31 @@ const ContentView: FC<{
  * content の行は端末幅で切られる。`index.cdx.gz` は中央値 563 文字あるので、
  * 切られた側に `offset` / `filename` のような**実際に確かめたい値**が入って
  * いる。ここは切らず、`wrap="wrap"` で折り返して全部見せる。
+ *
+ * fields は daemon が割って返したもの (割り方は core の explodeLine)。切れた行と
+ * binary は割られていないので、1 つの field として見せる。
  */
-const LineView: FC<{ line: string; index: number; total: number }> = ({ line, index, total }) => {
-  const fields = explodeLine(line);
+const LineView: FC<{ line: ReadLineResult; total: number; more: boolean }> = ({
+  line,
+  total,
+  more,
+}) => {
+  const fields: Field[] =
+    line.fields.length > 0
+      ? line.fields
+      : [
+          {
+            label: line.binary ? "binary" : "line",
+            value: line.binary ? `(${formatBytes(line.bytes)})` : line.text,
+            fromJson: false,
+          },
+        ];
   const width = Math.max(...fields.map((f) => f.label.length));
+  const note = line.cut ? " · 4 MiB で切った" : "";
   return (
     <Box flexDirection="column" flexGrow={1} minHeight={0} width="100%">
       <Text dimColor>
-        {`line ${String(index + 1)} / ${String(total)} · ${String(line.length)} chars  ↑↓/jk 前後の行 · esc 一覧へ`}
+        {`line ${String(line.n + 1)} / ${String(total)}${more ? "+" : ""} · ${String(line.bytes)} bytes${note}  ↑↓/jk 前後の行 · esc 一覧へ`}
       </Text>
       <Box flexDirection="column" marginTop={1}>
         {fields.map((field, k) => (
@@ -420,6 +651,99 @@ const LineView: FC<{ line: string; index: number; total: number }> = ({ line, in
           </Box>
         ))}
       </Box>
+    </Box>
+  );
+};
+
+/** 一覧の 1 レコード: 索引の印 · 種別 · 状態 · content-type · URI。 */
+const recordLine = (row: RecordSummary): string => {
+  const mark = row.indexed ? "▪" : "▫";
+  const status = row.status === undefined ? "   " : String(row.status).padStart(3);
+  const mime = (row.mime ?? row.contentType ?? "").slice(0, 24).padEnd(24);
+  return `${mark} ${row.type.padEnd(8)} ${status} ${mime} ${row.uri ?? ""}`;
+};
+
+/** WARC のレコードの一覧 (窓)。▪ は索引 (CDXJ) が指すレコード、▫ は索引に無いもの。 */
+const RecordsView: FC<{
+  records: RecordsState;
+  focused: number;
+  onHeight: (h: number) => void;
+}> = ({ records, focused, onHeight }) => {
+  const rows = records.records;
+  if (rows.length === 0) {
+    return (
+      <Box>
+        <Text dimColor>(no records)</Text>
+      </Box>
+    );
+  }
+  return (
+    <Box flexDirection="column" flexGrow={1} minHeight={0} width="100%">
+      <Text dimColor>
+        {`records ${String(focused + 1)}/${String(records.total)}  ▪ 索引にある · ▫ 索引に無い  ↑↓/jk PgUp/PgDn g/G · enter open · esc back`}
+      </Text>
+      <ScrollList
+        count={rows.length}
+        offset={0}
+        focused={focused}
+        onHeight={onHeight}
+        renderRange={(start, end) =>
+          rows.slice(start, end).map((row, k) => (
+            <Text
+              key={`record-${String(start + k)}`}
+              inverse={start + k === focused}
+              wrap="truncate-end"
+            >
+              {recordLine(row)}
+            </Text>
+          ))
+        }
+      />
+    </Box>
+  );
+};
+
+/** 1 レコードを行に。WARC の見出し → (HTTP の状態行と見出し) → 本文。 */
+const recordLines = (record: ReadRecordResult): string[] => {
+  const out = record.warc.map((h) => `${h.name}: ${h.value}`);
+  if (record.http !== undefined) {
+    out.push("", record.http.status, ...record.http.headers.map((h) => `${h.name}: ${h.value}`));
+  }
+  out.push("");
+  const body = record.body;
+  if (body.kind === "text") {
+    out.push(...body.content.split("\n"));
+    if (body.truncated) out.push("…(切れている)");
+  } else if (body.kind === "image") {
+    out.push(`(image ${body.mime} · ${formatBytes(body.byteLength)} — 端末では出せない)`);
+  } else {
+    out.push(`(binary${body.mime === undefined ? "" : ` ${body.mime}`} · ${formatBytes(body.byteLength)})`);
+  }
+  return out;
+};
+
+/** 開いた 1 レコード。offset 自由スクロール。 */
+const RecordView: FC<{
+  record: ReadRecordResult;
+  offset: number;
+  onHeight: (h: number) => void;
+}> = ({ record, offset, onHeight }) => {
+  const lines = recordLines(record);
+  return (
+    <Box flexDirection="column" flexGrow={1} minHeight={0} width="100%">
+      <Text dimColor>{`record  ${String(lines.length)} lines  ↑↓/jk PgUp/PgDn g/G · esc 一覧へ`}</Text>
+      <ScrollList
+        count={lines.length}
+        offset={offset}
+        onHeight={onHeight}
+        renderRange={(start, end) =>
+          lines.slice(start, end).map((text, k) => (
+            <Text key={`rec-${String(start + k)}`} wrap="truncate-end">
+              {text === "" ? " " : text}
+            </Text>
+          ))
+        }
+      />
     </Box>
   );
 };
@@ -813,17 +1137,18 @@ const Summary: FC<{ report: WireReport }> = ({ report }) => {
   );
 };
 
+const HELP: Record<View, string> = {
+  issues: "↑↓ navigate · enter expand · tab issues/layout · q quit",
+  layout: "↑↓ navigate · enter open · tab issues/layout · q quit",
+  content: "↑↓/jk 行 · PgUp/PgDn g/G · enter 詳細 · esc back · q quit",
+  line: "↑↓/jk 前後の行 · esc 一覧へ · q quit",
+  records: "↑↓/jk レコード · PgUp/PgDn g/G · enter open · esc back · q quit",
+  record: "↑↓/jk PgUp/PgDn g/G · esc 一覧へ · q quit",
+};
+
 const Help: FC<{ view: View }> = ({ view }) => (
   <Box marginTop={1}>
-    <Text dimColor>
-      {view === "line"
-        ? "↑↓/jk 前後の行 · esc 一覧へ · q quit"
-        : view === "content"
-        ? "↑↓/jk 行 · PgUp/PgDn g/G · enter 詳細 · esc back · q quit"
-        : view === "issues"
-          ? "↑↓ navigate · enter expand · tab issues/layout · q quit"
-          : "↑↓ navigate · enter open · tab issues/layout · q quit"}
-    </Text>
+    <Text dimColor>{HELP[view]}</Text>
   </Box>
 );
 

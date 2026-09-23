@@ -1,5 +1,5 @@
 /**
- * wacz-validator daemon protocol — tui / daemon / 将来の browser が共有する契約。
+ * wacz-validator daemon protocol — tui / daemon / browser の画面が共有する契約。
  *
  * 大半は型(`import type` で core を参照するが runtime には残らない)。加えて
  * クライアントが validation engine を引き込まずに済むよう、軽量な CLI 契約
@@ -11,9 +11,22 @@
  * {@link WireReport} を返すので、クライアントはカタログ不要の薄い表示器でよい。
  *
  * 案1(URI 参照渡し・stateless): 各リクエストが `source.uri` を運び、
- * daemon は open → validate → close するだけで状態を持たない。
+ * daemon は open → 読む → close するだけで状態を持たない。
+ *
+ * WACZ の中身は**窓**で返す —— 行の窓 ({@link ReadLinesParams})、1 行を丸ごと
+ * ({@link ReadLineParams})、WARC のレコードの一覧 ({@link ReadRecordsParams})、
+ * 1 レコード ({@link ReadRecordParams})。窓の位置は呼び手が持つ。かつての
+ * `readEntry` (丸ごと読んで 64 KiB で切る) は消した —— 大きい WACZ では
+ * 索引の 2 割しか見えず、切れた行は割れなかった。
  */
-import type { Issue, Report, ResolvedDocLink } from "@wacz-validator/core";
+import type {
+  Field,
+  Issue,
+  Report,
+  ResolvedDocLink,
+  WarcHeader,
+  WarcRecordSummary,
+} from "@wacz-validator/core";
 
 // クライアント(tui / browser)が core を直接 import せずに済むよう、表示用の
 // 型を protocol から re-export する(すべて型なので runtime には残らない)。
@@ -21,6 +34,7 @@ export type {
   AbsolutePath,
   ResolvedDocLink,
   ExpectedBy,
+  Field,
   IssueLocation,
   Locale,
   ReportEntry,
@@ -29,6 +43,8 @@ export type {
   ReportSummary,
   RuleProfile,
   Severity,
+  WarcHeader,
+  WarcRecordSummary,
 } from "@wacz-validator/core";
 
 /** WACZ の在り処。案1 では URI のみ(`file://` / `s3://` / `https://`)。 */
@@ -47,19 +63,92 @@ export interface ValidateParams {
   s3ForcePathStyle?: boolean;
 }
 
-export interface ReadEntryParams {
+// ── 中身の窓 ─────────────────────────────────────────────────────────
+
+/** 行の窓。1 行は daemon の cap (2 KiB) で切り、count は上限 (500) で丸める。 */
+export interface ReadLinesParams {
   source: SourceRef;
-  /** ZIP エントリのパス(例 `datapackage.json`)。 */
   path: string;
+  /** 0 始まりの行番号。 */
+  from: number;
+  count: number;
+}
+
+export interface WireLine {
+  n: number;
+  text: string;
+  /** cap を超えていて、text は先頭だけ。 */
+  cut: boolean;
+  /** NUL を含む・UTF-8 でない。text は空で、bytes だけ。 */
+  binary: boolean;
+  /** 行の本来の長さ(改行を除く)。 */
+  bytes: number;
+}
+
+export interface ReadLinesResult {
+  lines: WireLine[];
+  /** 続きの from。null は末尾まで読んだ。 */
+  next: number | null;
+  /** 中身が gzip だったので展開している(`.warc.gz` 等)。 */
+  gunzipped: boolean;
+}
+
+/** 1 行を丸ごと(daemon の上限 4 MiB まで)。`fields` は core の `explodeLine` —— 切れた行・binary は割らない([])。 */
+export interface ReadLineParams {
+  source: SourceRef;
+  path: string;
+  n: number;
+}
+
+export interface ReadLineResult extends WireLine {
+  fields: Field[];
+  gunzipped: boolean;
+}
+
+/** WARC を頭から歩いた一覧。`path` は WARC の entry(`archive/data.warc.gz`)。 */
+export interface ReadRecordsParams {
+  source: SourceRef;
+  path: string;
+  from: number;
+  count: number;
+}
+
+export interface RecordSummary extends WarcRecordSummary {
+  /** この WARC を指す索引(CDXJ)に、この offset があるか。無いレコードは索引から辿れない。 */
+  indexed: boolean;
+}
+
+export interface ReadRecordsResult {
+  records: RecordSummary[];
+  next: number | null;
+  total: number;
+}
+
+/** 1 レコード。offset / length は索引の行か、一覧から。 */
+export interface ReadRecordParams {
+  source: SourceRef;
+  path: string;
+  offset: number;
+  length: number;
 }
 
 /**
- * readEntry の結果。テキストはプレビュー文字列、非テキスト(画像・展開不能な
- * バイナリ等)はサイズだけを返す判別 union。文字化けを構造的に防ぐ。
+ * レコードの本文。テキストは文字列、raster の画像は大きさだけ(実体は REST の
+ * `POST /record/body`)、それ以外は大きさだけ。文字化けを構造的に防ぐ。
  */
-export type ReadEntryResult =
-  | { kind: "text"; content: string; truncated: boolean; gunzipped: boolean }
-  | { kind: "binary"; byteLength: number };
+export type RecordBody =
+  | { kind: "text"; content: string; truncated: boolean }
+  | { kind: "image"; mime: string; byteLength: number }
+  | { kind: "binary"; mime?: string; byteLength: number };
+
+export interface ReadRecordResult {
+  warc: WarcHeader[];
+  /** WARC の Content-Type が application/http のとき、状態行と見出し。 */
+  http?: { status: string; headers: WarcHeader[] };
+  body: RecordBody;
+}
+
+// ── 報告 ─────────────────────────────────────────────────────────────
 
 /** renderJson が解決した issue(`message` / `specUrl` / `conformance` が inline)。 */
 export interface WireIssue extends Issue {
@@ -81,8 +170,16 @@ export interface RpcError {
   message: string;
 }
 
+// ── WS の枠 ──────────────────────────────────────────────────────────
+
 /** WS のメッセージ枠(相関 id つき request/response。セッション状態は持たない)。 */
-export type RpcMethod = "wacz-validator/validate" | "wacz-validator/readEntry" | "wacz-validator/ping";
+export type RpcMethod =
+  | "wacz-validator/validate"
+  | "wacz-validator/readLines"
+  | "wacz-validator/readLine"
+  | "wacz-validator/readRecords"
+  | "wacz-validator/readRecord"
+  | "wacz-validator/ping";
 
 /** wacz-validator/ping は引数を取らない。 */
 export type PingParams = Record<string, never>;
@@ -98,14 +195,30 @@ export interface HealthStatus {
   uptimeSec: number;
 }
 
+export type RpcParams =
+  | ValidateParams
+  | ReadLinesParams
+  | ReadLineParams
+  | ReadRecordsParams
+  | ReadRecordParams
+  | PingParams;
+
+export type RpcResult =
+  | WireReport
+  | ReadLinesResult
+  | ReadLineResult
+  | ReadRecordsResult
+  | ReadRecordResult
+  | HealthStatus;
+
 export interface RpcRequest {
   id: number;
   method: RpcMethod;
-  params: ValidateParams | ReadEntryParams | PingParams;
+  params: RpcParams;
 }
 export interface RpcResponse {
   id: number;
-  result?: WireReport | ReadEntryResult | HealthStatus;
+  result?: RpcResult;
   error?: RpcError;
 }
 
