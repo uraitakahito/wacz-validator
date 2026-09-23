@@ -20,6 +20,7 @@ import {
   renderJson,
   resolveLocale,
   runValidation,
+  httpTransport,
   s3Transport,
   type ReportSource,
 } from "@wacz-validator/core";
@@ -48,8 +49,9 @@ export class DaemonError extends Error {
 
 /**
  * wire の source URI を検証済み ReportSource に parse する(file:// 変換はここに集約)。
- * file:// は絶対パスへ、s3:// / 絶対パスはそのまま parseReportSource に渡し、
- * ブランド付き AbsolutePath / S3Uri を得る。推論戻り値は Result<ReportSource, ParseSourceError>。
+ * file:// は絶対パスへ、s3:// / http(s):// / 絶対パスはそのまま parseReportSource に
+ * 渡し、ブランド付き AbsolutePath / S3Uri / HttpUrl を得る。
+ * 推論戻り値は Result<ReportSource, ParseSourceError>。
  */
 const parseSourceUri = (wireUri: string) =>
   parseReportSource(wireUri.startsWith("file://") ? fileURLToPath(wireUri) : wireUri);
@@ -60,9 +62,20 @@ const openFromSource = async (
   s3ForcePathStyle: boolean,
 ): Promise<WaczReader> => {
   try {
-    return source.kind === "s3"
-      ? await WaczReader.open(s3Transport({ ...source, forcePathStyle: s3ForcePathStyle }))
-      : await WaczReader.open(fileTransport(source.path));
+    // **switch で書く。** ReportSource に variant が増えたとき、三項の連鎖は
+    // 黙って「最後の枝」に落ちるが、switch は網羅性検査で止まる。
+    switch (source.kind) {
+      case "s3":
+        return await WaczReader.open(
+          s3Transport({ ...source, forcePathStyle: s3ForcePathStyle }),
+        );
+      case "http":
+        // **署名つきの URL がそのまま来る。** transport が identity に剥がすので、
+        // report にも wire error にも query は出ない。
+        return await WaczReader.open(httpTransport({ url: source.url }));
+      case "file":
+        return await WaczReader.open(fileTransport(source.path));
+    }
   } catch (cause) {
     // ここが wire に載る文字列を決める最上流。ここで捨てた情報は、受け手
     // (tui) では二度と復元できない — 向こうに届くのは string だけ。

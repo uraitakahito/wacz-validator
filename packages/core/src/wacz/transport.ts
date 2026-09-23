@@ -14,11 +14,14 @@ import { fromReader, open as yauzlOpen, type ZipFile } from "yauzl-promise";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import {
   s3UriToBucketKey,
+  stripUrlQuery,
   type AbsolutePath,
+  type HttpUrl,
   type ReportSource,
   type S3Source,
 } from "../validate/domain.js";
 import { S3RangeReader } from "./s3-range-reader.js";
+import { HttpRangeReader } from "./http-range-reader.js";
 import { buildS3Client } from "./s3-client-factory.js";
 
 export interface WaczTransport {
@@ -42,6 +45,35 @@ export interface ResolvedS3Source extends S3Source {
 export const fileTransport = (path: AbsolutePath): WaczTransport => ({
   source: { kind: "file", path },
   openZip: () => yauzlOpen(path),
+});
+
+/**
+ * identity ({@link HttpSource}) に「実際に叩く URL」を足した、open に使う
+ * 「解決済み」 source。 runtime 専用で、 wire format (`Report.source`) には
+ * 出さない —— 署名付き URL の query には `X-Amz-Signature` が入っており、
+ * report は画面にも JSON にも出るため。 `ResolvedS3Source` が
+ * `forcePathStyle` を wire に漏らさないのと同じ判断。
+ */
+export interface ResolvedHttpSource {
+  /** 署名つきでありうる、実際に GET する URL。 */
+  url: HttpUrl;
+}
+
+/**
+ * http transport — `HttpRangeReader` で range GET を重ねて ZIP を読む。
+ *
+ * **HEAD を使わない。** 署名は GET に対して作られているので、署名付き URL への
+ * HEAD は 403 になる (実測)。総サイズは最初の range GET の `Content-Range` から
+ * 取る (`probeSize`)。S3 版が `HeadObjectCommand` を 1 回挟むのと同じ位置の往復。
+ */
+export const httpTransport = (source: ResolvedHttpSource): WaczTransport => ({
+  // **query を剥がして identity にする。** 署名は資格情報で、identity ではない。
+  source: { kind: "http", url: stripUrlQuery(source.url) },
+  openZip: async () => {
+    const reader = new HttpRangeReader(source.url);
+    const size = await reader.probeSize();
+    return fromReader(reader, size);
+  },
 });
 
 /**

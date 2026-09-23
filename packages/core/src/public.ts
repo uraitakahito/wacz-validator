@@ -8,8 +8,8 @@
  * 引き込まれない。human-readable な rendering は @wacz-validator/tui 側。
  */
 export { WaczReader } from "./wacz/reader.js";
-export { fileTransport, s3Transport } from "./wacz/transport.js";
-export type { ResolvedS3Source, WaczTransport } from "./wacz/transport.js";
+export { fileTransport, httpTransport, s3Transport } from "./wacz/transport.js";
+export type { ResolvedHttpSource, ResolvedS3Source, WaczTransport } from "./wacz/transport.js";
 export { DEFAULT_PROFILE, runValidation } from "./validate/engine.js";
 export { DEFAULT_RULES, conformanceForRule, docsForRule } from "./validate/rules/index.js";
 export { renderJson } from "./render/json.js";
@@ -28,6 +28,7 @@ export type {
   Report,
   ReportEntry,
   ResolvedDocLink,
+  HttpSource,
   ReportSource,
   ReportStats,
   ReportSummary,
@@ -41,6 +42,7 @@ export type {
 export {
   ALL_PROFILES,
   formatParseSourceError,
+  parseHttpUrl,
   parseReportSource,
   s3UriToBucketKey,
 } from "./validate/domain.js";

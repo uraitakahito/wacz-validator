@@ -24,6 +24,7 @@ import {
   renderJson,
   resolveLocale,
   runValidation,
+  httpTransport,
   s3Transport,
   SUPPORTED_LOCALES,
   WaczReader,
@@ -62,15 +63,24 @@ const parseProfile = (raw: string): ProfileSelector => {
   );
 };
 
-const openWacz = (
-  source: ReportSource,
-  s3ForcePathStyle: boolean,
-): Promise<WaczReader> =>
-  WaczReader.open(
-    source.kind === "s3"
-      ? s3Transport({ ...source, forcePathStyle: s3ForcePathStyle })
-      : fileTransport(source.path),
-  );
+/**
+ * **switch で書く。** ReportSource に variant が増えたとき、三項の連鎖は黙って
+ * 「最後の枝」に落ちるが、switch は網羅性検査で止まる（http を足したとき、
+ * ここが compile error になって見つかった）。
+ */
+const transportFor = (source: ReportSource, s3ForcePathStyle: boolean) => {
+  switch (source.kind) {
+    case "s3":
+      return s3Transport({ ...source, forcePathStyle: s3ForcePathStyle });
+    case "http":
+      return httpTransport({ url: source.url });
+    case "file":
+      return fileTransport(source.path);
+  }
+};
+
+const openWacz = (source: ReportSource, s3ForcePathStyle: boolean): Promise<WaczReader> =>
+  WaczReader.open(transportFor(source, s3ForcePathStyle));
 
 async function runCli(filePath: string, opts: CliOptions): Promise<CliOutcome<Report>> {
   const sourceResult = parseReportSource(filePath);
