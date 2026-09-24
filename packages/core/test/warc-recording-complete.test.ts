@@ -110,6 +110,37 @@ describe("warc/recording-complete", () => {
     expect(recording?.byResourceType).toEqual({ Image: 2, Script: 1 });
     expect(recording?.byBlockedReason).toEqual({ inspector: 1 });
   });
+
+  it("本文を省いた理由 (truncated) と記録しなかった要求 (action) を byReason に分ける", async () => {
+    // 欄の形は browserhive の recorder が書くものに揃えてある。以前の rule は `skipBodyReason`
+    // という書かれたことの無い欄を読んでいて、下の 6 件をすべて incomplete に数えていた。
+    const issues = await issuesFor(
+      tmpDir,
+      {
+        warcMetadata: [
+          { uri: "https://example.com/a.mp4", fields: { truncated: "too-large", encodedDataLength: "5013" } },
+          { uri: "https://example.com/b.mp4", fields: { truncated: "task-cap" } },
+          { uri: "https://example.com/c.mp4", fields: { truncated: "content-type" } },
+          { uri: "https://example.com/d.mp4", fields: { truncated: "url-policy" } },
+          { uri: "https://example.com/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
+          { uri: "https://example.com/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
+          {
+            uri: "https://example.com/g",
+            fields: { incomplete: "true", reason: "loadingFailed", errorText: "net::ERR_FAILED" },
+          },
+          { uri: "https://example.com/h", fields: { incomplete: "true", reason: "stop-while-pending" } },
+        ],
+      },
+      "browserhive",
+    );
+    const recording = (
+      issues.find((i) => i.rule === RULE)?.details as
+        | { recording?: { incomplete?: number; byReason?: Record<string, number> } }
+        | undefined
+    )?.recording;
+    expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, blocked: 4 });
+    expect(recording?.incomplete).toBe(8);
+  });
 });
 
 describe("producer のバージョンによるゲート", () => {

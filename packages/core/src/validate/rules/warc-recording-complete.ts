@@ -4,7 +4,7 @@
  * 一部の producer(browserhive)は、失敗した / 途中で打ち切った HTTP 取得を
  * 通常の `response` レコードではなく `WARC-Type: metadata` レコードとして
  * 記録する。body は `application/warc-fields`(`incomplete: true` /
- * `reason: loadingFailed` / `skipBodyReason: ...` の key:value 行)。本ルールは
+ * `reason: loadingFailed` / `truncated: ...` / `action: ...` の key:value 行)。本ルールは
  * その metadata を数え、`response` を分母にした「未完了比率」を可視化する
  * (info、比率が高ければ warning)。`details.recording` に内訳とサンプル URL を
  * 載せ、TUI の Recording health パネルが描画する。
@@ -36,11 +36,24 @@ const parseWarcFields = (body: Buffer): Record<string, string> => {
   return out;
 };
 
-/** metadata の fields から未完了の種別を判定する。 */
+/**
+ * metadata の fields から未完了の種別を判定する。
+ *
+ * 本文を省いた理由は `truncated` の欄に入る (browserhive の `buildMetadataRecord` が最初から
+ * そう書いている)。以前ここは `skipBodyReason` を読んでいて、browserhive が一度も書いたことの
+ * 無い欄だったので、切り詰めも方針の省略もすべて "incomplete" に落ちていた —— fixture に
+ * 理由付きの記録が無く、気づかれなかった。
+ *
+ * - `truncated` が `too-large` / `task-cap`: 上限で落とした本文 ("truncated")
+ * - `truncated` が `content-type` / `url-policy`: 方針で省いた本文 ("blocked")
+ * - `action` が `deny` / `no-archive`: 方針で記録しなかった要求 ("blocked")
+ * - `reason: loadingFailed`: 失敗 ("failed")。残りは未完了 ("incomplete")
+ */
 const classify = (f: Record<string, string>): Reason => {
-  const skip = f["skipBodyReason"];
-  if (skip === "too-large" || skip === "task-cap") return "truncated";
-  if (skip === "content-type") return "blocked";
+  const truncated = f["truncated"];
+  if (truncated === "too-large" || truncated === "task-cap") return "truncated";
+  if (truncated === "content-type" || truncated === "url-policy") return "blocked";
+  if (f["action"] === "deny" || f["action"] === "no-archive") return "blocked";
   if (f["reason"] === "loadingFailed") return "failed";
   return "incomplete"; // reason: "stop-while-pending" 等(stop 時の in-flight ドレイン)
 };
@@ -60,7 +73,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
   // 規格外の producer 指標。browserhive profile のときだけ走る。
   applicability: {
     excludeProfiles: ["spec", "lenient"],
-    // 下の classify() が読む `skipBodyReason` の "too-large" / "task-cap" は
+    // 下の classify() が読む `truncated` の "too-large" / "task-cap" は
     // browserhive v1.11.0 (PR #281 / #282) で入った値。metadata 慣習そのもの
     // は v1.4.0 からあるが、それ未満の archive にこの分類を当てると、
     // 切り詰められた応答を "incomplete" に丸めて数字が静かに嘘になる。
