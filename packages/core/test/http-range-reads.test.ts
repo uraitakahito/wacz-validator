@@ -232,9 +232,15 @@ describe("WaczReader.openLines — 流す読み", () => {
   it("DEFLATE の entry でも、止めた場で元の GET が切れる", async () => {
     // STORE なら止めた stream がそのまま yauzl の stream だが、DEFLATE では間に
     // inflate が挟まる。止めるときに**元の stream** を閉じないと、GET は開いたまま。
+    //
+    // 相手は最初の CHUNK のあと黙る。流し続ける相手だと、送り手と受け手が同じ
+    // process に居るので、展開の段が 1 行目を出すまでに 1 MiB を socket の buffer へ
+    // 送り切れてしまうことがある —— そうなると止めたかどうかに関係なく GET は
+    // 「送り切って」終わり、送ったバイト数では区別が付かない (CI で 8 回中 4 回
+    // 落ちた)。黙る相手なら、GET が終わるのは止めた側が切ったときだけ。
     const size = 1024 * 1024;
     const { bytes } = await buildWacz({ warcResponses: [bigResponse(size)], warcDeflate: true });
-    const served = await serve(bytes);
+    const served = await serve(bytes, { stallOver: TAIL_BYTES });
 
     const reader = await openAt(served.url);
     try {
@@ -245,7 +251,6 @@ describe("WaczReader.openLines — 流す読み", () => {
         break;
       }
       expect(await settled(served)).toBe(true);
-      expect(served.sent.at(-1)).toBeLessThan(size);
     } finally {
       await reader.close();
     }
