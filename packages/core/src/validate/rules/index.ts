@@ -13,6 +13,7 @@ import type { Conformance, DocLink, ValidationRule } from "../domain.js";
 import { browserhiveTlsChainRule } from "./browserhive-tls-chain.js";
 import { browserhiveAxtreeShapeRule } from "./browserhive-axtree-shape.js";
 import { browserhiveUrlPoliciesRule } from "./browserhive-url-policies.js";
+import { browserhivePolicyNotTruncatedRule } from "./browserhive-policy-not-truncated.js";
 import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -105,6 +106,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveSettleShapeRule,
   browserhiveSettleDeadlineRule,
   browserhiveUrlPoliciesRule,
+  // 方針で省いた本文が、上限で落とした本文として完全性に載っていないか (profile 1.9.0 の MUST NOT)。
+  browserhivePolicyNotTruncatedRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

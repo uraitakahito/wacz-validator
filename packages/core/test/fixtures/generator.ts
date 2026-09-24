@@ -138,6 +138,13 @@ export interface FixtureOptions {
    */
   warcIncompleteSpec?: { resourceType?: string; blockedReason?: string }[];
   /**
+   * 中身を指定した `WARC-Type: metadata` レコード。`fields` がそのまま
+   * `application/warc-fields` の本文になる。browserhive が本文を省いた理由を書く
+   * `truncated: <reason>` や、記録しなかった要求の `action: <action>` を再現して、
+   * `warc/recording-complete` の分類を動かす。未完了の metadata の後ろに連結する。
+   */
+  warcMetadata?: { uri: string; fields: Record<string, string> }[];
+  /**
    * When set, override the CDXJ `offset` field on every entry with this
    * value (string form, matching the producer convention). Used to
    * exercise rule #8.
@@ -207,6 +214,11 @@ export interface FixtureOptions {
    * それを問題と呼ぶかは rule が決める。
    */
   settings?: Record<string, unknown>;
+  /**
+   * `browserhive:capture.completeness` にそのまま入れる。省けば書かない。中身は検査しない
+   * —— 方針で省いた URL を `truncatedUrls` に載せた形も、そのまま通す。
+   */
+  completeness?: Record<string, unknown>;
   /**
    * `browserhive:capture.dismissal` をそのまま書き込む。undefined なら member ごと
    * 書かない —— **除去は任意**で、不在は「配信されたままのページを保存した」という
@@ -362,6 +374,27 @@ const buildIncompleteMetadataBytes = (
   return Buffer.concat([Buffer.from(headers, "utf-8"), body, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
+/** 本文を `fields` の `key: value` の行で組んだ `WARC-Type: metadata` レコードを 1 件組み立てる。 */
+const buildFieldsMetadataBytes = (
+  idx: number,
+  spec: { uri: string; fields: Record<string, string> },
+): Buffer => {
+  const lines = Object.entries(spec.fields).map(([k, v]) => `${k}: ${v}`);
+  const body = Buffer.from(`${lines.join("\r\n")}\r\n`, "utf-8");
+  const headers = [
+    "WARC/1.1",
+    "WARC-Type: metadata",
+    `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx).padStart(12, "0")}>`,
+    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Target-URI: ${spec.uri}`,
+    "Content-Type: application/warc-fields",
+    `Content-Length: ${String(body.byteLength)}`,
+    "",
+    "",
+  ].join("\r\n");
+  return Buffer.concat([Buffer.from(headers, "utf-8"), body, Buffer.from("\r\n\r\n", "utf-8")]);
+};
+
 /**
  * `WARC-Type: response` レコードを 1 件組み立てる。形は BrowserHive の書く応答と
  * 同じ: WARC の見出し → 空行 → HTTP の状態行と見出し → 空行 → entity body → `\r\n\r\n`。
@@ -405,6 +438,7 @@ const buildWarcGz = (
     corruptAt?: number;
     incompleteRecords?: number;
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
+    metadata?: { uri: string; fields: Record<string, string> }[];
     responses?: WarcResponseSpec[];
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
@@ -449,6 +483,10 @@ const buildWarcGz = (
   // idx は衝突しないよう plainCount からの連番にする。
   (opts.incompleteSpec ?? []).forEach((spec, i) => {
     push(gzipSync(buildIncompleteMetadataBytes(plainCount + i, spec)), { type: "metadata" });
+  });
+  // 中身を指定した metadata は、さらにその後ろ。idx は衝突しないよう 500 から。
+  (opts.metadata ?? []).forEach((spec, i) => {
+    push(gzipSync(buildFieldsMetadataBytes(500 + i, spec)), { type: "metadata" });
   });
   return { bytes: Buffer.concat(members), recordLength: gz.byteLength, offset: 0, records };
 };
@@ -560,6 +598,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     ...(options.warcIncompleteSpec !== undefined && {
       incompleteSpec: options.warcIncompleteSpec,
     }),
+    ...(options.warcMetadata !== undefined && { metadata: options.warcMetadata }),
     ...(options.warcResponses !== undefined && { responses: options.warcResponses }),
   });
 
@@ -762,6 +801,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.settings !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["settings"] = options.settings;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.completeness !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["completeness"] = options.completeness;
     datapackage["browserhive:capture"] = capture;
   }
   if (options.dismissal !== undefined) {
