@@ -22,49 +22,16 @@
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.9.0/#completeness
  */
 import { ok } from "../../result.js";
-import { parseCdxj } from "../../wacz/cdxj-parser.js";
+import {
+  contentTypePolicyFor,
+  firstUrlPolicy,
+  mimesByUrl,
+  policiesOf,
+} from "../browserhive-policies.js";
 import { isRecord, readCapture } from "../browserhive-storage.js";
-import type { WaczReader } from "../../wacz/reader.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/policy-not-truncated";
-const CDXJ_ENTRY = "indexes/index.cdxj";
-
-/** 正規表現で意味を持つ文字を逃がす。`*` は glob の側で先に割ってあるので含めない。 */
-const escapeRegExp = (s: string): string => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
-
-/** glob を正規表現に。ワイルドカードは `*` だけで、URL 全体に当てる。 */
-const globToRegExp = (glob: string): RegExp =>
-  new RegExp(`^${glob.split("*").map(escapeRegExp).join(".*")}$`);
-
-/** `settings` の一覧から、`key` を文字列で持つ項目だけを取り出す。形の誤りは別の rule の担当。 */
-const entriesWith = (
-  settings: Record<string, unknown>,
-  member: string,
-  key: string,
-): { value: string; action: string }[] => {
-  const list = settings[member];
-  if (!Array.isArray(list)) return [];
-  return list.flatMap((entry) =>
-    isRecord(entry) && typeof entry[key] === "string" && typeof entry["action"] === "string"
-      ? [{ value: entry[key], action: entry["action"] }]
-      : [],
-  );
-};
-
-/** CDXJ の `url` ごとの `mime`。同じ URL の応答が複数あれば、どれも拾う。 */
-const mimesByUrl = async (wacz: WaczReader): Promise<Map<string, string[]>> => {
-  const buf = await wacz.readEntry(CDXJ_ENTRY);
-  const byUrl = new Map<string, string[]>();
-  if (buf === undefined) return byUrl;
-  for (const entry of parseCdxj(buf.toString("utf-8")).entries) {
-    const url = entry.fields["url"];
-    const mime = entry.fields["mime"];
-    if (typeof url !== "string" || typeof mime !== "string") continue;
-    byUrl.set(url, [...(byUrl.get(url) ?? []), mime]);
-  }
-  return byUrl;
-};
 
 export const browserhivePolicyNotTruncatedRule: ValidationRule = {
   name: "browserhive/policy-not-truncated",
@@ -92,8 +59,7 @@ export const browserhivePolicyNotTruncatedRule: ValidationRule = {
     const listed = completeness["truncatedUrls"];
     if (!Array.isArray(listed) || listed.length === 0) return ok([]);
 
-    const urlPolicies = entriesWith(settings, "urlPolicies", "pattern");
-    const contentTypePolicies = entriesWith(settings, "contentTypePolicies", "prefix");
+    const policies = policiesOf(settings);
     const mimes = await mimesByUrl(wacz);
 
     const issues: Issue[] = [];
@@ -101,28 +67,26 @@ export const browserhivePolicyNotTruncatedRule: ValidationRule = {
       if (typeof url !== "string") continue;
       // URL の方針は最初に当たったものだけが効き、当たれば content-type の方針より先に決まる。
       // deny / no-archive が先に当たった URL は応答として記録されないので、何も言わない。
-      const first = urlPolicies.find((p) => globToRegExp(p.value).test(url));
+      const first = firstUrlPolicy(url, policies);
       if (first !== undefined) {
         if (first.action === "no-body") {
           issues.push({
             rule: RULE,
             severity: "error",
             messageKey: `${RULE}.url-policy`,
-            params: { url, pattern: first.value },
+            params: { url, pattern: first.pattern },
             location: { entry: "datapackage.json" },
           });
         }
         continue;
       }
-      const prefix = contentTypePolicies.find((p) =>
-        (mimes.get(url) ?? []).some((mime) => mime !== "" && mime.startsWith(p.value)),
-      );
-      if (prefix !== undefined) {
+      const matched = contentTypePolicyFor(mimes.get(url) ?? [], policies);
+      if (matched !== undefined) {
         issues.push({
           rule: RULE,
           severity: "error",
           messageKey: `${RULE}.content-type`,
-          params: { url, prefix: prefix.value },
+          params: { url, prefix: matched.prefix },
           location: { entry: "datapackage.json" },
         });
       }

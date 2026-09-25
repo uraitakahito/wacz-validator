@@ -15,6 +15,7 @@ import { browserhiveAxtreeShapeRule } from "./browserhive-axtree-shape.js";
 import { browserhiveUrlPoliciesRule } from "./browserhive-url-policies.js";
 import { browserhivePolicyNotTruncatedRule } from "./browserhive-policy-not-truncated.js";
 import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js";
+import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
 import { browserhiveSettleDeadlineRule } from "./browserhive-settle-deadline.js";
@@ -108,6 +109,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveUrlPoliciesRule,
   // 方針で省いた本文が、上限で落とした本文として完全性に載っていないか (profile 1.9.0 の MUST NOT)。
   browserhivePolicyNotTruncatedRule,
+  // ページの文字・題・ツリーを、読んだ文書の扱いで決めているか (profile 1.10.0 の document)。
+  browserhiveDocumentWithheldRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,
