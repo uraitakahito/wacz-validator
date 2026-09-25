@@ -69,6 +69,13 @@ export interface FixtureOptions {
    * resources — e.g. corrupt a hash to exercise rule #5.
    */
   mutateResources?: (defaults: DatapackageResource[]) => DatapackageResource[];
+  /**
+   * `pages/pages.jsonl` の page 行 (header の次の行) を差し替える。既定の行
+   * `{ id, url, ts, title }` を受け取り、返したものを書く —— `text` を足した形も、
+   * `title` を落として `textWithheld` を置いた形も作れるように。header の行と
+   * `datapackage.json` の `title` は `pageTitle` のまま。
+   */
+  mutatePageEntry?: (defaults: Record<string, unknown>) => Record<string, unknown>;
   /** Replace the CDXJ filename field on every entry (rule #3). */
   cdxjFilenameOverride?: string;
   /**
@@ -219,6 +226,14 @@ export interface FixtureOptions {
    * —— 方針で省いた URL を `truncatedUrls` に載せた形も、そのまま通す。
    */
   completeness?: Record<string, unknown>;
+  /**
+   * `browserhive:capture.document` をそのまま書き込む。undefined なら member ごと書かない ——
+   * profile 1.10.0 で必須になったが、それより前の archive には無いので、不在も作れる必要がある。
+   *
+   * 中身は検査しない。方針と食い違う `withheld` も、`url` を欠いた形も、そのまま通す ——
+   * それを問題と呼ぶかは rule が決める。
+   */
+  document?: Record<string, unknown>;
   /**
    * `browserhive:capture.dismissal` をそのまま書き込む。undefined なら member ごと
    * 書かない —— **除去は任意**で、不在は「配信されたままのページを保存した」という
@@ -555,9 +570,10 @@ const buildPagesJsonl = (
   pageUrl: string,
   pageTitle: string,
   ts: string,
+  mutateEntry: (defaults: Record<string, unknown>) => Record<string, unknown> = (e) => e,
 ): string => {
   const header = JSON.stringify({ format: "json-pages-1.0", id: taskId, title: pageTitle });
-  const entry = JSON.stringify({ id: taskId, url: pageUrl, ts, title: pageTitle });
+  const entry = JSON.stringify(mutateEntry({ id: taskId, url: pageUrl, ts, title: pageTitle }));
   return `${header}\n${entry}\n`;
 };
 
@@ -665,7 +681,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     indexEntries.push({ name: cdxjEntryName, bytes: cdxjBytes });
   }
 
-  let pagesBody = buildPagesJsonl(taskId, pageUrl, pageTitle, capturedAt);
+  let pagesBody = buildPagesJsonl(taskId, pageUrl, pageTitle, capturedAt, options.mutatePageEntry);
   if (options.pagesBadLine === "not-json") {
     pagesBody += "this is not json\n";
   } else if (options.pagesBadLine === "missing-prop") {
@@ -806,6 +822,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.completeness !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["completeness"] = options.completeness;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.document !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["document"] = options.document;
     datapackage["browserhive:capture"] = capture;
   }
   if (options.dismissal !== undefined) {
