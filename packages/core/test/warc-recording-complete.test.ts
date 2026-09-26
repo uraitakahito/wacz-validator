@@ -139,7 +139,24 @@ describe("warc/recording-complete", () => {
         | undefined
     )?.recording;
     expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, blocked: 4 });
-    expect(recording?.incomplete).toBe(8);
+    // 方針で省いた 4 件 (blocked) は内訳に残るが、未完了には数えない。
+    expect(recording?.incomplete).toBe(4);
+  });
+
+  it("方針で省いたものしか無い archive には何も出さない", async () => {
+    // deny しか当たらない取り込みにも「未完了」の warning が出ていた (v13.0.0 の積み残しの 12 番)。
+    const issues = await issuesFor(
+      tmpDir,
+      {
+        warcMetadata: [
+          { uri: "https://example.com/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
+          { uri: "https://example.com/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
+          { uri: "https://example.com/d.mp4", fields: { truncated: "url-policy" } },
+        ],
+      },
+      "browserhive",
+    );
+    expect(issues.some((i) => i.rule === RULE)).toBe(false);
   });
 });
 

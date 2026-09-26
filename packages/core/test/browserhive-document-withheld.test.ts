@@ -2,7 +2,7 @@
 /**
  * `browserhive/document-withheld` のテスト。
  *
- * 守っている主張は profile 1.10.0 の `document` の節にある 3 つ:
+ * 守っている主張は profile 1.10.0 の `document` の節にある 3 つ (1.11.0 で `deny` が加わった):
  *
  * 1. `withheld` は、`document.url` に方針を照らし直した答えと一致する (両向き)。方針が当たったのに
  *    伏せていない archive も、当たっていないのに伏せた archive も落とす
@@ -41,6 +41,17 @@ const V13 = { major: 13, minor: 0, patch: 0 };
 const PAGE = "https://example.com/start";
 /** 読んだ文書。リダイレクトの先。 */
 const DOC = "https://example.com/landed";
+/** archive が適合を名乗る profile の版。`deny` の扱いがこれで変わる。 */
+const CONFORMS_1_10 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.10.0/";
+const CONFORMS_1_11 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/";
+/** 文書に deny が当たる方針。 */
+const DENY_DOC: Policies = { urlPolicies: [{ pattern: "*/landed", action: "deny" }] };
+/** 文書を送らなかった形。中継の 302 と、送らなかったことを言う metadata だけ。 */
+const DENIED: Partial<FixtureOptions> = {
+  warcResponses: [{ uri: PAGE, mime: "", status: 302, body: "" }],
+  warcMetadata: [{ uri: DOC, fields: { action: "deny", pattern: "*/landed", method: "GET" } }],
+};
+
 /** 文書とは別の応答 (画像)。content-type の照合を文書の記録に限ることを見るため。 */
 const IMAGE = "https://example.com/logo.png";
 
@@ -404,19 +415,51 @@ describe("browserhive/document-withheld", () => {
       ]);
     });
 
-    it("deny の記録は、身元の在り処にならない", async () => {
-      // BrowserHive は主文書への deny で要求を止められず、ページを読んでしまう (2026-09-25 に確かめた)。
+    it("1.10.0 の archive では、deny の記録は身元の在り処にならない", async () => {
+      // BrowserHive v13.0.0〜v17.0.0 は主文書への deny で要求を止められず、ページを読んでいた。
       // archive には `action: deny`（送らなかった）の記録しか無く、読んだ文書は archive のどこにも無い。
-      const issues = await run(
-        written(
-          { urlPolicies: [{ pattern: "*/landed", action: "deny" }] },
-          {
-            warcResponses: [{ uri: PAGE, mime: "", status: 302, body: "" }],
-            warcMetadata: [{ uri: DOC, fields: { action: "deny", pattern: "*/landed", method: "GET" } }],
-          },
-        ),
-      );
+      // 1.10.0 に deny の理由は無いので伏せないのが正しく、漏れはこの warning が言う。
+      const issues = await run(written(DENY_DOC, { ...DENIED, conformsTo: CONFORMS_1_10 }));
       expect(issues.map((i) => `${i.severity} ${i.messageKey}`)).toEqual([`warning ${RULE}.not-in-archive`]);
+    });
+  });
+
+  describe("deny は文書を伏せる（profile 1.11.0 から）", () => {
+    it("文書に deny が当たり、deny で伏せた archive には何も言わない", async () => {
+      // 送らなかった文書の身元は、送らなかったことを言う記録が指す。
+      for (const conformsTo of [CONFORMS_1_11, undefined]) {
+        const over = conformsTo === undefined ? DENIED : { ...DENIED, conformsTo };
+        expect(await run(withheldAs("deny", DENY_DOC, over))).toEqual([]);
+      }
+    });
+
+    it("文書に deny が当たるのに伏せていなければ、error で落とす", async () => {
+      expect(await run(written(DENY_DOC, { ...DENIED, conformsTo: CONFORMS_1_11 }))).toEqual([
+        error("should-withhold", { url: DOC, expected: "deny" }, "datapackage.json"),
+      ]);
+    });
+
+    it("適合を名乗らない archive は、いまの版（1.11.0）の決まりで照らす", async () => {
+      expect(await run(written(DENY_DOC, DENIED))).toEqual([
+        error("should-withhold", { url: DOC, expected: "deny" }, "datapackage.json"),
+      ]);
+    });
+
+    it("1.10.0 の archive の deny は、profile の定めない値", async () => {
+      // 1.10.0 では deny の記録も身元の在り処にならないので、身元が archive に無い warning も並ぶ。
+      expect(
+        (await run(withheldAs("deny", DENY_DOC, { ...DENIED, conformsTo: CONFORMS_1_10 }))).map(
+          (i) => `${i.severity} ${i.messageKey}`,
+        ),
+      ).toEqual([`error ${RULE}.unknown-reason`, `warning ${RULE}.not-in-archive`]);
+    });
+
+    it("deny が文書に当たらないのに deny で伏せれば、error で落とす（伏せすぎ）", async () => {
+      // 両向きの決まりの deny 版。deny は部分資源 (画像) にだけ当たり、読んだ文書には当たらない。
+      const policies: Policies = { urlPolicies: [{ pattern: "*/logo.png", action: "deny" }] };
+      expect(await run(withheldAs("deny", policies, { conformsTo: CONFORMS_1_11 }))).toEqual([
+        error("should-not-withhold", { url: DOC, declared: "deny" }, "datapackage.json"),
+      ]);
     });
   });
 
