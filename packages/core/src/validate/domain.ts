@@ -435,6 +435,11 @@ export interface ReportEntry {
 
 // #region report
 export interface Report {
+  /**
+   * この report を作った build の版。CLI と daemon は、build したときに git のタグから
+   * 決めた版を渡す —— タグの上なら `0.31.0`、その先なら `0.31.0+3.gabcdef1`、未コミットの
+   * 変更があれば `dirty` が付き、タグが見えなければ `unknown`。
+   */
   validatorVersion: string;
   /** report を評価した profile。{@link ReportProfile} を参照。 */
   profile: ReportProfile;

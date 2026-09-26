@@ -136,7 +136,7 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
     "passed": 20,
     "warnings": 1,
   },
-  "validatorVersion": "0.0.0",
+  "validatorVersion": "<version>",
 }
 `;
 
@@ -259,7 +259,7 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
     "passed": 20,
     "warnings": 0,
   },
-  "validatorVersion": "0.0.0",
+  "validatorVersion": "<version>",
 }
 `;
 
@@ -350,6 +350,6 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
     "passed": 21,
     "warnings": 0,
   },
-  "validatorVersion": "0.0.0",
+  "validatorVersion": "<version>",
 }
 `;

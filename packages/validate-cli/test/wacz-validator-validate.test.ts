@@ -26,6 +26,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 // いるので複製しない)。package 境界をまたぐ相対 import で、ambient な
 // archiver shim は tsconfig.json の include が拾う。
 import { buildWacz, type FixtureOptions } from "../../core/test/fixtures/generator.js";
+import { BUILD_INFO } from "../src/generated/build-info.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -78,9 +79,13 @@ const writeFixture = async (
  * JSON 出力には絶対ファイルパスと elapsed-ms duration が含まれる —
  * どちらもマシンや実行ごとに変わるので snapshot が脆くなる。安定した
  * placeholder に置換してから snapshot を取る。
+ *
+ * `validatorVersion` も checkout で変わる (タグからの隔たり、未コミットの変更、
+ * CI の浅い clone では `unknown`)。何を名乗るべきかは「cli — 版」が見る。
  */
 const stabiliseJson = (text: string): unknown => {
   const parsed = JSON.parse(text) as Record<string, unknown>;
+  parsed["validatorVersion"] = "<version>";
   const source = parsed["source"] as
     | { kind?: string; path?: string; uri?: string }
     | undefined;
@@ -123,6 +128,26 @@ describe("cli — exit codes", () => {
     // 触ると悪化する)。ここが `Error:` などで飾られ始めたら退行。
     expect(result.stderr).toContain("ENOENT");
     expect(result.stderr).not.toContain("HTTP");
+  });
+});
+
+describe("cli — 版", () => {
+  let tmpDir: string;
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "wacz-validator-cli-test-"));
+  });
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  // 2026-09-26 まで、報告の validatorVersion も --version も package.json の "0.0.0" を
+  // 名乗っていた。この repo の版はタグにしか無いので、どの build でも "0.0.0" だった。
+  it("報告の validatorVersion と --version は、build したときにタグから決めた版を名乗る", async () => {
+    const path = await writeFixture(tmpDir, "good.wacz");
+    const report = JSON.parse((await runCli([path])).stdout) as { validatorVersion: string };
+    const named = (await runCli(["--version"])).stdout.trim();
+    expect(report.validatorVersion).toBe(BUILD_INFO.version);
+    expect(named).toBe(BUILD_INFO.version);
   });
 });
 

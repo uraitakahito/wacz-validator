@@ -54,10 +54,9 @@ stdout には `Report` が出力される。full schema は
 
 ```json
 {
-  "validatorVersion": "0.0.0",
-  "profile": "spec",
+  "validatorVersion": "0.31.0",
+  "profile": { "name": "spec" },
   "source": { "kind": "file", "path": "/tmp/good.wacz" },
-  "valid": true,
   "summary": { "passed": 12, "failed": 0, "warnings": 0, "info": 0, "durationMs": 12 },
   "issues": [],
   "stats": { "warcRecordCount": 1, "warcArchiveBytes": 246, "hosts": ["example.com"] }

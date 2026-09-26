@@ -9,9 +9,9 @@ Everything routine is behind one command:
 pnpm check
 ```
 
-It runs `pnpm audit` and then, package by package, `typecheck → lint → build → test`.
-Six packages, in dependency order, so a break surfaces in the package that
-caused it rather than three packages downstream.
+It runs `pnpm audit`, the root scripts' own tests, and then, package by package,
+`typecheck → lint → build → test`. Seven packages, in dependency order, so a break
+surfaces in the package that caused it rather than three packages downstream.
 
 **Nothing here needs a network, a container, or a WACZ file on disk.** The one
 suite that does is skipped unless you ask for it — see below.
@@ -20,8 +20,9 @@ suite that does is skipped unless you ask for it — see below.
 
 | Command | Scope |
 | --- | --- |
-| `pnpm check` | audit + all seven packages. **What CI runs.** |
-| `pnpm test` | tests only, all packages |
+| `pnpm check` | audit + the root scripts' tests + all seven packages. **What CI runs.** |
+| `pnpm test` | tests only, all packages, then the root scripts' |
+| `pnpm test:scripts` | the root scripts' own tests (`node --test`) |
 | `pnpm --filter @wacz-validator/core test` | one package |
 | `pnpm --filter @wacz-validator/core test:watch` | one package, watching |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | one stage across all packages |
@@ -134,9 +135,9 @@ rather than "nothing to run".
 ## Why `build` comes before `test`
 
 Each package's `check` is `typecheck && lint && build && test`, and the order is
-deliberate. `@wacz-validator/daemon` and `@wacz-validator/tui` generate `build-info.ts` as part
-of their build; running their tests against a stale or missing one tests the
-wrong thing. Type errors and lint failures also cost seconds, while a build costs
+deliberate. `@wacz-validator/validate-cli`, `@wacz-validator/daemon` and `@wacz-validator/tui`
+generate `build-info.ts` as part of their build; running their tests against a stale or
+missing one tests the wrong thing. Type errors and lint failures also cost seconds, while a build costs
 longer — cheap gates first.
 
 ## The corpus tests

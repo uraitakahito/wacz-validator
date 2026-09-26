@@ -187,6 +187,7 @@ export type PingParams = Record<string, never>;
 /** /healthz と wacz-validator/ping が返す生存ステータス。 */
 export interface HealthStatus {
   status: "ok";
+  /** build が名乗る版。git のタグから決めて、ビルド時に焼き込み(report の `validatorVersion` と同じ)。 */
   version: string;
   /** 短い git SHA(未コミット変更があれば `-dirty` 付き)。ビルド時に焼き込み。 */
   gitSha: string;

@@ -112,8 +112,23 @@ wacz-validator archive.wacz | jq '[.issues[]
 
 ## 安定性の約束
 
-`validatorVersion` は `package.json#version` を映したもので、consumer が schema の
-drift を推測ではなく検出できるようにするために存在します。
+`validatorVersion` は、consumer が schema の drift を推測ではなく検出できるように
+するために存在します。値は、その build がどのリリースから来たかで、build したときに
+git のタグから読みます。
+
+| `validatorVersion` | その build は |
+| --- | --- |
+| `0.31.0` | タグの commit そのもので、未コミットの変更も無い —— リリースそのもの |
+| `0.31.0+3.gabcdef1` | `v0.31.0` より 3 commit 先（`abcdef1`） |
+| `0.31.0+dirty`、`0.31.0+3.gabcdef1.dirty` | 上と同じで、未コミットの変更がある |
+| `unknown` | タグが見えない所で build した（浅い clone） |
+
+リリースなのは素の `X.Y.Z` だけです。それ以外は SemVer の build metadata（`+…`）で
+書きます。prerelease（`-…`）で書くと、そのリリース**より前**と読めてしまうためです。
+
+0.31.0 より前の build の report は、何から build したかに関係なく `0.0.0` と書いています。
+当時この値は `package.json#version` を映していて、この repo の package.json は動かない
+（版はタグにしか無い）ためです。
 
 同一 major version の中では:
 

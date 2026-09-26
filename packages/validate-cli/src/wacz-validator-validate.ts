@@ -12,9 +12,6 @@
  *   1 — validation 失敗 (error 重大度の issue が 1 件以上)
  *   2 — operational な失敗 (ファイルが開けない等)
  */
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Command, InvalidArgumentError } from "commander";
 import {
   DEFAULT_RULES,
@@ -43,9 +40,7 @@ import {
   type ProfileSelector,
 } from "@wacz-validator/contract";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const manifestPath = join(here, "..", "package.json");
-const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as { version: string };
+import { BUILD_INFO } from "./generated/build-info.js";
 
 const envS3ForcePathStyle = process.env["WACZ_VALIDATOR_S3_FORCE_PATH_STYLE"] === "true";
 
@@ -101,7 +96,7 @@ async function runCli(filePath: string, opts: CliOptions): Promise<CliOutcome<Re
 
   try {
     const result = await runValidation(reader, {
-      validatorVersion: manifest.version,
+      validatorVersion: BUILD_INFO.version,
       rules: DEFAULT_RULES,
       profile: opts.profile,
     });
@@ -122,7 +117,7 @@ const program = new Command();
 program
   .name("wacz-validator-validate")
   .description("WACZ validator — emits a machine-readable JSON report to stdout")
-  .version(manifest.version)
+  .version(BUILD_INFO.version)
   .argument(
     "<source>",
     "Local path or s3://bucket/key URI of the .wacz to validate",
