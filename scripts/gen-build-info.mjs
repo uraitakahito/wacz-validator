@@ -1,47 +1,43 @@
 /**
  * Build-info codegen — writes `packages/<pkg>/src/generated/build-info.ts`
- * with the package version, the short git SHA (+ `-dirty` when the working
- * tree has uncommitted changes), and the build timestamp.
+ * with the version this build names, the short git SHA (+ `-dirty` when the
+ * working tree has uncommitted changes), and the build timestamp.
  *
- * Run from a package's `build` / `check` script as
+ * The version comes from the release tags, not from package.json — every
+ * package.json here stays at `0.0.0` because the tags are the only version.
+ * `build-version.mjs` has the rules and why (`0.30.0`, `0.30.0+3.gabcdef1`, …).
+ *
+ * Run from a package's `build` / `typecheck` script as
  *   node ../../scripts/gen-build-info.mjs <pkg>
  * The emitted `.ts` is compiled by plain tsc into `dist/generated/build-info.js`
  * (no postbuild copy / createRequire needed — contrast with JSON assets). The
  * file is git-ignored and regenerated on every build, so it is never committed.
  *
  * git failures (no .git, published tarball) degrade gracefully: the SHA falls
- * back to `WACZ_VALIDATOR_GIT_SHA` (CI injection) or the literal "nogit".
+ * back to `WACZ_VALIDATOR_GIT_SHA` or the literal "nogit", the version to
+ * "unknown".
  */
-import { execSync } from "node:child_process";
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readBuild } from "./build-version.mjs";
+
+const PACKAGES = ["daemon", "tui", "validate-cli"];
+
 const pkg = process.argv[2];
-if (pkg !== "daemon" && pkg !== "tui") {
-  process.stderr.write(`gen-build-info: expected pkg "daemon" | "tui", got "${String(pkg)}"\n`);
+if (!PACKAGES.includes(pkg)) {
+  process.stderr.write(
+    `gen-build-info: expected pkg ${PACKAGES.map((name) => `"${name}"`).join(" | ")}, got "${String(pkg)}"\n`,
+  );
   process.exit(1);
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const pkgDir = join(root, "packages", pkg);
-const { version } = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
-
-const git = (cmd, fallback) => {
-  try {
-    return execSync(cmd, { cwd: root, stdio: ["ignore", "pipe", "ignore"] })
-      .toString()
-      .trim();
-  } catch {
-    return fallback;
-  }
-};
-const sha = git("git rev-parse --short HEAD", process.env.WACZ_VALIDATOR_GIT_SHA ?? "nogit");
-const dirty = git("git status --porcelain", "") ? "-dirty" : "";
-const gitSha = sha + dirty;
+const { version, gitSha } = readBuild(root);
 const builtAt = new Date().toISOString();
 
-const outDir = join(pkgDir, "src", "generated");
+const outDir = join(root, "packages", pkg, "src", "generated");
 mkdirSync(outDir, { recursive: true });
 writeFileSync(
   join(outDir, "build-info.ts"),

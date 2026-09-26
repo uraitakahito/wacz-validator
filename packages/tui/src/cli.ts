@@ -20,9 +20,8 @@
  * → `process.exitCode`。child を待ってから exitCode を確定するので、死にかけの
  * child handle と event loop が競合して exit code が 0 に化けるレースを避ける。
  */
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { Command, InvalidArgumentError } from "commander";
 import {
   ALL_PROFILES,
@@ -57,10 +56,6 @@ interface BuildInfo {
   tui: BuildPair;
   daemon: BuildPair;
 }
-
-const here = dirname(fileURLToPath(import.meta.url));
-const manifestPath = join(here, "..", "package.json");
-const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as { version: string };
 
 const envS3ForcePathStyle = process.env["WACZ_VALIDATOR_S3_FORCE_PATH_STYLE"] === "true";
 
@@ -106,7 +101,7 @@ const program = new Command();
 program
   .name("wacz-validator")
   .description("Interactive TUI for WACZ validation (use wacz-validator-validate for JSON output)")
-  .version(`${manifest.version} (${BUILD_INFO.gitSha})`)
+  .version(`${BUILD_INFO.version} (${BUILD_INFO.gitSha})`)
   .argument("<source>", "Local path or s3://bucket/key URI of the .wacz to validate")
   .option(
     "--profile <name>",

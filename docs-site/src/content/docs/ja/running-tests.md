@@ -9,8 +9,8 @@ description: pnpm check が見る範囲、意図的に skip される corpus テ
 pnpm check
 ```
 
-`pnpm audit` を走らせたあと、パッケージごとに `typecheck → lint → build → test`
-を回します。7 パッケージを依存順に処理するので、壊れたときは**原因のパッケージ**で
+`pnpm audit` と root の scripts の試験を走らせたあと、パッケージごとに
+`typecheck → lint → build → test` を回します。7 パッケージを依存順に処理するので、壊れたときは**原因のパッケージ**で
 止まります ― 3 つ下流で気づくことにはなりません。
 
 **ここまでにネットワークもコンテナも、ディスク上の WACZ も必要ありません。**
@@ -20,8 +20,9 @@ pnpm check
 
 | コマンド | 範囲 |
 | --- | --- |
-| `pnpm check` | audit + 7 パッケージ全部。**CI が回すもの。** |
-| `pnpm test` | テストのみ、全パッケージ |
+| `pnpm check` | audit + root の scripts の試験 + 7 パッケージ全部。**CI が回すもの。** |
+| `pnpm test` | テストのみ、全パッケージのあとに root の scripts |
+| `pnpm test:scripts` | root の scripts 自身の試験（`node --test`） |
 | `pnpm --filter @wacz-validator/core test` | 1 パッケージだけ |
 | `pnpm --filter @wacz-validator/core test:watch` | 1 パッケージを watch |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | 1 段階を全パッケージに |
@@ -130,7 +131,7 @@ pnpm test:ui --tagsFilter 'docs && i18n'
 ## なぜ `build` が `test` より前なのか
 
 各パッケージの `check` は `typecheck && lint && build && test` で、この順序は意図的です。
-`@wacz-validator/daemon` と `@wacz-validator/tui` はビルドの一部として `build-info.ts` を生成するので、
+`@wacz-validator/validate-cli`・`@wacz-validator/daemon`・`@wacz-validator/tui` はビルドの一部として `build-info.ts` を生成するので、
 古いまま（あるいは無いまま）テストを回すと**別物を検査する**ことになります。
 型エラーと lint は数秒で終わるのに対しビルドは長い ― 安いゲートを先に置く、という理由もあります。
 

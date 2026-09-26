@@ -116,8 +116,23 @@ filtering is left to the caller.
 
 ## What is promised
 
-`validatorVersion` mirrors `package.json#version` and exists so a consumer can
-detect schema drift rather than guess at it.
+`validatorVersion` exists so a consumer can detect schema drift rather than guess
+at it. It is the release the build came from, read from the git tags when it was
+built:
+
+| `validatorVersion` | The build was |
+| --- | --- |
+| `0.31.0` | the tagged commit, with no uncommitted changes — the release itself |
+| `0.31.0+3.gabcdef1` | three commits past `v0.31.0` (`abcdef1`) |
+| `0.31.0+dirty`, `0.31.0+3.gabcdef1.dirty` | the same, plus uncommitted changes |
+| `unknown` | made where no tag was visible (a shallow clone) |
+
+Only a plain `X.Y.Z` is a release. The rest carries SemVer build metadata (`+…`)
+rather than a prerelease (`-…`), which would read as *before* the release.
+
+Reports from builds before 0.31.0 say `0.0.0`, whatever they were built from: the
+field then mirrored `package.json#version`, which never moves here — the tags are
+the only version.
 
 Within a major version:
 

@@ -15,9 +15,9 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && node ../../scripts/gen-build-info.mjs validate-cli && tsc -p tsconfig.build.json",
     "postbuild": "chmod +x dist/wacz-validator-validate.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "node ../../scripts/gen-build-info.mjs validate-cli && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
