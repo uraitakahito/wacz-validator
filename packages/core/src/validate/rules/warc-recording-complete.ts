@@ -9,6 +9,11 @@
  * (info、比率が高ければ warning)。`details.recording` に内訳とサンプル URL を
  * 載せ、TUI の Recording health パネルが描画する。
  *
+ * **方針で省いたもの (blocked) は未完了に数えない。** `deny`・`no-archive` の要求と、
+ * `url-policy`・`content-type` で省いた本文は、要求者が頼んだ省略で、記録の欠けではない。
+ * 以前は数えていて、`deny` しか当たらない archive にも「未完了」の warning が出ていた。
+ * 内訳 (`byReason.blocked`) とサンプルには残すので、何を省いたかは見えるまま。
+ *
  * 規格との関係: この metadata 慣習は WARC/WACZ の規格そのものではなく
  * browserhive 固有。よって `applicability.excludeProfiles` で
  * `spec` / `lenient` を除外し、`--profile browserhive` のときだけ走る。
@@ -119,7 +124,8 @@ export const warcRecordingCompleteRule: ValidationRule = {
       }
     }
 
-    const incomplete = byReason.failed + byReason.incomplete + byReason.truncated + byReason.blocked;
+    // blocked は数えない (上の説明)。内訳には残す。
+    const incomplete = byReason.failed + byReason.incomplete + byReason.truncated;
     if (incomplete === 0) return ok([]);
 
     const ratio = incomplete / (responses + incomplete);

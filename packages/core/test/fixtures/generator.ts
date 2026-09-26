@@ -121,6 +121,12 @@ export interface FixtureOptions {
    */
   warcResponses?: WarcResponseSpec[];
   /**
+   * `WARC-Type: request` のレコード (HTTP の要求行と見出し、本文なし) を応答の後ろに足す。
+   * 索引には並べない (BrowserHive の索引も応答だけ)。送った要求の記録を見る rule
+   * (`browserhive/deny-enforced`) の試験に使う。
+   */
+  warcRequests?: WarcRequestSpec[];
+  /**
    * When true, store the WARC entry as DEFLATE rather than STORE
    * (browserhive's invariant from packager.ts). Triggers rule #6.
    */
@@ -235,6 +241,11 @@ export interface FixtureOptions {
    */
   document?: Record<string, unknown>;
   /**
+   * `browserhive:capture.conformsTo` をそのまま書き込む。undefined なら member ごと書かない。
+   * archive が名乗る profile の版で決まりが変わる rule (1.11.0 の `deny`) の試験に使う。
+   */
+  conformsTo?: string;
+  /**
    * `browserhive:capture.dismissal` をそのまま書き込む。undefined なら member ごと
    * 書かない —— **除去は任意**で、不在は「配信されたままのページを保存した」という
    * 意味になるので、tls と同じく不在も正しい形。
@@ -318,9 +329,16 @@ export interface WarcResponseSpec {
   status?: number;
 }
 
+/** `warcRequests` の 1 件。本文は持たない。 */
+export interface WarcRequestSpec {
+  uri: string;
+  /** HTTP のメソッド。既定 GET。 */
+  method?: string;
+}
+
 /** 組み立てた WARC の各メンバ (gzip 1 つ = レコード 1 つ) の位置。 */
 export interface WarcRecordInfo {
-  type: "warcinfo" | "response" | "metadata";
+  type: "warcinfo" | "response" | "request" | "metadata";
   offset: number;
   length: number;
   uri?: string;
@@ -446,6 +464,30 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
   return Buffer.concat([Buffer.from(headers, "utf-8"), http, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
+/**
+ * `WARC-Type: request` レコードを 1 件組み立てる。WARC の見出し → 空行 → HTTP の要求行と
+ * 見出し → 空行。本文は持たない。
+ */
+const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
+  const url = new URL(spec.uri);
+  const http = Buffer.from(
+    [`${spec.method ?? "GET"} ${url.pathname}${url.search} HTTP/1.1`, `host: ${url.host}`, "", ""].join("\r\n"),
+    "utf-8",
+  );
+  const headers = [
+    "WARC/1.1",
+    "WARC-Type: request",
+    `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx + 800).padStart(12, "0")}>`,
+    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Target-URI: ${spec.uri}`,
+    "Content-Type: application/http;msgtype=request",
+    `Content-Length: ${String(http.byteLength)}`,
+    "",
+    "",
+  ].join("\r\n");
+  return Buffer.concat([Buffer.from(headers, "utf-8"), http, Buffer.from("\r\n\r\n", "utf-8")]);
+};
+
 const buildWarcGz = (
   software: string,
   opts: {
@@ -455,6 +497,7 @@ const buildWarcGz = (
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
     metadata?: { uri: string; fields: Record<string, string> }[];
     responses?: WarcResponseSpec[];
+    requests?: WarcRequestSpec[];
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
   const raw = buildWarcInfoBytes(software, opts.payloadDigestBad);
@@ -488,6 +531,10 @@ const buildWarcGz = (
       mime: spec.mime,
       status: spec.status ?? 200,
     });
+  });
+  // 要求レコードは応答の後ろ。索引には並べない。
+  (opts.requests ?? []).forEach((spec, i) => {
+    push(gzipSync(buildRequestBytes(i, spec)), { type: "request", uri: spec.uri });
   });
   // テスト用: 未完了 metadata を別 gzip member として連結。
   const plainCount = opts.incompleteRecords ?? 0;
@@ -616,6 +663,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     }),
     ...(options.warcMetadata !== undefined && { metadata: options.warcMetadata }),
     ...(options.warcResponses !== undefined && { responses: options.warcResponses }),
+    ...(options.warcRequests !== undefined && { requests: options.warcRequests }),
   });
 
   const cdxjFilename = options.cdxjFilenameOverride ?? "data.warc.gz";
@@ -827,6 +875,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.document !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["document"] = options.document;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.conformsTo !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["conformsTo"] = options.conformsTo;
     datapackage["browserhive:capture"] = capture;
   }
   if (options.dismissal !== undefined) {
