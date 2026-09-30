@@ -73,6 +73,21 @@ describe("warc/recording-complete", () => {
     expect(recording?.incomplete).toBe(30);
   });
 
+  it("開かせなかったウィンドウの記録（window の欄）は、取得の記録ではないので数えない", async () => {
+    // profile 1.12.0 の記録。要求を出していないので、未完了にも方針の省略にも入れない。
+    const issues = await issuesFor(
+      tmpDir,
+      {
+        warcMetadata: [
+          { uri: "https://shop.example/campaign", fields: { window: "not-opened", windowName: "_blank", target: "page" } },
+          { uri: "about:blank", fields: { window: "not-opened" } },
+        ],
+      },
+      "browserhive",
+    );
+    expect(issues.some((i) => i.rule === RULE)).toBe(false);
+  });
+
   it("metadata が無ければ何も出さない", async () => {
     const issues = await issuesFor(tmpDir, {}, "browserhive");
     expect(issues.some((i) => i.rule === RULE)).toBe(false);
