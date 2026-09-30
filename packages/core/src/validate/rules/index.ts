@@ -16,6 +16,7 @@ import { browserhiveUrlPoliciesRule } from "./browserhive-url-policies.js";
 import { browserhivePolicyNotTruncatedRule } from "./browserhive-policy-not-truncated.js";
 import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js";
 import { browserhiveDenyEnforcedRule } from "./browserhive-deny-enforced.js";
+import { browserhiveWindowShapeRule } from "./browserhive-window-shape.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -115,6 +116,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveDocumentWithheldRule,
   // deny の当たった URL に、送った要求や届いた応答の記録が無いか (profile 1.11.0 の policies)。
   browserhiveDenyEnforcedRule,
+  // 開かせなかったウィンドウの記録の形 (profile 1.12.0 の windows)。
+  browserhiveWindowShapeRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

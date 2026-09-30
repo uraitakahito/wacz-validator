@@ -14,6 +14,9 @@
  * 以前は数えていて、`deny` しか当たらない archive にも「未完了」の warning が出ていた。
  * 内訳 (`byReason.blocked`) とサンプルには残すので、何を省いたかは見えるまま。
  *
+ * **開かせなかったウィンドウの記録（`window` の欄。profile 1.12.0）も数えない。** 要求を出していないので、取得の記録ではない。
+ * 内訳にもサンプルにも入れない。形は `browserhive/window-shape` が見る。
+ *
  * 規格との関係: この metadata 慣習は WARC/WACZ の規格そのものではなく
  * browserhive 固有。よって `applicability.excludeProfiles` で
  * `spec` / `lenient` を除外し、`--profile browserhive` のときだけ走る。
@@ -24,22 +27,13 @@ import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
+import { parseWarcFields } from "../warc-fields.js";
 
 const WARC_ENTRY = "archive/data.warc.gz";
 /** 未完了比率がこれを超えたら info から warning に上げる。 */
 const WARN_RATIO = 0.1;
 
 type Reason = "failed" | "incomplete" | "truncated" | "blocked";
-
-/** `application/warc-fields` body を key:value に。継続行は折り畳まない。 */
-const parseWarcFields = (body: Buffer): Record<string, string> => {
-  const out: Record<string, string> = {};
-  for (const line of body.toString("utf-8").split("\n")) {
-    const sep = line.indexOf(": ");
-    if (sep > 0) out[line.slice(0, sep).trim()] = line.slice(sep + 2).trim();
-  }
-  return out;
-};
 
 /**
  * metadata の fields から未完了の種別を判定する。
@@ -109,6 +103,8 @@ export const warcRecordingCompleteRule: ValidationRule = {
       }
       if (type !== "metadata") continue;
       const fields = parseWarcFields(record.body);
+      // 開かせなかったウィンドウの記録（profile 1.12.0）は、取得の記録ではない。未完了にも、方針の省略にも数えない。
+      if (fields["window"] !== undefined) continue;
       const reason = classify(fields);
       byReason[reason] += 1;
       const rt = fields["resourceType"];

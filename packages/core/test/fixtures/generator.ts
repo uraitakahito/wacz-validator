@@ -155,8 +155,9 @@ export interface FixtureOptions {
    * `application/warc-fields` の本文になる。browserhive が本文を省いた理由を書く
    * `truncated: <reason>` や、記録しなかった要求の `action: <action>` を再現して、
    * `warc/recording-complete` の分類を動かす。未完了の metadata の後ろに連結する。
+   * `uri` を省くと `WARC-Target-URI` の無いレコードになる（形の rule の反証用）。
    */
-  warcMetadata?: { uri: string; fields: Record<string, string> }[];
+  warcMetadata?: { uri?: string; fields: Record<string, string> }[];
   /**
    * When set, override the CDXJ `offset` field on every entry with this
    * value (string form, matching the producer convention). Used to
@@ -410,7 +411,7 @@ const buildIncompleteMetadataBytes = (
 /** 本文を `fields` の `key: value` の行で組んだ `WARC-Type: metadata` レコードを 1 件組み立てる。 */
 const buildFieldsMetadataBytes = (
   idx: number,
-  spec: { uri: string; fields: Record<string, string> },
+  spec: { uri?: string; fields: Record<string, string> },
 ): Buffer => {
   const lines = Object.entries(spec.fields).map(([k, v]) => `${k}: ${v}`);
   const body = Buffer.from(`${lines.join("\r\n")}\r\n`, "utf-8");
@@ -419,7 +420,7 @@ const buildFieldsMetadataBytes = (
     "WARC-Type: metadata",
     `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx).padStart(12, "0")}>`,
     "WARC-Date: 2026-05-13T00:00:00Z",
-    `WARC-Target-URI: ${spec.uri}`,
+    ...(spec.uri === undefined ? [] : [`WARC-Target-URI: ${spec.uri}`]),
     "Content-Type: application/warc-fields",
     `Content-Length: ${String(body.byteLength)}`,
     "",
@@ -495,7 +496,7 @@ const buildWarcGz = (
     corruptAt?: number;
     incompleteRecords?: number;
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
-    metadata?: { uri: string; fields: Record<string, string> }[];
+    metadata?: { uri?: string; fields: Record<string, string> }[];
     responses?: WarcResponseSpec[];
     requests?: WarcRequestSpec[];
   },
