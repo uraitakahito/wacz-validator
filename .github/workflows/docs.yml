@@ -5,22 +5,23 @@ name: docs
 #   /wacz-validator/      → English
 #   /wacz-validator/ja/   → Japanese
 #
+# Publishing:
+#   - Triggered by pushing a release tag (v*), so the published docs are those
+#     of a released version. A push to main does not publish: main also carries
+#     changes that are not released yet. The github-pages environment allows
+#     deployments from v* tags only; to publish again, dispatch on a tag
+#     (gh workflow run docs.yml --ref vX.Y.Z).
+#
 # Security:
-#   - Triggered only by push to main and manual dispatch, never on
-#     pull_request — that would build untrusted fork code with Pages
-#     permissions. The read-only guard for PRs is site.yaml.
+#   - Never triggered on pull_request — that would build untrusted fork code
+#     with Pages permissions. The read-only guard for PRs is site.yml.
 #   - Permissions are split per job: build gets contents:read; deploy gets
 #     pages:write + id-token:write, required by deploy-pages' OIDC handshake.
 #   - No secrets are referenced.
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "packages/core/src/validate/**"
-      - "docs-site/**"
-      - "package.json"
-      - ".github/workflows/docs.yml"
+    tags: ["v*"]
   workflow_dispatch:
 
 # One in-flight Pages deployment; queue rather than cancel so a running deploy
