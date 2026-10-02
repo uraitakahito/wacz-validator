@@ -30,13 +30,13 @@
     "prepublishOnly": "pnpm check && pnpm build"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1107.0",
+    "@aws-sdk/client-s3": "^3.1142.0",
     "@wacz-validator/contract": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-draft-04": "^1.0.0",
-    "intl-messageformat": "^11.2.13",
+    "intl-messageformat": "^12.1.2",
     "yauzl-promise": "^4.0.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/archiver": "^8.0.0",
