@@ -12,8 +12,6 @@
  *
  * ## `git describe` で足りる理由
  *
- * browserhive は describe を使わない (scripts/generate-version.mjs)。あちらはタグを main の
- * merge commit に打ち、開発は develop で進むので、develop からタグが見えない。
  * **この repo は main で開発し、タグも main に打つ** —— タグはどれも main の HEAD から
  * 辿れる (2026-09-26 に `git tag --no-merged main` が空なのを確かめた)。describe が
  * 返すのは「HEAD から辿れる最も近いタグ」で、それがそのまま
