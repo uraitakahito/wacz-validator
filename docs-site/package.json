@@ -1,4 +1,17 @@
 {
+  "//": [
+    "package.json にコメントを書く方法の議論:",
+    "https://stackoverflow.com/questions/14221579/how-do-i-add-comments-to-package-json-for-npm-install",
+    "",
+    "overrides: 上流が古い系列に縛っている依存を、勧告の修正版の系列へ上げる。",
+    "@expressive-code/core > postcss-nested: core 0.44.2 が ^6.0.1 を要求する。6 系が連れてくる",
+    "postcss-selector-parser 6 は GHSA-rj75-hqrm-r3gf（moderate、修正版は 7.1.6）の対象で、6 系に修正版は無い。",
+    "7 に上げても、docs の build の出力（CSS と HTML）は変わらなかった。",
+    "外す条件: @expressive-code/core が、postcss-nested を 7 以上で要求する版を出したとき。",
+    "mermaid > katex: mermaid が katex を ^0.16 系で要求する。0.16 系は GHSA-238p-pmpm-9mq7",
+    "（low、修正版は 0.18.2）の対象。0.18 に上げても、図は描ける。",
+    "外す条件: mermaid が、katex を 0.18.2 以上で要求する版を出したとき。"
+  ],
   "name": "wacz-validator-docs-site",
   "type": "module",
   "private": true,
@@ -16,5 +29,13 @@
   "devDependencies": {
     "@astrojs/markdown-satteri": "^0.3.5",
     "satteri": "^0.9.5"
+  },
+  "overrides": {
+    "@expressive-code/core": {
+      "postcss-nested": "^7.0.2"
+    },
+    "mermaid": {
+      "katex": "^0.18.2"
+    }
   }
 }
