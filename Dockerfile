@@ -44,7 +44,9 @@
 #
 # container-compose のサブコマンドは up / down / build / version の 4 つだけで
 # `run` が無いため、1 回きりの CLI は compose service ではなく `container run` で叩く。
-# 常駐の daemon は、compose からも `build.target: daemon` で建てられる。
+# 常駐の daemon を compose で起こすなら、image を `container build --target daemon` で先に建て、
+# compose からは `image:` で指す。container-compose 1.2.0 は `build.target` を無視して最後の段
+# (CLI) を建てる (2026-10-13 に dashboard のサンドボックスで実測)。
 #
 # TUI (`wacz-validator` bin) は、この image に入れない。
 
