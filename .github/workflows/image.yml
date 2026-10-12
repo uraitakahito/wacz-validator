@@ -1,0 +1,57 @@
+name: image
+
+# Builds both image targets and checks that each one starts.
+#
+# Nothing built the image before this workflow, and it broke twice without
+# anyone noticing: the CLI moved to validate-cli in August 2026 and the
+# ENTRYPOINT kept pointing at a file that no longer exists, then the Node 26
+# base dropped corepack. A build that only runs when someone needs the image
+# finds such breakage too late.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "Dockerfile.dockerignore"
+      - ".nvmrc"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/**"
+      - "scripts/**"
+      - ".github/workflows/image.yml"
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - "Dockerfile.dockerignore"
+      - ".nvmrc"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/**"
+      - "scripts/**"
+      - ".github/workflows/image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the daemon image
+        run: docker build --target daemon -t wacz-validator-daemon .
+      # No --target: the last stage is the CLI, the image the docs build.
+      - name: Build the CLI image
+        run: docker build -t wacz-validator .
+      - name: The daemon starts and answers /healthz
+        run: |
+          docker run -d --name daemon -p 127.0.0.1:7180:7180 wacz-validator-daemon
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:7180/healthz
+      # --help loads the whole module graph, including the native crc32
+      # binding that only an install inside Linux provides.
+      - name: The CLI loads
+        run: docker run --rm wacz-validator --help

@@ -123,13 +123,33 @@ container run --rm \
   wacz-validator:latest s3://wacz-validator/wikipedia.wacz
 ```
 
+A build without `--target` builds the CLI image (the last stage of the Dockerfile).
 The image's entrypoint is the CLI, so everything after the image name is passed
-straight to it, and the exit code is wacz-validator' own.
+straight to it, and the exit code is wacz-validator's own.
 
 `NODE_OPTIONS=--dns-result-order=ipv4first` is needed only inside a container:
 the platform DNS publishes AAAA records but there is no v6 route between the
 VMs, so Node resolving v6 first would reach nothing. On the host it is
 unnecessary.
+
+## Run the daemon in a container
+
+The resident daemon is built from the `daemon` stage of the Dockerfile.
+
+```sh
+container build --target daemon -t wacz-validator-daemon:latest .
+
+container run --rm -p 127.0.0.1:7180:7180 \
+  -v "$PWD/samples:/samples:ro" \
+  wacz-validator-daemon:latest
+```
+
+Inside the container it listens on `0.0.0.0:7180` (`WACZ_VALIDATOR_DAEMON_HOST`,
+`WACZ_VALIDATOR_DAEMON_PORT`). Publish it on `127.0.0.1` only. WACZ files in the mounted
+directory can be read with a source such as `file:///samples/wikipedia.wacz`.
+
+The image has no `.git`, so the version in reports and in `/healthz` is `unknown`, and the
+gitSha is `nogit`.
 
 ## Tear down
 

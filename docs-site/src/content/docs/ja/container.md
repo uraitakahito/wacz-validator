@@ -120,12 +120,31 @@ container run --rm \
   wacz-validator:latest s3://wacz-validator/wikipedia.wacz
 ```
 
+`--target` を書かない build は、CLI の image を建てる（Dockerfile の最後の段）。
 image の entrypoint が CLI なので、image 名より後ろはそのまま CLI に渡り、
 終了コードも wacz-validator 自身のものになる。
 
 `NODE_OPTIONS=--dns-result-order=ipv4first` が要るのは container 内で動かすとき
 だけ。platform DNS は AAAA も返すが VM 間に v6 経路が無いので、Node が v6 を先に
 解決すると到達できない。host 実行では不要。
+
+## daemon を image で動かす
+
+常駐の daemon は、Dockerfile の `daemon` の段で建てる。
+
+```sh
+container build --target daemon -t wacz-validator-daemon:latest .
+
+container run --rm -p 127.0.0.1:7180:7180 \
+  -v "$PWD/samples:/samples:ro" \
+  wacz-validator-daemon:latest
+```
+
+コンテナの中では `0.0.0.0:7180` で待つ（`WACZ_VALIDATOR_DAEMON_HOST`・`WACZ_VALIDATOR_DAEMON_PORT`）。
+host には `127.0.0.1` にだけ出すこと。
+mount した置き場の WACZ は、`file:///samples/wikipedia.wacz` の形の source で読める。
+
+image の中には `.git` が無いので、報告と `/healthz` の版は `unknown`、gitSha は `nogit` になる。
 
 ## 片付ける
 
