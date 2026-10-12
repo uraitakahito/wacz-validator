@@ -47,10 +47,13 @@ jobs:
       # No --target: the last stage is the CLI, the image the docs build.
       - name: Build the CLI image
         run: docker build -t wacz-validator .
+      # Docker's port proxy accepts the connection before the daemon listens and
+      # then resets it (curl exit 56), which --retry-connrefused does not retry.
       - name: The daemon starts and answers /healthz
         run: |
           docker run -d --name daemon -p 127.0.0.1:7180:7180 wacz-validator-daemon
-          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:7180/healthz
+          curl --retry 30 --retry-all-errors --retry-delay 1 -fsS http://127.0.0.1:7180/healthz \
+            || { docker logs daemon; exit 1; }
       # --help loads the whole module graph, including the native crc32
       # binding that only an install inside Linux provides.
       - name: The CLI loads
