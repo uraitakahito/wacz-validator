@@ -53,7 +53,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1: builder
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
@@ -66,7 +66,7 @@ RUN pnpm --filter "@wacz-validator/daemon..." --filter "@wacz-validator/validate
 # ---------------------------------------------------------------------------
 # Stage 2: deps — prod の依存だけ
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
@@ -89,7 +89,7 @@ RUN pnpm install --prod --frozen-lockfile --node-linker=hoisted \
 # ---------------------------------------------------------------------------
 # Stage 3: daemon — 常駐の検証 daemon
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS daemon
+FROM node:26-bookworm-slim AS daemon
 
 WORKDIR /app
 COPY --from=deps /app ./
@@ -109,7 +109,7 @@ ENTRYPOINT ["node", "packages/daemon/dist/cli.js"]
 # ---------------------------------------------------------------------------
 # Stage 4: cli — 1 回きりの検証 CLI (最後の段 = target を書かない build の既定)
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS cli
+FROM node:26-bookworm-slim AS cli
 
 WORKDIR /app
 COPY --from=deps /app ./
