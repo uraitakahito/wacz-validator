@@ -17,6 +17,8 @@ import { browserhivePolicyNotTruncatedRule } from "./browserhive-policy-not-trun
 import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js";
 import { browserhiveDenyEnforcedRule } from "./browserhive-deny-enforced.js";
 import { browserhiveWindowShapeRule } from "./browserhive-window-shape.js";
+import { browserhiveUninterceptedListedRule } from "./browserhive-unintercepted-listed.js";
+import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -118,6 +120,11 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveDenyEnforcedRule,
   // 開かせなかったウィンドウの記録の形 (profile 1.12.0 の windows)。
   browserhiveWindowShapeRule,
+  // 取り込めなかった本文の記録が完全性の一覧と一致し、response が WARC-Truncated: unspecified を持つか
+  // (profile 1.13.0 の payloads)。
+  browserhiveUninterceptedListedRule,
+  // 文字の本文が、書き手が文字符号を変えた物に見えないか (profile 1.13.0 の payloads。推測なので warning)。
+  browserhivePayloadCharsetRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

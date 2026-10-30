@@ -144,6 +144,8 @@ describe("warc/recording-complete", () => {
             fields: { incomplete: "true", reason: "loadingFailed", errorText: "net::ERR_FAILED" },
           },
           { uri: "https://example.com/h", fields: { incomplete: "true", reason: "stop-while-pending" } },
+          // profile 1.13.0: 届いたのにバイト列で読めなかった本文
+          { uri: "https://example.com/i.css", fields: { truncated: "not-intercepted", encodedDataLength: "812" } },
         ],
       },
       "browserhive",
@@ -153,9 +155,9 @@ describe("warc/recording-complete", () => {
         | { recording?: { incomplete?: number; byReason?: Record<string, number> } }
         | undefined
     )?.recording;
-    expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, blocked: 4 });
-    // 方針で省いた 4 件 (blocked) は内訳に残るが、未完了には数えない。
-    expect(recording?.incomplete).toBe(4);
+    expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, unintercepted: 1, blocked: 4 });
+    // 方針で省いた 4 件 (blocked) は内訳に残るが、未完了には数えない。読めなかった本文は失った本文なので数える。
+    expect(recording?.incomplete).toBe(5);
   });
 
   it("方針で省いたものしか無い archive には何も出さない", async () => {

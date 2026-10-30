@@ -33,7 +33,7 @@ const WARC_ENTRY = "archive/data.warc.gz";
 /** 未完了比率がこれを超えたら info から warning に上げる。 */
 const WARN_RATIO = 0.1;
 
-type Reason = "failed" | "incomplete" | "truncated" | "blocked";
+type Reason = "failed" | "incomplete" | "truncated" | "unintercepted" | "blocked";
 
 /**
  * metadata の fields から未完了の種別を判定する。
@@ -44,6 +44,7 @@ type Reason = "failed" | "incomplete" | "truncated" | "blocked";
  * 理由付きの記録が無く、気づかれなかった。
  *
  * - `truncated` が `too-large` / `task-cap`: 上限で落とした本文 ("truncated")
+ * - `truncated` が `not-intercepted`: 届いたのにバイト列で読めなかった本文 ("unintercepted"。profile 1.13.0)
  * - `truncated` が `content-type` / `url-policy`: 方針で省いた本文 ("blocked")
  * - `action` が `deny` / `no-archive`: 方針で記録しなかった要求 ("blocked")
  * - `reason: loadingFailed`: 失敗 ("failed")。残りは未完了 ("incomplete")
@@ -51,6 +52,7 @@ type Reason = "failed" | "incomplete" | "truncated" | "blocked";
 const classify = (f: Record<string, string>): Reason => {
   const truncated = f["truncated"];
   if (truncated === "too-large" || truncated === "task-cap") return "truncated";
+  if (truncated === "not-intercepted") return "unintercepted";
   if (truncated === "content-type" || truncated === "url-policy") return "blocked";
   if (f["action"] === "deny" || f["action"] === "no-archive") return "blocked";
   if (f["reason"] === "loadingFailed") return "failed";
@@ -86,7 +88,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
     if (!buf) return ok([]); // WARC 不在は resource-hashes / required-files が cover。
 
     let responses = 0;
-    const byReason: Record<Reason, number> = { failed: 0, incomplete: 0, truncated: 0, blocked: 0 };
+    const byReason: Record<Reason, number> = { failed: 0, incomplete: 0, truncated: 0, unintercepted: 0, blocked: 0 };
     // 案3 で metadata に追加された `resourceType` / `blockedReason` 内訳。
     // 旧 producer のレコードには無いので空のまま残る(欠落 ≠ 0 件の種別)。
     const byResourceType: Record<string, number> = {};
@@ -121,7 +123,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
     }
 
     // blocked は数えない (上の説明)。内訳には残す。
-    const incomplete = byReason.failed + byReason.incomplete + byReason.truncated;
+    const incomplete = byReason.failed + byReason.incomplete + byReason.truncated + byReason.unintercepted;
     if (incomplete === 0) return ok([]);
 
     const ratio = incomplete / (responses + incomplete);
