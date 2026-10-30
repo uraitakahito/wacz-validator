@@ -157,7 +157,7 @@ export interface FixtureOptions {
    * `warc/recording-complete` の分類を動かす。未完了の metadata の後ろに連結する。
    * `uri` を省くと `WARC-Target-URI` の無いレコードになる（形の rule の反証用）。
    */
-  warcMetadata?: { uri?: string; fields: Record<string, string> }[];
+  warcMetadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
   /**
    * When set, override the CDXJ `offset` field on every entry with this
    * value (string form, matching the producer convention). Used to
@@ -328,7 +328,13 @@ export interface WarcResponseSpec {
   body: Buffer | string;
   /** HTTP の状態コード。既定 200。 */
   status?: number;
+  /** `WARC-Truncated` の値。省けば見出しを書かない。 */
+  truncated?: string;
 }
+
+/** `warcResponses` の `idx` 番目の応答の `WARC-Record-ID`。metadata の `refersTo` に渡す。 */
+export const responseRecordId = (idx: number): string =>
+  `<urn:uuid:00000000-0000-0000-0000-${String(idx + 200).padStart(12, "0")}>`;
 
 /** `warcRequests` の 1 件。本文は持たない。 */
 export interface WarcRequestSpec {
@@ -411,7 +417,7 @@ const buildIncompleteMetadataBytes = (
 /** 本文を `fields` の `key: value` の行で組んだ `WARC-Type: metadata` レコードを 1 件組み立てる。 */
 const buildFieldsMetadataBytes = (
   idx: number,
-  spec: { uri?: string; fields: Record<string, string> },
+  spec: { uri?: string; refersTo?: string; fields: Record<string, string> },
 ): Buffer => {
   const lines = Object.entries(spec.fields).map(([k, v]) => `${k}: ${v}`);
   const body = Buffer.from(`${lines.join("\r\n")}\r\n`, "utf-8");
@@ -421,6 +427,7 @@ const buildFieldsMetadataBytes = (
     `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx).padStart(12, "0")}>`,
     "WARC-Date: 2026-05-13T00:00:00Z",
     ...(spec.uri === undefined ? [] : [`WARC-Target-URI: ${spec.uri}`]),
+    ...(spec.refersTo === undefined ? [] : [`WARC-Refers-To: ${spec.refersTo}`]),
     "Content-Type: application/warc-fields",
     `Content-Length: ${String(body.byteLength)}`,
     "",
@@ -453,10 +460,11 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
   const headers = [
     "WARC/1.1",
     "WARC-Type: response",
-    `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx + 200).padStart(12, "0")}>`,
+    `WARC-Record-ID: ${responseRecordId(idx)}`,
     "WARC-Date: 2026-05-13T00:00:00Z",
     `WARC-Target-URI: ${spec.uri}`,
     `WARC-Payload-Digest: ${sha256Base32(body)}`,
+    ...(spec.truncated === undefined ? [] : [`WARC-Truncated: ${spec.truncated}`]),
     "Content-Type: application/http;msgtype=response",
     `Content-Length: ${String(http.byteLength)}`,
     "",
@@ -496,7 +504,7 @@ const buildWarcGz = (
     corruptAt?: number;
     incompleteRecords?: number;
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
-    metadata?: { uri?: string; fields: Record<string, string> }[];
+    metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
     responses?: WarcResponseSpec[];
     requests?: WarcRequestSpec[];
   },

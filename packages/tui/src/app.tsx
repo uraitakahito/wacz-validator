@@ -1069,7 +1069,7 @@ const RecordingHealthView: FC<{ recording: Record<string, unknown> }> = ({ recor
       .map(([k, v]) => `${k} ${String(Number(v))}`)
       .join(" · ");
   const byReason = asMap(recording["byReason"]);
-  const breakdown = ["failed", "incomplete", "truncated", "blocked"]
+  const breakdown = ["failed", "incomplete", "truncated", "unintercepted", "blocked"]
     .map((k) => `${k} ${String(Number(byReason[k] ?? 0))}`)
     .join(" · ");
   // 案3 で metadata に追加された内訳。レコードに無ければ空 → 行を描かない。
