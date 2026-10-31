@@ -16,3 +16,14 @@ allowBuilds:
   # eslint-plugin-import-x が TypeScript resolver 経由で読み込む Rust-backed
   # path resolver。native bindings の link が必要なので build script を許可。
   unrs-resolver: true
+
+auditConfig:
+  ignoreGhsas:
+    # minimatch: globparts の増幅による DoS。修正は 11.0.1 (2026-10-27) からで、10 系には無い。
+    # 11 は名前付きの書き出し makeRe をやめたので、override で 11 にすると eslint-plugin-import-x が
+    # 読み込みで落ちる (実測)。eslint 10.14・@eslint/config-array 0.23・@typescript-eslint/typescript-estree 8.72・
+    # import-x 4.17・readdir-glob 3.0 の最新版がどれも ^10 を要求する。木の中の minimatch が読むパターンは
+    # eslint の設定と lint の対象 (この repo の物) だけで、archiver の下の readdir-glob は使っていない
+    # (core の試験の fixture と devtools の break-wacz は append だけ)。image にも入らない。
+    # 外す条件: これらの親が ^11 を要求する版を出したとき (そのとき update で直る)。
+    - GHSA-g3hv-75wg-m249
