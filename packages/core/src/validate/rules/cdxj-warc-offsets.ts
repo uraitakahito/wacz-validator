@@ -57,6 +57,7 @@ export const cdxjWarcOffsetsRule: ValidationRule = {
         "cdxj/warc-offsets.missing-or-nonnumeric": "warning",
         "cdxj/warc-offsets.offset-no-match": "warning",
         "cdxj/warc-offsets.length-mismatch": "warning",
+        "cdxj/warc-offsets.file-not-in-archive": "warning",
       },
     },
   },
