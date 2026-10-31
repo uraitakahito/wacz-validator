@@ -9,7 +9,8 @@ Everything routine is behind one command:
 pnpm check
 ```
 
-It runs `pnpm audit`, the root scripts' own tests, and then, package by package,
+It runs two repository checks (`check:store-name`, `check:test-hosts`), the root scripts'
+own tests, and then, package by package,
 `typecheck → lint → build → test`. Seven packages, in dependency order, so a break
 surfaces in the package that caused it rather than three packages downstream.
 
@@ -20,7 +21,8 @@ suite that does is skipped unless you ask for it — see below.
 
 | Command | Scope |
 | --- | --- |
-| `pnpm check` | audit + the root scripts' tests + all seven packages. **What CI runs.** |
+| `pnpm check` | the root scripts' tests + all seven packages. **What CI runs.** |
+| `pnpm run audit` | known advisories in both lockfiles (`pnpm-lock.yaml`, `docs-site/package-lock.json`); not part of `pnpm check` |
 | `pnpm test` | tests only, all packages, then the root scripts' |
 | `pnpm test:scripts` | the root scripts' own tests (`node --test`) |
 | `pnpm --filter @wacz-validator/core test` | one package |
@@ -31,7 +33,7 @@ suite that does is skipped unless you ask for it — see below.
 
 `--filter` takes the package name, not the directory: `@wacz-validator/contract`,
 `@wacz-validator/core`, `@wacz-validator/validate-cli`, `@wacz-validator/daemon`, `@wacz-validator/protocol`,
-`@wacz-validator/tui`.
+`@wacz-validator/devtools`, `@wacz-validator/tui`.
 
 `@wacz-validator/protocol` has no tests — it is the wire contract, and its `check` stops
 after `build`. That is not an omission: there is nothing there to run.
@@ -220,14 +222,16 @@ Check `git status` in the corpus repository before running it, and never point
 
 ## What CI runs
 
-Five workflows, and only the first is the one you reproduce locally with
-`pnpm check`.
+The workflows live in `.github/workflows/`. Two of them you reproduce locally:
+`check` with `pnpm check`, and `audit` with `pnpm run audit`.
 
 | Workflow | Runs |
 | --- | --- |
 | `check` | `pnpm check` — the whole routine suite |
-| `corpus` | clones wacz-validator-corpus **at `.corpus-version`**, then `corpus:docs:check` and `test:corpus` |
-| `pack-smoke` | `npm pack` for `@wacz-validator/contract`, `@wacz-validator/core`, `@wacz-validator/validate-cli` and `@wacz-validator/tui`, then installs them into a clean directory and runs the binaries |
+| `audit` | `pnpm run audit` on every push and pull request, and once a day, because advisories arrive on their own schedule. It is kept out of `check` so that an advisory does not stop the tests |
+| `corpus` | clones wacz-validator-corpus **at `.corpus-version`**, then `corpus:docs:check`, `test:corpus` and the daemon's tests against the corpus |
+| `pack-smoke` | `pnpm pack` for `@wacz-validator/contract`, `@wacz-validator/core`, `@wacz-validator/validate-cli` and `@wacz-validator/tui`, installs them into a clean directory and runs the binaries, then `pnpm publish --dry-run` for every publishable workspace. The dry run runs `prepublishOnly`, which is `check` and `build` for core, validate-cli and tui |
+| `image` | builds both image targets (the daemon and the CLI) and checks that each one starts |
 | `site` | builds the documentation and verifies its references |
 | `docs` | publishes the site |
 

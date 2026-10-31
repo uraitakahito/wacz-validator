@@ -9,7 +9,7 @@ description: pnpm check が見る範囲、意図的に skip される corpus テ
 pnpm check
 ```
 
-`pnpm audit` と root の scripts の試験を走らせたあと、パッケージごとに
+repo の検査 2 つ（`check:store-name`・`check:test-hosts`）と root の scripts の試験を走らせたあと、パッケージごとに
 `typecheck → lint → build → test` を回します。7 パッケージを依存順に処理するので、壊れたときは**原因のパッケージ**で
 止まります ― 3 つ下流で気づくことにはなりません。
 
@@ -20,7 +20,8 @@ pnpm check
 
 | コマンド | 範囲 |
 | --- | --- |
-| `pnpm check` | audit + root の scripts の試験 + 7 パッケージ全部。**CI が回すもの。** |
+| `pnpm check` | root の scripts の試験 + 7 パッケージ全部。**CI が回すもの。** |
+| `pnpm run audit` | 2 つの lockfile（`pnpm-lock.yaml`・`docs-site/package-lock.json`）の既知の勧告。`pnpm check` には入っていない |
 | `pnpm test` | テストのみ、全パッケージのあとに root の scripts |
 | `pnpm test:scripts` | root の scripts 自身の試験（`node --test`） |
 | `pnpm --filter @wacz-validator/core test` | 1 パッケージだけ |
@@ -31,7 +32,7 @@ pnpm check
 
 `--filter` に渡すのはディレクトリ名ではなく**パッケージ名**です ―
 `@wacz-validator/contract`、`@wacz-validator/core`、`@wacz-validator/validate-cli`、`@wacz-validator/daemon`、
-`@wacz-validator/protocol`、`@wacz-validator/tui`。
+`@wacz-validator/protocol`、`@wacz-validator/devtools`、`@wacz-validator/tui`。
 
 `@wacz-validator/protocol` にはテストがありません。ここは wire contract そのもので、
 `check` は `build` で終わります。抜けているのではなく、**走らせるものが無い**からです。
@@ -214,13 +215,16 @@ corpus に何かをマージしても、ここは何も変わりません ——
 
 ## CI が回すもの
 
-5 つの workflow があり、ローカルで `pnpm check` として再現できるのは最初の 1 つだけです。
+workflow は `.github/workflows/` にあります。手元で再現できるのは 2 つで、`check` は
+`pnpm check`、`audit` は `pnpm run audit` です。
 
 | workflow | 内容 |
 | --- | --- |
 | `check` | `pnpm check` ― 日常のスイート全部 |
-| `corpus` | wacz-validator-corpus を **`.corpus-version` のバージョンで**クローンし、`corpus:docs:check` と `test:corpus` |
-| `pack-smoke` | `@wacz-validator/contract`・`@wacz-validator/core`・`@wacz-validator/validate-cli`・`@wacz-validator/tui` を `npm pack` し、まっさらなディレクトリに入れてバイナリを実行 |
+| `audit` | `pnpm run audit` を push と pull request のたびと、毎日 1 回。勧告はこちらの都合と関係なく出るからです。勧告で試験が止まらないよう、`check` からは外してあります |
+| `corpus` | wacz-validator-corpus を **`.corpus-version` のバージョンで**クローンし、`corpus:docs:check`・`test:corpus` と、コーパスに対する daemon の試験 |
+| `pack-smoke` | `@wacz-validator/contract`・`@wacz-validator/core`・`@wacz-validator/validate-cli`・`@wacz-validator/tui` を `pnpm pack` し、まっさらなディレクトリに入れてバイナリを実行したあと、公開できる全ワークスペースで `pnpm publish --dry-run`。dry run は `prepublishOnly` を走らせ、core・validate-cli・tui ではそれが `check` と `build` |
+| `image` | 2 つの image（daemon と CLI）を build し、それぞれが起動するかを見る |
 | `site` | ドキュメントをビルドし、参照を検証 |
 | `docs` | サイトを公開 |
 
