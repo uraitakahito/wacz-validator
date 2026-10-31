@@ -61,13 +61,13 @@ describe("explodeLine", () => {
 
     it("JSON の値に空白が入っても 3 分割の境界を誤らない", () => {
       // 先頭 2 つの空白だけで割る。値の中の空白で割ると JSON が壊れる。
-      const line = 'com,example)/ 20260101000000 {"title": "hello world again"}';
-      expect(valueOf(line, "key")).toBe("com,example)/");
+      const line = 'test,site)/ 20260101000000 {"title": "hello world again"}';
+      expect(valueOf(line, "key")).toBe("test,site)/");
       expect(valueOf(line, "title")).toBe("hello world again");
     });
 
     it("JSON でない値は文字列化して見せる", () => {
-      const line = 'com,example)/ 20260101000000 {"n": 42, "ok": true, "list": [1, 2]}';
+      const line = 'test,site)/ 20260101000000 {"n": 42, "ok": true, "list": [1, 2]}';
       expect(valueOf(line, "n")).toBe("42");
       expect(valueOf(line, "ok")).toBe("true");
       expect(valueOf(line, "list")).toBe("[1,2]");
@@ -91,7 +91,7 @@ describe("explodeLine", () => {
     });
 
     it("JSON が壊れていても落ちない", () => {
-      const broken = 'com,example)/ 20260101000000 {"url": "https://x/", ';
+      const broken = 'test,site)/ 20260101000000 {"url": "https://x/", ';
       expect(raw(broken)).toBe(broken);
     });
 

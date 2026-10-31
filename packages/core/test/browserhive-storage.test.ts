@@ -36,7 +36,7 @@ const goodInventory = (over: Record<string, unknown> = {}): Record<string, unkno
   valuesRecorded: false,
   origins: [
     {
-      origin: "https://example.com",
+      origin: "https://site.test",
       local: { keys: 2, bytes: 40, digest: DIGEST },
       session: { keys: 0, bytes: 0, digest: DIGEST },
     },
@@ -47,7 +47,7 @@ const goodInventory = (over: Record<string, unknown> = {}): Record<string, unkno
 /** 値のファイルの 1 行。 */
 const goodLine = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   profile: "browserhive:storage/1",
-  origin: "https://example.com",
+  origin: "https://site.test",
   takenAt: "2026-09-06T01:22:14.881Z",
   stage: "after-behaviors",
   areas: { local: { theme: "dark" }, session: {} },
@@ -144,7 +144,7 @@ describe("browserhive/storage-inventory", () => {
       storage: goodInventory({
         origins: [
           {
-            origin: "https://example.com",
+            origin: "https://site.test",
             unreadable: true,
             local: { keys: 0, bytes: 0, digest: DIGEST },
             session: { keys: 0, bytes: 0, digest: DIGEST },
@@ -157,7 +157,7 @@ describe("browserhive/storage-inventory", () => {
 
   it("どちらでもない origin を報告する", async () => {
     const issues = await run({
-      storage: goodInventory({ origins: [{ origin: "https://example.com" }] }),
+      storage: goodInventory({ origins: [{ origin: "https://site.test" }] }),
     });
     expect(issues.map((i) => i.messageKey)).toEqual([`${INVENTORY}.origin-form`]);
   });
@@ -177,7 +177,7 @@ describe("browserhive/storage-inventory", () => {
       storage: goodInventory({
         origins: [
           {
-            origin: "https://example.com",
+            origin: "https://site.test",
             local: { keys: 1, bytes: 2, digest: "md5:abc" },
             session: { keys: 0, bytes: 0, digest: DIGEST },
           },
@@ -192,7 +192,7 @@ describe("browserhive/storage-inventory", () => {
       storage: goodInventory({
         origins: [
           {
-            origin: "https://example.com",
+            origin: "https://site.test",
             local: { keys: -1, bytes: 0, digest: DIGEST },
             session: { keys: 0, bytes: 0, digest: DIGEST },
           },
@@ -225,7 +225,7 @@ describe("browserhive/storage-inventory", () => {
           valuesRecorded: true,
           origins: [
             {
-              origin: "https://heavy.example",
+              origin: "https://heavy.test",
               local: { keys: 1, bytes: 2_129_905, digest: DIGEST },
               session: { keys: 0, bytes: 0, digest: DIGEST },
               valuesOversize: true,
@@ -247,7 +247,7 @@ describe("browserhive/storage-inventory", () => {
     const issues = await run({
       storage: goodInventory({
         valuesRecorded: true,
-        origins: [{ origin: "https://heavy.example", valuesOversize: true }],
+        origins: [{ origin: "https://heavy.test", valuesOversize: true }],
       }),
     });
     expect(issues.map((i) => i.messageKey)).toEqual([`${INVENTORY}.origin-form`]);
@@ -261,7 +261,7 @@ describe("browserhive/storage-inventory", () => {
         valuesRecorded: true,
         origins: [
           {
-            origin: "https://heavy.example",
+            origin: "https://heavy.test",
             local: { keys: 1, bytes: 10, digest: DIGEST },
             session: { keys: 0, bytes: 0, digest: DIGEST },
             valuesOversize: false,
@@ -290,7 +290,7 @@ describe("browserhive/storage-inventory", () => {
       storage: goodInventory({
         origins: [
           {
-            origin: "https://heavy.example",
+            origin: "https://heavy.test",
             local: { keys: 1, bytes: 2_129_905, digest: DIGEST },
             session: { keys: 0, bytes: 0, digest: DIGEST },
             valuesOversize: true,
@@ -368,7 +368,7 @@ describe("browserhive/storage-shape", () => {
     const issues = await run({
       storage: goodInventory({
         valuesRecorded: true,
-        origins: [{ origin: "https://example.com", unreadable: true }],
+        origins: [{ origin: "https://site.test", unreadable: true }],
       }),
       storageValues: [goodLine()],
     });
@@ -386,7 +386,7 @@ describe("browserhive/storage-shape", () => {
         valuesRecorded: true,
         origins: [
           {
-            origin: "https://example.com",
+            origin: "https://site.test",
             local: { keys: 1, bytes: 2_129_905, digest: DIGEST },
             session: { keys: 0, bytes: 0, digest: DIGEST },
             valuesOversize: true,

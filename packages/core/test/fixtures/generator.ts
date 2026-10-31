@@ -444,7 +444,7 @@ const buildIncompleteMetadataBytes = (
     "WARC-Type: metadata",
     `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx + 100).padStart(12, "0")}>`,
     "WARC-Date: 2026-05-13T00:00:00Z",
-    `WARC-Target-URI: https://tracker.example/req/${String(idx)}`,
+    `WARC-Target-URI: https://tracker.test/req/${String(idx)}`,
     "Content-Type: application/warc-fields",
     `Content-Length: ${String(body.byteLength)}`,
     "",
@@ -693,7 +693,7 @@ export interface BuiltFixture {
 /** WACZ を完全にメモリ上で組み立てる。ZIP の bytes を返す。 */
 export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixture> => {
   const taskId = options.taskId ?? "00000000-0000-0000-0000-000000000001";
-  const pageUrl = options.pageUrl ?? "https://example.com/";
+  const pageUrl = options.pageUrl ?? "https://site.test/";
   const pageTitle = options.pageTitle ?? "Example";
   const capturedAt = options.capturedAt ?? "2026-05-13T00:00:00.000Z";
   const software = options.software ?? "wacz-validator-fixture/0.0.0";

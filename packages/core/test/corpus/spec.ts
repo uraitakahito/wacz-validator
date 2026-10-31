@@ -175,7 +175,7 @@ export const CORPUS: CorpusSpec[] = [
   {
     name: "cdxj-mainpage-orphan",
     description: "mainPageURL が CDXJ/pages に存在しない URL — warning",
-    options: { mainPageUrlOverride: "https://orphan.example/" },
+    options: { mainPageUrlOverride: "https://orphan.test/" },
     expectRules: ["cdxj/pages-mainpage"],
   },
   {

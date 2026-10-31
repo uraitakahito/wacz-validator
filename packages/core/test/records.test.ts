@@ -31,12 +31,12 @@ const membersOf = async (options: FixtureOptions): Promise<WarcMember[]> => {
 };
 
 const png = {
-  uri: "https://example.com/a.png",
+  uri: "https://site.test/a.png",
   mime: "image/png",
   body: Buffer.from("PNGDATA-not-really", "utf-8"),
 };
 const html = {
-  uri: "https://example.com/missing",
+  uri: "https://site.test/missing",
   mime: "text/html; charset=utf-8",
   body: "<p>not here</p>",
   status: 404,
@@ -54,7 +54,7 @@ describe("summarizeMember", () => {
     // content-type の parameters は落とし、状態コードは数に。
     expect(rows[2]).toMatchObject({ uri: html.uri, status: 404, mime: "text/html" });
     expect(rows[3]).toMatchObject({ type: "metadata", contentType: "application/warc-fields" });
-    expect(rows[3]?.uri).toMatch(/^https:\/\/tracker\.example\//);
+    expect(rows[3]?.uri).toMatch(/^https:\/\/tracker\.test\//);
     // warcinfo に URI は無い。無いものを空文字で埋めない。
     expect(rows[0]?.uri).toBeUndefined();
     expect(rows[0]?.status).toBeUndefined();

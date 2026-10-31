@@ -13,8 +13,8 @@ import { AXTREE, DATAPACKAGE, MUTATIONS, type TlsMember } from "../src/mutations
 /** 2 host・2 チェーンの最小形。どの tls の壊し方も適用できる。 */
 const tls = (): TlsMember => ({
   hosts: {
-    "a.example": { subject: "a.example", san: ["a.example"], chainRef: "aaa" },
-    "b.example": { subject: "b.example", san: ["b.example"], chainRef: "bbb" },
+    "a.test": { subject: "a.test", san: ["a.test"], chainRef: "aaa" },
+    "b.test": { subject: "b.test", san: ["b.test"], chainRef: "bbb" },
   },
   chains: { aaa: ["leaf-a", "inter-a"], bbb: ["leaf-b", "inter-b"] },
 });
@@ -29,7 +29,7 @@ const axtreeBytes = (): Buffer =>
   Buffer.from(
     `${JSON.stringify({
       profile: "browserhive:axtree/1",
-      url: "https://example.com/",
+      url: "https://site.test/",
       takenAt: "2026-08-22T00:00:00.000Z",
       stage: "after-behaviors",
       devicePixelRatio: 1,
@@ -78,7 +78,7 @@ describe("MUTATIONS", () => {
 describe("壊せない入力", () => {
   it("チェーンが 1 本しか無ければ swap は throw する", () => {
     const one = datapackageBytes({
-      hosts: { "a.example": { chainRef: "aaa" } },
+      hosts: { "a.test": { chainRef: "aaa" } },
       chains: { aaa: ["leaf-a", "inter-a"] },
     });
     const swap = MUTATIONS.find((m) => m.name === "swap-intermediate");
@@ -88,7 +88,7 @@ describe("壊せない入力", () => {
   });
 
   it("chainRef がどこにも無ければ tls の壊し方は throw する", () => {
-    const none = datapackageBytes({ hosts: { "a.example": null }, chains: {} });
+    const none = datapackageBytes({ hosts: { "a.test": null }, chains: {} });
     for (const m of MUTATIONS.filter(
       (x) => x.target === DATAPACKAGE && x.name !== "san-drift",
     )) {
@@ -98,7 +98,7 @@ describe("壊せない入力", () => {
 
   it("san を持つ host が無ければ san-drift は throw する", () => {
     const none = datapackageBytes({
-      hosts: { "a.example": { chainRef: "aaa" } },
+      hosts: { "a.test": { chainRef: "aaa" } },
       chains: { aaa: ["leaf-a"] },
     });
     const drift = MUTATIONS.find((m) => m.name === "san-drift");

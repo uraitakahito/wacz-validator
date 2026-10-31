@@ -89,7 +89,7 @@ export const buildTinyWacz = async (): Promise<TinyWacz> => {
     [
       "WARC/1.1",
       "WARC-Type: response",
-      "WARC-Target-URI: https://example.com/a.png",
+      "WARC-Target-URI: https://site.test/a.png",
       "WARC-Date: 2026-09-23T00:00:01Z",
       "Content-Type: application/http;msgtype=response",
     ],
@@ -117,7 +117,7 @@ export const buildTinyWacz = async (): Promise<TinyWacz> => {
   // 索引: png は data.warc.gz を指す。metadata は**別の WARC 名**を指す (この WARC の
   // 索引ではないので、indexed にならない)。warcinfo は索引に無い。
   const cdxj =
-    `com,example)/a.png 20260923000001 ${JSON.stringify({ url: "https://example.com/a.png", mime: "image/png", status: "200", length: String(pngAt.length), offset: String(pngAt.offset), filename: "data.warc.gz" })}\n` +
+    `test,site)/a.png 20260923000001 ${JSON.stringify({ url: "https://site.test/a.png", mime: "image/png", status: "200", length: String(pngAt.length), offset: String(pngAt.offset), filename: "data.warc.gz" })}\n` +
     `com,googletagmanager)/gtm.js 20260923000002 ${JSON.stringify({ url: "https://www.googletagmanager.com/gtm.js", length: String(metaAt.length), offset: String(metaAt.offset), filename: "other.warc.gz" })}\n`;
   // 行の窓の標本: 短い行 / 4 MiB を超える 1 行 / NUL を含む行
   const lines = Buffer.concat([

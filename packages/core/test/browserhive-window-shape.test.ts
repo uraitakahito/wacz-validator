@@ -22,7 +22,7 @@ const RULE = "browserhive/window-shape";
 const WARC = "archive/data.warc.gz";
 
 /** 頁が開こうとした先。要求は送っていないので、ほかの記録は無い。 */
-const CAMPAIGN = "https://shop.example/campaign?from=top";
+const CAMPAIGN = "https://shop.test/campaign?from=top";
 
 /** この rule の error を 1 件。 */
 const bad = (messageKey: string, params: Record<string, string>): Issue => ({

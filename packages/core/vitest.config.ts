@@ -11,6 +11,7 @@ export default defineConfig({
     // accepts a JSX element directly.
     include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
     environment: "node",
+    setupFiles: ["../../test/no-dns.ts"],
     clearMocks: true,
     tags: TEST_TAGS,
   },

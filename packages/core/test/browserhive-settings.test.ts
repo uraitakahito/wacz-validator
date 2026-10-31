@@ -184,7 +184,7 @@ describe("browserhive/url-policies", () => {
     expect(
       await run({
         settings: goodSettings({
-          urlPolicies: [{ pattern: "*://cdn.example.com/*", action: "no-body" }],
+          urlPolicies: [{ pattern: "*://cdn.site.test/*", action: "no-body" }],
         }),
       }),
     ).toEqual([]);

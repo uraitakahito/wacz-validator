@@ -84,24 +84,24 @@ describe("browserhive/payload-charset", () => {
 
   it("v19 が書いた 2 つの形を warning で指し、正しい本文は指さない", async () => {
     const issues = await run([
-      { uri: "https://example.com/sjis.css", mime: "text/css; charset=Shift_JIS", body: UTF8 },
-      { uri: "https://example.com/nocharset.css", mime: "text/css", body: DOUBLE },
-      { uri: "https://example.com/ok.css", mime: "text/css; charset=Shift_JIS", body: SJIS },
-      { uri: "https://example.com/ok.txt", mime: "text/plain", body: UTF8 },
+      { uri: "https://site.test/sjis.css", mime: "text/css; charset=Shift_JIS", body: UTF8 },
+      { uri: "https://site.test/nocharset.css", mime: "text/css", body: DOUBLE },
+      { uri: "https://site.test/ok.css", mime: "text/css; charset=Shift_JIS", body: SJIS },
+      { uri: "https://site.test/ok.txt", mime: "text/plain", body: UTF8 },
     ]);
     expect(issues).toEqual([
       {
         rule: RULE,
         severity: "warning",
         messageKey: `${RULE}.transcoded`,
-        params: { url: "https://example.com/sjis.css", charset: "shift_jis" },
+        params: { url: "https://site.test/sjis.css", charset: "shift_jis" },
         location: { entry: "archive/data.warc.gz" },
       },
       {
         rule: RULE,
         severity: "warning",
         messageKey: `${RULE}.double-encoded`,
-        params: { url: "https://example.com/nocharset.css" },
+        params: { url: "https://site.test/nocharset.css" },
         location: { entry: "archive/data.warc.gz" },
       },
     ]);

@@ -22,7 +22,7 @@ const RULE = "browserhive/unintercepted-listed";
 const WARC = "archive/data.warc.gz";
 
 /** 頁が読んだ CSS。本文は届いたが、取り込みはバイト列で読めなかった。 */
-const CSS = "https://example.com/app.css";
+const CSS = "https://site.test/app.css";
 
 const bad = (messageKey: string, params: Record<string, string>, entry: string): Issue => ({
   rule: RULE,

@@ -25,9 +25,9 @@ import { buildWacz, type FixtureOptions } from "./fixtures/generator.js";
 const RULE = "browserhive/deny-enforced";
 const WARC = "archive/data.warc.gz";
 
-const TRACKER = "https://example.com/tracker.js";
+const TRACKER = "https://site.test/tracker.js";
 /** 印付きの頁が読む画像。BrowserHive の e2e が deny の的にするのと同じ形の URL。 */
-const PIXEL = "https://example.com/marked/asset/pixel.svg?from=secret&tag=t1";
+const PIXEL = "https://site.test/marked/asset/pixel.svg?from=secret&tag=t1";
 
 /** 方針だけを差し替えた settings。他の member は形の rule の担当なので、最小で済ませる。 */
 const settingsWith = (urlPolicies: { pattern: string; action: string }[]): Record<string, unknown> => ({

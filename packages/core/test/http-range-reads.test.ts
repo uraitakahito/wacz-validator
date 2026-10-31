@@ -118,7 +118,7 @@ const openAt = async (url: string): Promise<WaczReader> => {
 
 /** 64 KiB の末尾に収まらない WACZ。乱数の本文は gzip で縮まないので、そのまま大きい。 */
 const bigResponse = (size: number): WarcResponseSpec => ({
-  uri: "https://example.com/big.bin",
+  uri: "https://site.test/big.bin",
   mime: "application/octet-stream",
   body: randomBytes(size),
 });
@@ -280,7 +280,7 @@ describe("WaczReader.openLines — 流す読み", () => {
 
 describe("WaczReader.member — STORE から 1 メンバ", () => {
   const png: WarcResponseSpec = {
-    uri: "https://example.com/a.png",
+    uri: "https://site.test/a.png",
     mime: "image/png",
     body: Buffer.from("PNGDATA-not-really", "utf-8"),
   };

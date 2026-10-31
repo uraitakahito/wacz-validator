@@ -136,14 +136,14 @@ describe("browserhive/tls-san", () => {
 
   it("証明書に無い名前を記録していれば drift を出す", async () => {
     const tls = goodTls();
-    tls.hosts[HOST] = { ...tls.hosts[HOST], san: [HOST, "extra.example"] };
+    tls.hosts[HOST] = { ...tls.hosts[HOST], san: [HOST, "extra.test"] };
     const keys = of(await runFor(tmpDir, { tls }), SAN).map((i) => i.messageKey);
     expect(keys).toContain(`${SAN}.drift`);
   });
 
   it("host を覆わない san を出す", async () => {
     const tls = goodTls();
-    tls.hosts[HOST] = { ...tls.hosts[HOST], san: ["other.example"] };
+    tls.hosts[HOST] = { ...tls.hosts[HOST], san: ["other.test"] };
     const keys = of(await runFor(tmpDir, { tls }), SAN).map((i) => i.messageKey);
     expect(keys).toContain(`${SAN}.host-not-covered`);
   });
