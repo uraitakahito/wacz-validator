@@ -21,7 +21,8 @@
     "test:ui": "vitest --ui",
     "test:report": "vitest run --reporter=html",
     "lint": "pnpm -r lint",
-    "check": "pnpm run check:store-name && pnpm run check:test-hosts && pnpm audit --audit-level=moderate && pnpm run test:scripts && pnpm --filter @wacz-validator/contract check && pnpm --filter @wacz-validator/core check && pnpm --filter @wacz-validator/validate-cli check && pnpm --filter @wacz-validator/protocol check && pnpm --filter @wacz-validator/daemon check && pnpm --filter @wacz-validator/devtools check && pnpm --filter @wacz-validator/tui check",
+    "audit": "pnpm audit --audit-level=low && npm audit --prefix docs-site --audit-level=low",
+    "check": "pnpm run check:store-name && pnpm run check:test-hosts && pnpm run test:scripts && pnpm --filter @wacz-validator/contract check && pnpm --filter @wacz-validator/core check && pnpm --filter @wacz-validator/validate-cli check && pnpm --filter @wacz-validator/protocol check && pnpm --filter @wacz-validator/daemon check && pnpm --filter @wacz-validator/devtools check && pnpm --filter @wacz-validator/tui check",
     "site:dev": "npm --prefix docs-site run dev",
     "site:build": "npm --prefix docs-site run build",
     "site:preview": "npm --prefix docs-site run preview",
@@ -43,7 +44,11 @@
     "(seaweedfs.crawler-storage), brought up by seaweedfs/scripts/stack.sh. So there is no",
     "docker-compose.yml here and no image pin to compare — check:store-name is what remains,",
     "and it fails when a page or a comment still names a per-repo store (seaweedfs.<project>).",
-    "store:wipe empties this repo's bucket in the shared store."
+    "store:wipe empties this repo's bucket in the shared store.",
+    "check does not run the audit: advisories are published on no schedule of ours, and while",
+    "`pnpm audit` sat in this && chain, a new advisory stopped every step after it on CI.",
+    "The audit runs on its own in .github/workflows/audit.yml (push, pull_request, daily).",
+    "Run it as `pnpm run audit`: bare `pnpm audit` is pnpm's built-in and skips docs-site."
   ],
   "//@types/node": [
     "Root-level eslint.config.js uses `// @ts-check` plus `import.meta.dirname`",

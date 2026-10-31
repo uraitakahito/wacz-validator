@@ -72,7 +72,8 @@ rule が有効になるのは、`packages/core/src/validate/rules/` に定義が
 
 ```sh
 pnpm install --frozen-lockfile   # workspace の依存 + symlink
-pnpm check                       # audit + 各 workspace の check
+pnpm check                       # 各 workspace の check
+pnpm run audit                   # 2 つの lockfile の既知の勧告
 pnpm build
 ```
 

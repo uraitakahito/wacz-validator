@@ -74,7 +74,8 @@ A rule becomes active only when it is both defined in
 
 ```sh
 pnpm install --frozen-lockfile   # workspace deps + symlinks
-pnpm check                       # audit + each workspace's checks
+pnpm check                       # each workspace's checks
+pnpm run audit                   # known advisories in both lockfiles
 pnpm build
 ```
 
