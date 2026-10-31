@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
     environment: "node",
+    setupFiles: ["../../test/no-dns.ts"],
     clearMocks: true,
     tags: TEST_TAGS,
   },

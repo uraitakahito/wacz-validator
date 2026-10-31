@@ -95,7 +95,7 @@ describe("daemon handlers", () => {
     it("readLine: 索引の行を割り、offset / length / filename が取れる", async () => {
       const line = await readLine({ source, path: "indexes/index.cdxj", n: 0 });
       const value = (label: string): string | undefined => line.fields.find((f) => f.label === label)?.value;
-      expect(value("key")).toBe("com,example)/a.png");
+      expect(value("key")).toBe("test,site)/a.png");
       expect(value("filename")).toBe("data.warc.gz");
       expect(value("offset")).toBe(String(wacz.members[1]?.offset));
     });
@@ -108,7 +108,7 @@ describe("daemon handlers", () => {
         ["response", true], // 索引が data.warc.gz を指す
         ["metadata", false], // 索引は在るが other.warc.gz を指す
       ]);
-      expect(page.records[1]).toMatchObject({ status: 200, mime: "image/png", uri: "https://example.com/a.png" });
+      expect(page.records[1]).toMatchObject({ status: 200, mime: "image/png", uri: "https://site.test/a.png" });
     });
 
     it("readRecords: 窓を送ると next が続きを言う", async () => {

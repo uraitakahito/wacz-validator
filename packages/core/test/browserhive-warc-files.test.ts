@@ -88,7 +88,7 @@ describe("browserhive/warc-files", () => {
   it("先頭が warcinfo でない本があれば、error", async () => {
     const second: Partial<ExtraWarcSpec> = {
       omitWarcinfo: true,
-      responses: [{ uri: "https://example.com/a.css", mime: "text/css", body: "a{}" }],
+      responses: [{ uri: "https://site.test/a.css", mime: "text/css", body: "a{}" }],
     };
     expect(await run(archive({ second }))).toEqual([bad("first-record", { entry: SECOND, type: "response" }, SECOND)]);
   });

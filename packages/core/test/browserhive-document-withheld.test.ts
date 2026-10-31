@@ -38,9 +38,9 @@ const RULE = "browserhive/document-withheld";
 const V13 = { major: 13, minor: 0, patch: 0 };
 
 /** 要求の URL。302 で `DOC` へ送る。 */
-const PAGE = "https://example.com/start";
+const PAGE = "https://site.test/start";
 /** 読んだ文書。リダイレクトの先。 */
-const DOC = "https://example.com/landed";
+const DOC = "https://site.test/landed";
 /** archive が適合を名乗る profile の版。`deny` の扱いがこれで変わる。 */
 const CONFORMS_1_10 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.10.0/";
 const CONFORMS_1_11 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/";
@@ -53,7 +53,7 @@ const DENIED: Partial<FixtureOptions> = {
 };
 
 /** 文書とは別の応答 (画像)。content-type の照合を文書の記録に限ることを見るため。 */
-const IMAGE = "https://example.com/logo.png";
+const IMAGE = "https://site.test/logo.png";
 
 interface Policies {
   urlPolicies?: { pattern: string; action: string }[];
@@ -243,7 +243,7 @@ describe("browserhive/document-withheld", () => {
           "no-archive",
           {
             urlPolicies: [
-              { pattern: "https://example.com/*", action: "no-archive" },
+              { pattern: "https://site.test/*", action: "no-archive" },
               { pattern: "*/landed", action: "no-body" },
             ],
           },
@@ -260,8 +260,8 @@ describe("browserhive/document-withheld", () => {
       const issues = await run(
         written({
           urlPolicies: [
-            { pattern: "https://example.com/land", action: "no-body" },
-            { pattern: "https://example.com/lande.", action: "no-body" },
+            { pattern: "https://site.test/land", action: "no-body" },
+            { pattern: "https://site.test/lande.", action: "no-body" },
           ],
         }),
       );
@@ -381,7 +381,7 @@ describe("browserhive/document-withheld", () => {
 
   describe("身元の形", () => {
     it("document がオブジェクトでなければ、error で落とす", async () => {
-      expect(await run(written({}, { document: "https://example.com/landed" as unknown as Record<string, unknown> }))).toEqual([
+      expect(await run(written({}, { document: "https://site.test/landed" as unknown as Record<string, unknown> }))).toEqual([
         error("not-object", { found: "string" }, "datapackage.json"),
       ]);
     });

@@ -105,9 +105,9 @@ describe("browserhive/behaviors-shape", () => {
       await run({
         settings: settingsWith([
           { id: "autoscroll", origin: "builtin" },
-          { id: "x.example:one", origin: "custom" },
+          { id: "x.test:one", origin: "custom" },
         ]),
-        behaviorsCustom: [line("x.example:one")],
+        behaviorsCustom: [line("x.test:one")],
       }),
     ).toEqual([]);
   });
@@ -119,16 +119,16 @@ describe("browserhive/behaviors-shape", () => {
    */
   it("申告した持ち込みの source が無ければ落とす", async () => {
     const issues = await run({
-      settings: settingsWith([{ id: "x.example:one", origin: "custom" }]),
-      behaviorsCustom: [line("y.example:two")],
+      settings: settingsWith([{ id: "x.test:one", origin: "custom" }]),
+      behaviorsCustom: [line("y.test:two")],
     });
     expect(issues.map((i) => i.messageKey)).toEqual([`${RULE}.source-missing`]);
-    expect(issues[0]?.params?.["id"]).toBe("x.example:one");
+    expect(issues[0]?.params?.["id"]).toBe("x.test:one");
   });
 
   it("エントリごと無ければ、申告のぶんだけ落とす", async () => {
     const issues = await run({
-      settings: settingsWith([{ id: "x.example:one", origin: "custom" }]),
+      settings: settingsWith([{ id: "x.test:one", origin: "custom" }]),
     });
     expect(issues.map((i) => i.messageKey)).toEqual([`${RULE}.missing-entry`]);
   });
@@ -171,7 +171,7 @@ describe("browserhive/behaviors-shape", () => {
   });
 
   it.each(["profile", "id", "source"])("必須 member %s を落としたら落とす", async (member) => {
-    const full = line("x.example:one");
+    const full = line("x.test:one");
     const partial = Object.fromEntries(Object.entries(full).filter(([k]) => k !== member));
     const issues = await run({ settings: settingsWith([]), behaviorsCustom: [partial] });
     // profile を落とした行は unknown-profile で打ち切る。それ以外は member 不足。
@@ -186,7 +186,7 @@ describe("browserhive/behaviors-shape", () => {
    */
   it("8.6.0 未満のアーカイブには当てない", async () => {
     const broken: FixtureOptions = {
-      settings: settingsWith([{ id: "x.example:one", origin: "custom" }]),
+      settings: settingsWith([{ id: "x.test:one", origin: "custom" }]),
     };
     // 8.6.0 なら落ちる形であることを先に確かめる。落ちない形で版だけ下げても、
     // 「見ていない」と「問題なし」が区別できない。

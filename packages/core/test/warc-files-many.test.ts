@@ -59,7 +59,7 @@ describe("archive/ の WARC が何本もあるとき", () => {
   it("索引の行は、filename の本の offset で照らす —— 2 本目の応答の行が通る", async () => {
     const report = await reportFor(tmpDir, {
       extraWarcs: [
-        { name: "data-001.warc.gz", responses: [{ uri: "https://example.com/a.css", mime: "text/css", body: "a{}" }] },
+        { name: "data-001.warc.gz", responses: [{ uri: "https://site.test/a.css", mime: "text/css", body: "a{}" }] },
       ],
     });
     expect(ofRule(report, "cdxj/warc-offsets")).toEqual([]);
@@ -72,7 +72,7 @@ describe("archive/ の WARC が何本もあるとき", () => {
         {
           name: "data-001.warc.gz",
           cdxjFilename: "data-009.warc.gz",
-          responses: [{ uri: "https://example.com/a.css", mime: "text/css", body: "a{}" }],
+          responses: [{ uri: "https://site.test/a.css", mime: "text/css", body: "a{}" }],
         },
       ],
     });
@@ -92,7 +92,7 @@ describe("archive/ の WARC が何本もあるとき", () => {
   it("stats は全部の本の和", async () => {
     const one = await reportFor(tmpDir, {});
     const two = await reportFor(tmpDir, {
-      extraWarcs: [{ name: "data-001.warc.gz", responses: [{ uri: "https://example.com/a.css", mime: "text/css", body: "a{}" }] }],
+      extraWarcs: [{ name: "data-001.warc.gz", responses: [{ uri: "https://site.test/a.css", mime: "text/css", body: "a{}" }] }],
     });
     expect(one.stats?.warcRecordCount).toBe(1);
     expect(two.stats?.warcRecordCount).toBe(3);

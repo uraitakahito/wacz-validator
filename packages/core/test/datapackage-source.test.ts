@@ -76,13 +76,13 @@ describe("datapackageOf", () => {
   // **いちばん危ない失敗。** reader をまたいで共有すると、2 つ目の WACZ の検証が
   // 1 つ目の datapackage について判定する —— 全 rule が緑のまま誤る。
   it("reader が違えば別の値を返す", async () => {
-    const a = await openFixture("a", { pageUrl: "https://a.example/" });
-    const b = await openFixture("b", { pageUrl: "https://b.example/" });
+    const a = await openFixture("a", { pageUrl: "https://a.test/" });
+    const b = await openFixture("b", { pageUrl: "https://b.test/" });
     try {
       const first = await datapackageOf(a);
       const second = await datapackageOf(b);
-      expect(first.parsed?.mainPageURL).toBe("https://a.example/");
-      expect(second.parsed?.mainPageURL).toBe("https://b.example/");
+      expect(first.parsed?.mainPageURL).toBe("https://a.test/");
+      expect(second.parsed?.mainPageURL).toBe("https://b.test/");
       expect(second.bytes).not.toEqual(first.bytes);
     } finally {
       await a.close();

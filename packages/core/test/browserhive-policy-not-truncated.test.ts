@@ -31,8 +31,8 @@ import { buildWacz, type FixtureOptions } from "./fixtures/generator.js";
 const RULE = "browserhive/policy-not-truncated";
 const V12_2 = { major: 12, minor: 2, patch: 0 };
 
-const VIDEO = "https://example.com/big/video.mp4";
-const IMAGE = "https://example.com/big/photo.jpg";
+const VIDEO = "https://site.test/big/video.mp4";
+const IMAGE = "https://site.test/big/photo.jpg";
 
 /** 方針だけを差し替えた settings。他の member は形の rule の担当なので、最小で済ませる。 */
 const settingsWith = (policies: {
@@ -173,7 +173,7 @@ describe("browserhive/policy-not-truncated", () => {
       archive({
         settings: settingsWith({
           urlPolicies: [
-            { pattern: "https://example.com/big/*", action: "deny" },
+            { pattern: "https://site.test/big/*", action: "deny" },
             { pattern: "*.mp4", action: "no-body" },
           ],
         }),
@@ -191,8 +191,8 @@ describe("browserhive/policy-not-truncated", () => {
       archive({
         settings: settingsWith({
           urlPolicies: [
-            { pattern: "https://example.com/big/video.mp", action: "no-body" },
-            { pattern: "https://example.com/big/vide..mp4", action: "no-body" },
+            { pattern: "https://site.test/big/video.mp", action: "no-body" },
+            { pattern: "https://site.test/big/vide..mp4", action: "no-body" },
           ],
         }),
         completeness: truncatedAs(VIDEO),

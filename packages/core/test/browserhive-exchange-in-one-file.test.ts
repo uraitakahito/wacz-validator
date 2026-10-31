@@ -21,7 +21,7 @@ const RULE = "browserhive/exchange-in-one-file";
 const PROFILE_1_14 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.14.0/";
 const FIRST = "archive/data-000.warc.gz";
 const SECOND = "archive/data-001.warc.gz";
-const CSS = "https://example.com/app.css";
+const CSS = "https://site.test/app.css";
 const RESPONSE_ID = "<urn:uuid:00000000-0000-0000-0000-000000000900>";
 const REQUEST_ID = "<urn:uuid:00000000-0000-0000-0000-000000000901>";
 

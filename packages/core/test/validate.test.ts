@@ -265,7 +265,7 @@ describe("validation engine — corrupted variants", () => {
 
   it("mainPageURL not covered → cdxj/pages-mainpage warns", async () => {
     const report = await runAgainstFixture(tmpDir, "orphan-mainpage.wacz", {
-      mainPageUrlOverride: "https://orphan.example/",
+      mainPageUrlOverride: "https://orphan.test/",
     });
     const issues = report.issues.filter((i) => i.rule === "cdxj/pages-mainpage");
     // pages 側と cdxj 側の両方の warning が発火するはず。

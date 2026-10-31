@@ -63,7 +63,7 @@ describe("classifyBody", () => {
   });
 
   it("テキストは content に、warc-fields も text", () => {
-    const fields = Buffer.from("action: no-archive\r\npattern: *://*.example/*\r\n");
+    const fields = Buffer.from("action: no-archive\r\npattern: *://*.test/*\r\n");
     expect(classifyBody("application/warc-fields", fields, CAP, false)).toEqual({
       kind: "text",
       content: fields.toString("utf-8"),

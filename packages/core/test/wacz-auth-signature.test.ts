@@ -99,9 +99,9 @@ describe("wacz-auth/signature", () => {
 
   /** 証明書が覆っていない名前を名乗るのは、別の主体の署名を流用した形。 */
   it("証明書が覆っていない domain を名乗ったら落とす", async () => {
-    const issues = await run({ signedData: signedData({ domain: "evil.example" }) });
+    const issues = await run({ signedData: signedData({ domain: "evil.test" }) });
     expect(issues.map((i) => i.messageKey)).toEqual([`${RULE}.domain-mismatch`]);
-    expect(issues[0]?.params?.["domain"]).toBe("evil.example");
+    expect(issues[0]?.params?.["domain"]).toBe("evil.test");
   });
 
   it("PEM として読めない domainCert を落とす", async () => {

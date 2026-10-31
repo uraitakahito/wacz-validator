@@ -79,7 +79,7 @@ describe("warc/recording-complete", () => {
       tmpDir,
       {
         warcMetadata: [
-          { uri: "https://shop.example/campaign", fields: { window: "not-opened", windowName: "_blank", target: "page" } },
+          { uri: "https://shop.test/campaign", fields: { window: "not-opened", windowName: "_blank", target: "page" } },
           { uri: "about:blank", fields: { window: "not-opened" } },
         ],
       },
@@ -133,19 +133,19 @@ describe("warc/recording-complete", () => {
       tmpDir,
       {
         warcMetadata: [
-          { uri: "https://example.com/a.mp4", fields: { truncated: "too-large", encodedDataLength: "5013" } },
-          { uri: "https://example.com/b.mp4", fields: { truncated: "task-cap" } },
-          { uri: "https://example.com/c.mp4", fields: { truncated: "content-type" } },
-          { uri: "https://example.com/d.mp4", fields: { truncated: "url-policy" } },
-          { uri: "https://example.com/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
-          { uri: "https://example.com/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
+          { uri: "https://site.test/a.mp4", fields: { truncated: "too-large", encodedDataLength: "5013" } },
+          { uri: "https://site.test/b.mp4", fields: { truncated: "task-cap" } },
+          { uri: "https://site.test/c.mp4", fields: { truncated: "content-type" } },
+          { uri: "https://site.test/d.mp4", fields: { truncated: "url-policy" } },
+          { uri: "https://site.test/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
+          { uri: "https://site.test/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
           {
-            uri: "https://example.com/g",
+            uri: "https://site.test/g",
             fields: { incomplete: "true", reason: "loadingFailed", errorText: "net::ERR_FAILED" },
           },
-          { uri: "https://example.com/h", fields: { incomplete: "true", reason: "stop-while-pending" } },
+          { uri: "https://site.test/h", fields: { incomplete: "true", reason: "stop-while-pending" } },
           // profile 1.13.0: 届いたのにバイト列で読めなかった本文
-          { uri: "https://example.com/i.css", fields: { truncated: "not-intercepted", encodedDataLength: "812" } },
+          { uri: "https://site.test/i.css", fields: { truncated: "not-intercepted", encodedDataLength: "812" } },
         ],
       },
       "browserhive",
@@ -166,9 +166,9 @@ describe("warc/recording-complete", () => {
       tmpDir,
       {
         warcMetadata: [
-          { uri: "https://example.com/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
-          { uri: "https://example.com/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
-          { uri: "https://example.com/d.mp4", fields: { truncated: "url-policy" } },
+          { uri: "https://site.test/e.js", fields: { action: "deny", pattern: "*.js", method: "GET" } },
+          { uri: "https://site.test/f.js", fields: { action: "no-archive", pattern: "*/f.js", method: "GET" } },
+          { uri: "https://site.test/d.mp4", fields: { truncated: "url-policy" } },
         ],
       },
       "browserhive",
