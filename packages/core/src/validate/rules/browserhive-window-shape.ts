@@ -18,7 +18,6 @@ import type { Issue, ValidationRule } from "../domain.js";
 import { parseWarcFields } from "../warc-fields.js";
 
 const RULE = "browserhive/window-shape";
-const WARC_ENTRY = "archive/data.warc.gz";
 
 /** 頁がウィンドウを求める側。frame は別サイトの iframe で、browser が頁と別に走らせるもの。 */
 const ASKERS: ReadonlySet<string> = new Set(["page", "iframe"]);
@@ -40,30 +39,31 @@ export const browserhiveWindowShapeRule: ValidationRule = {
     excludeProfiles: ["spec", "lenient"],
   },
   run: async (wacz) => {
-    const buf = await wacz.readEntry(WARC_ENTRY);
-    if (buf === undefined) return ok([]);
-
     const issues: Issue[] = [];
-    const issue = (messageKey: string, params: Record<string, string>): void => {
-      issues.push({ rule: RULE, severity: "error", messageKey: `${RULE}.${messageKey}`, params, location: { entry: WARC_ENTRY } });
-    };
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null) continue;
-      if ((getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
-      const fields = parseWarcFields(record.body);
-      const value = fields["window"];
-      if (value === undefined) continue;
-      const url = getHeader(record, "WARC-Target-URI");
-      if (url === undefined) {
-        issue("uri", { value });
-        continue;
+    for (const entry of wacz.warcEntries()) {
+      const buf = await wacz.readEntry(entry);
+      if (buf === undefined) continue;
+      const issue = (messageKey: string, params: Record<string, string>): void => {
+        issues.push({ rule: RULE, severity: "error", messageKey: `${RULE}.${messageKey}`, params, location: { entry } });
+      };
+      for (const member of iterateWarcMembers(buf, { loose: true })) {
+        const record = parseWarcRecord(member.raw);
+        if (record === null) continue;
+        if ((getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
+        const fields = parseWarcFields(record.body);
+        const value = fields["window"];
+        if (value === undefined) continue;
+        const url = getHeader(record, "WARC-Target-URI");
+        if (url === undefined) {
+          issue("uri", { value });
+          continue;
+        }
+        if (value !== "not-opened") issue("value", { url, value });
+        const target = fields["target"];
+        if (target !== undefined && !ASKERS.has(target)) issue("target", { url, target });
+        const action = fields["action"];
+        if (action !== undefined) issue("action", { url, action });
       }
-      if (value !== "not-opened") issue("value", { url, value });
-      const target = fields["target"];
-      if (target !== undefined && !ASKERS.has(target)) issue("target", { url, target });
-      const action = fields["action"];
-      if (action !== undefined) issue("action", { url, action });
     }
     return ok(issues);
   },

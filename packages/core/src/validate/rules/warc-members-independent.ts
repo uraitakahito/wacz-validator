@@ -26,8 +26,6 @@ import { ok } from "../../result.js";
 import { WarcMemberDecodeError, iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
-const WARC_ENTRY = "archive/data.warc.gz";
-
 export const warcMembersIndependentRule: ValidationRule = {
   name: "warc/members-independent",
   descriptionKey: "warc/members-independent.desc",
@@ -43,52 +41,60 @@ export const warcMembersIndependentRule: ValidationRule = {
 
   run: async (wacz) => {
     const issues: Issue[] = [];
-    const bytes = await wacz.readEntry(WARC_ENTRY);
-    if (!bytes) return ok(issues); // 不在は resource-hashes など他の rule が表面化する。
-
-    try {
-      let memberCount = 0;
-      for (const _member of iterateWarcMembers(bytes, { loose: false })) {
-        void _member;
-        memberCount += 1;
-      }
-      if (memberCount === 0) {
-        issues.push({
-          rule: "warc/members-independent",
-          severity: "error",
-          messageKey: "warc/members-independent.no-members",
-          params: { entry: WARC_ENTRY },
-          location: { entry: WARC_ENTRY },
-          details: { archiveBytes: bytes.byteLength },
-        });
-      }
-    } catch (error) {
-      if (error instanceof WarcMemberDecodeError) {
-        issues.push({
-          rule: "warc/members-independent",
-          severity: "error",
-          messageKey: "warc/members-independent.decode-failed",
-          params: { offset: String(error.offset), length: String(error.length) },
-          location: { entry: WARC_ENTRY, offset: error.offset },
-          details: {
-            offset: error.offset,
-            length: error.length,
-            reason: error.cause instanceof Error ? error.cause.message : String(error.cause),
-          },
-        });
-      } else {
-        // 想定外の throw — propagate せず issue として表面化することで、
-        // 検証 run 自体は最後まで走らせる。
-        issues.push({
-          rule: "warc/members-independent",
-          severity: "error",
-          messageKey: "warc/members-independent.unexpected-error",
-          params: { entry: WARC_ENTRY, detail: error instanceof Error ? error.message : String(error) },
-          location: { entry: WARC_ENTRY },
-        });
-      }
+    // 1 本も無ければ、不在は resource-hashes など他の rule が表面化する。本ごとに独立に歩く。
+    for (const entry of wacz.warcEntries()) {
+      const bytes = await wacz.readEntry(entry);
+      if (!bytes) continue;
+      issues.push(...walk(entry, bytes));
     }
-
     return ok(issues);
   },
+};
+
+/** 1 本を先頭から歩き、落ちたところを issue にする。 */
+const walk = (entry: string, bytes: Buffer): Issue[] => {
+  const issues: Issue[] = [];
+  try {
+    let memberCount = 0;
+    for (const _member of iterateWarcMembers(bytes, { loose: false })) {
+      void _member;
+      memberCount += 1;
+    }
+    if (memberCount === 0) {
+      issues.push({
+        rule: "warc/members-independent",
+        severity: "error",
+        messageKey: "warc/members-independent.no-members",
+        params: { entry },
+        location: { entry },
+        details: { archiveBytes: bytes.byteLength },
+      });
+    }
+  } catch (error) {
+    if (error instanceof WarcMemberDecodeError) {
+      issues.push({
+        rule: "warc/members-independent",
+        severity: "error",
+        messageKey: "warc/members-independent.decode-failed",
+        params: { offset: String(error.offset), length: String(error.length) },
+        location: { entry, offset: error.offset },
+        details: {
+          offset: error.offset,
+          length: error.length,
+          reason: error.cause instanceof Error ? error.cause.message : String(error.cause),
+        },
+      });
+    } else {
+      // 想定外の throw — propagate せず issue として表面化することで、
+      // 検証 run 自体は最後まで走らせる。
+      issues.push({
+        rule: "warc/members-independent",
+        severity: "error",
+        messageKey: "warc/members-independent.unexpected-error",
+        params: { entry, detail: error instanceof Error ? error.message : String(error) },
+        location: { entry },
+      });
+    }
+  }
+  return issues;
 };

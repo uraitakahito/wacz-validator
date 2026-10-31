@@ -32,8 +32,6 @@ import { getHeader, httpEntityBody, parseWarcRecord } from "../../wacz/warc-head
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
-const WARC_ENTRY = "archive/data.warc.gz";
-
 /**
  * `WARC-Payload-Digest` が record body をそのまま digest 対象にする
  * record type。それ以外は HTTP entity スライスを使う (response/request)
@@ -56,72 +54,80 @@ export const warcPayloadDigestRule: ValidationRule = {
 
   run: async (wacz) => {
     const issues: Issue[] = [];
-    const warcBuf = await wacz.readEntry(WARC_ENTRY);
-    if (!warcBuf) return ok(issues); // 不在は resource-hashes が cover する。
-
-    let memberIdx = 0;
-    for (const member of iterateWarcMembers(warcBuf, { loose: true })) {
-      memberIdx += 1;
-      const record = parseWarcRecord(member.raw);
-      if (!record) continue;
-
-      const recordType = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
-      const declared = getHeader(record, "WARC-Payload-Digest");
-      if (declared === undefined) continue; // spec 上 optional。
-
-      if (recordType === "revisit") continue; // header コメント参照。
-
-      // sha256 以外のアルゴリズムは spec で許容される。rule は
-      // informational にこれを表面化して、当該行は不一致ではなく
-      // 未検証なのだと operator が把握できるようにする。
-      if (!declared.toLowerCase().startsWith("sha256:")) {
-        issues.push({
-          rule: "warc/payload-digest",
-          severity: "info",
-          messageKey: "warc/payload-digest.non-sha256",
-          params: { memberIdx: String(memberIdx), algo: declared.split(":")[0] ?? "" },
-          location: { entry: WARC_ENTRY, offset: member.offset },
-          details: { recordType, declared },
-        });
-        continue;
-      }
-
-      const payload = BODY_VERBATIM_TYPES.has(recordType) ? record.body : httpEntityBody(record);
-      if (payload === null) {
-        issues.push({
-          rule: "warc/payload-digest",
-          severity: "warning",
-          messageKey: "warc/payload-digest.no-http-body",
-          params: { memberIdx: String(memberIdx), recordType: recordType || "unknown" },
-          location: { entry: WARC_ENTRY, offset: member.offset },
-          details: { recordType, declared },
-        });
-        continue;
-      }
-
-      const computed = sha256Base32(payload);
-      if (computed.toUpperCase() !== declared.toUpperCase()) {
-        issues.push({
-          rule: "warc/payload-digest",
-          severity: "warning",
-          messageKey: "warc/payload-digest.mismatch",
-          params: { memberIdx: String(memberIdx) },
-          location: { entry: WARC_ENTRY, offset: member.offset },
-          details: {
-            recordType,
-            expected: declared,
-            actual: computed,
-            payloadBytes: payload.byteLength,
-            // payload 先頭 256 bytes の hex dump — operator が record
-            // の運ぶはずのリソース (HTML? image? 全ゼロ pad?) として
-            // 妥当に見えるかを目視確認できる。TUI 側の hex viewer が
-            // この field を消費する。
-            hexPreview: formatHexLines(payload),
-          },
-        });
-      }
+    // 1 本も無ければ、不在は resource-hashes が cover する。member の番号は本ごとに数える。
+    for (const entry of wacz.warcEntries()) {
+      const warcBuf = await wacz.readEntry(entry);
+      if (!warcBuf) continue;
+      issues.push(...digestsOf(entry, warcBuf));
     }
-
     return ok(issues);
   },
+};
+
+/** 1 本の全 member の digest を照らす。 */
+const digestsOf = (entry: string, warcBuf: Buffer): Issue[] => {
+  const issues: Issue[] = [];
+  let memberIdx = 0;
+  for (const member of iterateWarcMembers(warcBuf, { loose: true })) {
+    memberIdx += 1;
+    const record = parseWarcRecord(member.raw);
+    if (!record) continue;
+
+    const recordType = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
+    const declared = getHeader(record, "WARC-Payload-Digest");
+    if (declared === undefined) continue; // spec 上 optional。
+
+    if (recordType === "revisit") continue; // header コメント参照。
+
+    // sha256 以外のアルゴリズムは spec で許容される。rule は
+    // informational にこれを表面化して、当該行は不一致ではなく
+    // 未検証なのだと operator が把握できるようにする。
+    if (!declared.toLowerCase().startsWith("sha256:")) {
+      issues.push({
+        rule: "warc/payload-digest",
+        severity: "info",
+        messageKey: "warc/payload-digest.non-sha256",
+        params: { memberIdx: String(memberIdx), algo: declared.split(":")[0] ?? "" },
+        location: { entry, offset: member.offset },
+        details: { recordType, declared },
+      });
+      continue;
+    }
+
+    const payload = BODY_VERBATIM_TYPES.has(recordType) ? record.body : httpEntityBody(record);
+    if (payload === null) {
+      issues.push({
+        rule: "warc/payload-digest",
+        severity: "warning",
+        messageKey: "warc/payload-digest.no-http-body",
+        params: { memberIdx: String(memberIdx), recordType: recordType || "unknown" },
+        location: { entry, offset: member.offset },
+        details: { recordType, declared },
+      });
+      continue;
+    }
+
+    const computed = sha256Base32(payload);
+    if (computed.toUpperCase() !== declared.toUpperCase()) {
+      issues.push({
+        rule: "warc/payload-digest",
+        severity: "warning",
+        messageKey: "warc/payload-digest.mismatch",
+        params: { memberIdx: String(memberIdx) },
+        location: { entry, offset: member.offset },
+        details: {
+          recordType,
+          expected: declared,
+          actual: computed,
+          payloadBytes: payload.byteLength,
+          // payload 先頭 256 bytes の hex dump — operator が record
+          // の運ぶはずのリソース (HTML? image? 全ゼロ pad?) として
+          // 妥当に見えるかを目視確認できる。TUI 側の hex viewer が
+          // この field を消費する。
+          hexPreview: formatHexLines(payload),
+        },
+      });
+    }
+  }
+  return issues;
 };

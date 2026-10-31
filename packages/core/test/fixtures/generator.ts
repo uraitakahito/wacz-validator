@@ -127,6 +127,19 @@ export interface FixtureOptions {
    */
   warcRequests?: WarcRequestSpec[];
   /**
+   * `archive/` の主の本の名。既定は `data.warc.gz` (1.13.0 までの BrowserHive と他の producer の形)。
+   * BrowserHive 21.0.0 の形を作るなら `data-000.warc.gz`。CDXJ の `filename` と resources にも効く
+   * (`cdxjFilenameOverride` が優先)。
+   */
+  warcName?: string;
+  /** 主の本の warcinfo に `WARC-Filename` を書く。省けば書かない (既定の標本は 1.13.0 までの形)。 */
+  warcinfoFilename?: string;
+  /**
+   * `archive/` に足す本。書いた順に ZIP へ入る (読む側は名前順に並べ直す)。応答の行は CDXJ にも
+   * `name` (か `cdxjFilename`) で並ぶ。resources にも載る。
+   */
+  extraWarcs?: ExtraWarcSpec[];
+  /**
    * When true, store the WARC entry as DEFLATE rather than STORE
    * (browserhive's invariant from packager.ts). Triggers rule #6.
    */
@@ -326,6 +339,8 @@ export interface WarcResponseSpec {
   uri: string;
   mime: string;
   body: Buffer | string;
+  /** `WARC-Record-ID`。省けば `responseRecordId(idx)`。別の本と衝突させないときに渡す。 */
+  recordId?: string;
   /** HTTP の状態コード。既定 200。 */
   status?: number;
   /** `WARC-Truncated` の値。省けば見出しを書かない。 */
@@ -341,6 +356,29 @@ export interface WarcRequestSpec {
   uri: string;
   /** HTTP のメソッド。既定 GET。 */
   method?: string;
+  /** `WARC-Record-ID`。省けば idx から作る。 */
+  recordId?: string;
+  /** `WARC-Concurrent-To` に書く応答の `WARC-Record-ID`。省けば書かない。 */
+  concurrentTo?: string;
+}
+
+/** `extraWarcs` の 1 本。 */
+export interface ExtraWarcSpec {
+  /** `archive/` からの相対の名。例 `data-001.warc.gz`。 */
+  name: string;
+  /** warcinfo の `WARC-Filename`。省けば書かない。 */
+  warcinfoFilename?: string;
+  /** true なら warcinfo を書かず、応答から始める (先頭の記録を見る rule 用)。 */
+  omitWarcinfo?: boolean;
+  /** CDXJ の `filename` に書く名。省けば `name`。同梱しない本を指す行を作るのに使う。 */
+  cdxjFilename?: string;
+  /** DEFLATE で入れる (既定は STORE)。 */
+  deflate?: boolean;
+  /** warcinfo の gzip の中の 1 バイトを反転する。 */
+  corruptAt?: number;
+  responses?: WarcResponseSpec[];
+  requests?: WarcRequestSpec[];
+  metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
 }
 
 /** 組み立てた WARC の各メンバ (gzip 1 つ = レコード 1 つ) の位置。 */
@@ -365,7 +403,7 @@ export interface WarcRecordInfo {
  * rule #10 を発火させる。それ以外のときは実体 body から digest を
  * 計算して、デフォルト fixture では rule が pass する。
  */
-const buildWarcInfoBytes = (software: string, payloadDigestBad: boolean): Buffer => {
+const buildWarcInfoBytes = (software: string, payloadDigestBad: boolean, filename?: string): Buffer => {
   const body = `software: ${software}\r\n`;
   const bodyBuf = Buffer.from(body, "utf-8");
   const digest = payloadDigestBad
@@ -376,6 +414,7 @@ const buildWarcInfoBytes = (software: string, payloadDigestBad: boolean): Buffer
     "WARC-Type: warcinfo",
     "WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-000000000001>",
     "WARC-Date: 2026-05-13T00:00:00Z",
+    ...(filename === undefined ? [] : [`WARC-Filename: ${filename}`]),
     `WARC-Payload-Digest: ${digest}`,
     `Content-Length: ${String(bodyBuf.byteLength)}`,
     "Content-Type: application/warc-fields",
@@ -460,7 +499,7 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
   const headers = [
     "WARC/1.1",
     "WARC-Type: response",
-    `WARC-Record-ID: ${responseRecordId(idx)}`,
+    `WARC-Record-ID: ${spec.recordId ?? responseRecordId(idx)}`,
     "WARC-Date: 2026-05-13T00:00:00Z",
     `WARC-Target-URI: ${spec.uri}`,
     `WARC-Payload-Digest: ${sha256Base32(body)}`,
@@ -486,9 +525,10 @@ const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
   const headers = [
     "WARC/1.1",
     "WARC-Type: request",
-    `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx + 800).padStart(12, "0")}>`,
+    `WARC-Record-ID: ${spec.recordId ?? `<urn:uuid:00000000-0000-0000-0000-${String(idx + 800).padStart(12, "0")}>`}`,
     "WARC-Date: 2026-05-13T00:00:00Z",
     `WARC-Target-URI: ${spec.uri}`,
+    ...(spec.concurrentTo === undefined ? [] : [`WARC-Concurrent-To: ${spec.concurrentTo}`]),
     "Content-Type: application/http;msgtype=request",
     `Content-Length: ${String(http.byteLength)}`,
     "",
@@ -507,9 +547,11 @@ const buildWarcGz = (
     metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
     responses?: WarcResponseSpec[];
     requests?: WarcRequestSpec[];
+    warcinfoFilename?: string;
+    omitWarcinfo?: boolean;
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
-  const raw = buildWarcInfoBytes(software, opts.payloadDigestBad);
+  const raw = buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename);
   const gz = gzipSync(raw);
   // bit を 1 つ反転して gzip member が decode できないようにする。
   // gzip *の後* に corrupt させているのは、corruption が iterator に
@@ -531,7 +573,7 @@ const buildWarcGz = (
     records.push({ ...info, offset: at, length: member.byteLength });
     at += member.byteLength;
   };
-  push(gz, { type: "warcinfo" });
+  if (opts.omitWarcinfo !== true) push(gz, { type: "warcinfo" });
   // 応答レコードは warcinfo の直後。索引にも offset / length つきで並ぶ。
   (opts.responses ?? []).forEach((spec, i) => {
     push(gzipSync(buildResponseBytes(i, spec)), {
@@ -663,6 +705,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
 
   const warc = buildWarcGz(software, {
     payloadDigestBad: options.payloadDigestBad ?? false,
+    ...(options.warcinfoFilename !== undefined && { warcinfoFilename: options.warcinfoFilename }),
     ...(options.warcCorruptAt !== undefined && { corruptAt: options.warcCorruptAt }),
     ...(options.warcIncompleteRecords !== undefined && {
       incompleteRecords: options.warcIncompleteRecords,
@@ -675,7 +718,23 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     ...(options.warcRequests !== undefined && { requests: options.warcRequests }),
   });
 
-  const cdxjFilename = options.cdxjFilenameOverride ?? "data.warc.gz";
+  const warcName = options.warcName ?? "data.warc.gz";
+  const cdxjFilename = options.cdxjFilenameOverride ?? warcName;
+  // 足す本。それぞれ主の本と同じ道で組む。
+  const extraWarcs = (options.extraWarcs ?? []).map((spec) => ({
+    name: spec.name,
+    cdxjFilename: spec.cdxjFilename ?? spec.name,
+    deflate: spec.deflate ?? false,
+    warc: buildWarcGz(software, {
+      payloadDigestBad: false,
+      ...(spec.warcinfoFilename !== undefined && { warcinfoFilename: spec.warcinfoFilename }),
+      ...(spec.omitWarcinfo === true && { omitWarcinfo: true }),
+      ...(spec.corruptAt !== undefined && { corruptAt: spec.corruptAt }),
+      ...(spec.responses !== undefined && { responses: spec.responses }),
+      ...(spec.requests !== undefined && { requests: spec.requests }),
+      ...(spec.metadata !== undefined && { metadata: spec.metadata }),
+    }),
+  }));
   // CDXJ "url" field は replay ツールが lookup する URL。何も
   // override しないとき rule #9 が mainPageURL を cover できるよう、
   // pageUrl を使う。
@@ -695,6 +754,14 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
       warc.records
         .filter((record) => record.type === "response")
         .map((record) => buildResponseCdxjLine(cdxjFilename, record))
+        .join("") +
+      extraWarcs
+        .map((extra) =>
+          extra.warc.records
+            .filter((record) => record.type === "response")
+            .map((record) => buildResponseCdxjLine(extra.cdxjFilename, record))
+            .join(""),
+        )
         .join("");
   const cdxjBytesPlain = Buffer.from(cdxjBody, "utf-8");
 
@@ -781,11 +848,17 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
 
   const defaultResources: DatapackageResource[] = [
     {
-      name: "data.warc.gz",
-      path: "archive/data.warc.gz",
+      name: warcName,
+      path: `archive/${warcName}`,
       hash: sha256Hex(warc.bytes),
       bytes: warc.bytes.byteLength,
     },
+    ...extraWarcs.map((extra) => ({
+      name: extra.name,
+      path: `archive/${extra.name}`,
+      hash: sha256Hex(extra.warc.bytes),
+      bytes: extra.warc.bytes.byteLength,
+    })),
     ...indexEntries.map((e) => ({
       name: e.name.split("/").pop() ?? e.name,
       path: e.name,
@@ -934,10 +1007,13 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     // 既定は archive/data.warc.gz(gzip 内容に正しい拡張子)。
     // warcExtensionMismatch で gzip 内容のまま `.warc` 名にし、G1 を踏ませる。
     zip.append(warc.bytes, {
-      name: options.warcExtensionMismatch === true ? "archive/data.warc" : "archive/data.warc.gz",
+      name: options.warcExtensionMismatch === true ? "archive/data.warc" : `archive/${warcName}`,
       store: !(options.warcDeflate ?? false),
       date: entryDate,
     });
+    for (const extra of extraWarcs) {
+      zip.append(extra.warc.bytes, { name: `archive/${extra.name}`, store: !extra.deflate, date: entryDate });
+    }
   }
   if (!(options.omitIndexes ?? false)) {
     for (const entry of indexEntries) {

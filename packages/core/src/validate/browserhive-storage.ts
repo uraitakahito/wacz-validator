@@ -81,6 +81,21 @@ export interface StorageInventory {
 export const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** `conformsTo` の URL から読む profile の版。`/wacz-profile/1.14.0/` の形。 */
+const CONFORMS_TO_VERSION = /\/wacz-profile\/(\d+)\.(\d+)\.(\d+)\//;
+
+/**
+ * archive が名乗る profile (`conformsTo`) が `major.minor` 以上か。名乗りが無いか読めなければ
+ * `false` —— その版で初めて決まった MUST を、何に対して書かれたか分からない archive に当てない。
+ */
+export const profileAtLeast = (conformsTo: unknown, major: number, minor: number): boolean => {
+  if (typeof conformsTo !== "string") return false;
+  const match = CONFORMS_TO_VERSION.exec(conformsTo);
+  if (match === null) return false;
+  const [found, foundMinor] = [Number(match[1]), Number(match[2])];
+  return found > major || (found === major && foundMinor >= minor);
+};
+
 /** `sha256:` + 小文字 16 進 64 桁。profile が定める形。 */
 export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 

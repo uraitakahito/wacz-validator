@@ -1,7 +1,7 @@
 /**
  * Rule: warc/storage-store
  *
- * `archive/data.warc.gz` は WACZ ZIP の中で STORE 方式 (compression
+ * `archive/` の WARC はどれも WACZ ZIP の中で STORE 方式 (compression
  * method 0) で格納すべきで、DEFLATE では駄目。WARC spec に従って
  * 内側の WARC はすでに gzip 圧縮されているので、その gzip wrapper
  * を更に deflate してもサイズが膨らむだけで展開メリットがなく、
@@ -14,8 +14,8 @@
  *       参考実装 (browserhive、pywb、wacz-creator) はすべて WARC
  *       entry を STORE で出す。
  * Reference producer: browserhive/src/storage/wacz/packager.ts:152-169
- *       は `archive/data.warc.gz` を唯一の STORE entry にして、それ
- *       以外は DEFLATE。
+ *       は `archive/` の WARC だけを STORE entry にして、それ以外は
+ *       DEFLATE。
  *
  * Severity は `error` ではなく `warning`: DEFLATE で格納された
  * warc.gz でも標準的な ZIP reader で問題なく解凍できるので、entry
@@ -27,8 +27,6 @@
 import { ok } from "../../result.js";
 import { ZIP_COMPRESSION_STORE } from "../../wacz/reader.js";
 import type { Issue, ValidationRule } from "../domain.js";
-
-const WARC_ENTRY = "archive/data.warc.gz";
 
 export const warcStorageStoreRule: ValidationRule = {
   name: "warc/storage-store",
@@ -52,21 +50,17 @@ export const warcStorageStoreRule: ValidationRule = {
   run: async (wacz) => {
     const issues: Issue[] = [];
     await Promise.resolve(); // satisfy lint: async function with no await
-    const meta = wacz.getEntryMeta(WARC_ENTRY);
-    if (!meta) {
-      // WARC が完全に欠落 — 他 rule (resource-hashes、
-      // members-independent) がより rich な context で表面化する。
-      // 重複ノイズを避けるためここは silent にしておく。
-      return ok(issues);
-    }
-
-    if (meta.compressionMethod !== ZIP_COMPRESSION_STORE) {
+    // WARC が 1 本も無ければ — 他 rule (required-files、resource-hashes) がより
+    // rich な context で表面化する。重複ノイズを避けるためここは silent にしておく。
+    for (const entry of wacz.warcEntries()) {
+      const meta = wacz.getEntryMeta(entry);
+      if (!meta || meta.compressionMethod === ZIP_COMPRESSION_STORE) continue;
       issues.push({
         rule: "warc/storage-store",
         severity: "warning",
         messageKey: "warc/storage-store.zip-compressed",
-        params: { entry: WARC_ENTRY, method: String(meta.compressionMethod) },
-        location: { entry: WARC_ENTRY },
+        params: { entry, method: String(meta.compressionMethod) },
+        location: { entry },
         details: {
           expected: ZIP_COMPRESSION_STORE,
           actual: meta.compressionMethod,

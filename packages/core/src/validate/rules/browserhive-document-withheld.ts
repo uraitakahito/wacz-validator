@@ -59,7 +59,6 @@ import type { Issue, ValidationRule } from "../domain.js";
 const RULE = "browserhive/document-withheld";
 const DATAPACKAGE = "datapackage.json";
 const PAGES_ENTRY = "pages/pages.jsonl";
-const WARC_ENTRY = "archive/data.warc.gz";
 
 /** 方針の名を持つ理由 (profile 1.10.0)。どれも `document.url` から照らし直せる。 */
 const POLICY_REASONS_1_10: ReadonlySet<string> = new Set(["url-policy", "content-type", "no-archive"]);
@@ -113,18 +112,20 @@ const expectedFor = (
  */
 const withheldRequestUrls = async (wacz: WaczReader, actions: ReadonlySet<string>): Promise<Set<string>> => {
   const urls = new Set<string>();
-  const buf = await wacz.readEntry(WARC_ENTRY);
-  if (buf === undefined) return urls;
-  for (const member of iterateWarcMembers(buf, { loose: true })) {
-    const record = parseWarcRecord(member.raw);
-    if (record === null || (getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
-    const action = record.body
-      .toString("utf-8")
-      .split("\n")
-      .map((line) => line.trim())
-      .some((line) => line.startsWith("action: ") && actions.has(line.slice("action: ".length)));
-    const url = getHeader(record, "WARC-Target-URI");
-    if (action && url !== undefined) urls.add(url);
+  for (const entry of wacz.warcEntries()) {
+    const buf = await wacz.readEntry(entry);
+    if (buf === undefined) continue;
+    for (const member of iterateWarcMembers(buf, { loose: true })) {
+      const record = parseWarcRecord(member.raw);
+      if (record === null || (getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
+      const action = record.body
+        .toString("utf-8")
+        .split("\n")
+        .map((line) => line.trim())
+        .some((line) => line.startsWith("action: ") && actions.has(line.slice("action: ".length)));
+      const url = getHeader(record, "WARC-Target-URI");
+      if (action && url !== undefined) urls.add(url);
+    }
   }
   return urls;
 };

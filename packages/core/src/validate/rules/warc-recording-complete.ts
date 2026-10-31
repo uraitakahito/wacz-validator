@@ -29,7 +29,6 @@ import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
 import { parseWarcFields } from "../warc-fields.js";
 
-const WARC_ENTRY = "archive/data.warc.gz";
 /** 未完了比率がこれを超えたら info から warning に上げる。 */
 const WARN_RATIO = 0.1;
 
@@ -84,8 +83,13 @@ export const warcRecordingCompleteRule: ValidationRule = {
   },
 
   run: async (wacz) => {
-    const buf = await wacz.readEntry(WARC_ENTRY);
-    if (!buf) return ok([]); // WARC 不在は resource-hashes / required-files が cover。
+    // WARC 不在は resource-hashes / required-files が cover。本が何本でも、数えるのは全部の和。
+    const buffers: Buffer[] = [];
+    for (const entry of wacz.warcEntries()) {
+      const buf = await wacz.readEntry(entry);
+      if (buf) buffers.push(buf);
+    }
+    if (buffers.length === 0) return ok([]);
 
     let responses = 0;
     const byReason: Record<Reason, number> = { failed: 0, incomplete: 0, truncated: 0, unintercepted: 0, blocked: 0 };
@@ -95,7 +99,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
     const byBlockedReason: Record<string, number> = {};
     const samples: { url: string; reason: Reason; resourceType?: string }[] = [];
 
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
+    for (const member of buffers.flatMap((buf) => Array.from(iterateWarcMembers(buf, { loose: true })))) {
       const record = parseWarcRecord(member.raw);
       if (!record) continue;
       const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
@@ -134,7 +138,6 @@ export const warcRecordingCompleteRule: ValidationRule = {
         severity: ratio > WARN_RATIO ? "warning" : "info",
         messageKey: "warc/recording-complete.incomplete",
         params: { incomplete, total: responses + incomplete, percent },
-        location: { entry: WARC_ENTRY },
         details: {
           recording: { responses, incomplete, percent, byReason, byResourceType, byBlockedReason, samples },
         },

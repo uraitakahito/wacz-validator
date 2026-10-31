@@ -230,7 +230,7 @@ export interface SkippedRule {
 export interface ReportStats {
   /** WARC iterator が yield した独立 gzip member 数。 */
   warcRecordCount: number;
-  /** `archive/data.warc.gz` の byte 長 (ZIP 解凍後)。 */
+  /** `archive/` の全 WARC の byte 長の和 (ZIP 解凍後)。 */
   warcArchiveBytes: number;
   /** CDXJ entry の `url` field に現れる distinct な host。 */
   hosts: string[];

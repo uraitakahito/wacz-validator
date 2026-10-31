@@ -15,16 +15,16 @@
  *       文字列として出力する。
  *
  * クロスチェック戦略:
- *   1. 既存の `iterateWarcMembers` で WARC を辿り、すべての
+ *   1. `archive/` の WARC を全部、既存の `iterateWarcMembers` で辿り、本ごとに
  *      (offset, length) ペアを map に集める。
- *   2. `filename` が `data.warc.gz` に解決される CDXJ entry ごとに
- *      `offset` / `length` を parse し、member を lookup。
+ *   2. CDXJ entry ごとに `filename` の本を選び、`offset` / `length` を parse し、
+ *      その本の member を lookup。
  *   3. 不一致 → error。CDXJ の行番号と、近傍の候補 member (operator
  *      が corruption を目視できるよう) を付ける。
  *
- * `filename === "data.warc.gz"` の entry だけが対象 — 他の filename は
- * WACZ が同梱しない別ファイルを指していて、`archive/` プレフィックスの
- * ミスは `cdxj/filename-archive-relative` rule が既に cover している。
+ * `filename` が `archive/` のどの本でもない entry は `file-not-in-archive` (error)。
+ * WARC が何本にも分かれて初めて起きる誤りで、1 本のときは `cdxj/filename-archive-relative`
+ * の `archive/` プレフィックスの検査と重なっていた。`filename` が無い entry はそちらが言う。
  */
 import { ok } from "../../result.js";
 import { parseCdxj } from "../../wacz/cdxj-parser.js";
@@ -37,8 +37,6 @@ import {
 import type { Issue, ValidationRule } from "../domain.js";
 
 const CDXJ_ENTRY = "indexes/index.cdxj";
-const WARC_ENTRY = "archive/data.warc.gz";
-const EXPECTED_FILENAME = "data.warc.gz";
 
 export const cdxjWarcOffsetsRule: ValidationRule = {
   name: "cdxj/warc-offsets",
@@ -67,29 +65,49 @@ export const cdxjWarcOffsetsRule: ValidationRule = {
     const issues: Issue[] = [];
 
     const cdxjBuf = await wacz.readEntry(CDXJ_ENTRY);
-    const warcBuf = await wacz.readEntry(WARC_ENTRY);
-    if (!cdxjBuf || !warcBuf) return ok(issues); // 不在は他 rule が報告する。
+    if (!cdxjBuf) return ok(issues); // 不在は他 rule が報告する。
 
+    // 本ごとの member。鍵は `archive/` からの相対の名 (CDXJ の `filename` と同じ形)。
     // `loose: true` にしているのは、warc/members-independent rule が
     // 既に rich な context つきで decode 失敗を報告するため。member
     // 1 つの不良で offset check を short-circuit させて、他の CDXJ
     // 行の visibility を失うのを避けたい。
-    let members: WarcMember[];
-    try {
-      members = Array.from(iterateWarcMembers(warcBuf, { loose: true }));
-    } catch (error) {
-      if (error instanceof WarcMemberDecodeError) return ok(issues);
-      throw error;
+    const files = new Map<string, { members: WarcMember[]; byOffset: Map<number, WarcMember> }>();
+    for (const warcEntry of wacz.warcEntries()) {
+      const warcBuf = await wacz.readEntry(warcEntry);
+      if (!warcBuf) continue;
+      let members: WarcMember[];
+      try {
+        members = Array.from(iterateWarcMembers(warcBuf, { loose: true }));
+      } catch (error) {
+        if (error instanceof WarcMemberDecodeError) continue;
+        throw error;
+      }
+      const byOffset = new Map<number, WarcMember>();
+      for (const m of members) byOffset.set(m.offset, m);
+      files.set(warcEntry.slice("archive/".length), { members, byOffset });
     }
-    const byOffset = new Map<number, WarcMember>();
-    for (const m of members) byOffset.set(m.offset, m);
+    if (files.size === 0) return ok(issues);
 
     const { entries } = parseCdxj(cdxjBuf.toString("utf-8"));
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (!entry) continue;
       const filename = entry.fields["filename"];
-      if (filename !== EXPECTED_FILENAME) continue;
+      if (typeof filename !== "string" || filename.startsWith("archive/")) continue; // 無い・`archive/` 付きは cdxj/filename-archive-relative が言う。
+      const file = files.get(filename);
+      if (file === undefined) {
+        issues.push({
+          rule: "cdxj/warc-offsets",
+          severity: "error",
+          messageKey: "cdxj/warc-offsets.file-not-in-archive",
+          params: { line: String(i + 1), filename },
+          location: { entry: CDXJ_ENTRY, line: i + 1 },
+          details: { filename, archive: [...files.keys()] },
+        });
+        continue;
+      }
+      const { members, byOffset } = file;
 
       const offsetField = entry.fields["offset"];
       const lengthField = entry.fields["length"];
