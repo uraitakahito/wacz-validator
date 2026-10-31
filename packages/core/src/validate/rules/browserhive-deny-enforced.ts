@@ -28,7 +28,6 @@ import { isRecord, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/deny-enforced";
-const WARC_ENTRY = "archive/data.warc.gz";
 
 /** 要求が取り込みの機械を出たことを言う記録の型。 */
 const SENT_TYPES: ReadonlySet<string> = new Set(["request", "response", "revisit"]);
@@ -57,29 +56,30 @@ export const browserhiveDenyEnforcedRule: ValidationRule = {
     const policies = policiesOf(settings);
     if (!policies.urlPolicies.some((policy) => policy.action === "deny")) return ok([]);
 
-    const buf = await wacz.readEntry(WARC_ENTRY);
-    if (buf === undefined) return ok([]);
-
     const issues: Issue[] = [];
     // 同じ URL の要求と応答は 1 件にまとめる。何度送ったかではなく、送ったかが問い。
     const reported = new Set<string>();
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null) continue;
-      const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
-      if (!SENT_TYPES.has(type)) continue;
-      const url = getHeader(record, "WARC-Target-URI");
-      if (url === undefined || reported.has(url)) continue;
-      const first = firstUrlPolicy(url, policies);
-      if (first?.action !== "deny") continue;
-      reported.add(url);
-      issues.push({
-        rule: RULE,
-        severity: "error",
-        messageKey: `${RULE}.sent`,
-        params: { url, pattern: first.pattern, type },
-        location: { entry: WARC_ENTRY },
-      });
+    for (const entry of wacz.warcEntries()) {
+      const buf = await wacz.readEntry(entry);
+      if (buf === undefined) continue;
+      for (const member of iterateWarcMembers(buf, { loose: true })) {
+        const record = parseWarcRecord(member.raw);
+        if (record === null) continue;
+        const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
+        if (!SENT_TYPES.has(type)) continue;
+        const url = getHeader(record, "WARC-Target-URI");
+        if (url === undefined || reported.has(url)) continue;
+        const first = firstUrlPolicy(url, policies);
+        if (first?.action !== "deny") continue;
+        reported.add(url);
+        issues.push({
+          rule: RULE,
+          severity: "error",
+          messageKey: `${RULE}.sent`,
+          params: { url, pattern: first.pattern, type },
+          location: { entry },
+        });
+      }
     }
     return ok(issues);
   },

@@ -19,6 +19,8 @@ import { browserhiveDenyEnforcedRule } from "./browserhive-deny-enforced.js";
 import { browserhiveWindowShapeRule } from "./browserhive-window-shape.js";
 import { browserhiveUninterceptedListedRule } from "./browserhive-unintercepted-listed.js";
 import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js";
+import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
+import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -125,6 +127,10 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveUninterceptedListedRule,
   // 文字の本文が、書き手が文字符号を変えた物に見えないか (profile 1.13.0 の payloads。推測なので warning)。
   browserhivePayloadCharsetRule,
+  // archive/ の WARC の名前・連番・先頭の warcinfo・最後以外の本の大きさ (profile 1.14.0 の Archive files)。
+  browserhiveWarcFilesRule,
+  // 1 つの交信 (response・request・metadata) が同じ本に在るか (同じく 1.14.0)。
+  browserhiveExchangeInOneFileRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

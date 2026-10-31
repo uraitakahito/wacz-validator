@@ -8,27 +8,32 @@
  * stats 成功が issue を出して *いけない*。なので内部エラーがあれば
  * `undefined` を返して、renderer 側で footer を省く。
  *
- * `archive/data.warc.gz` は不在のこともある (一部の実験的な WACZ
- * バリアントでは WARC バイトを複数ファイルに分割する); 取れる分だけ
- * 報告する。
+ * `archive/` の WARC は何本でもよい (BrowserHive 21.0.0 からは大きさで
+ * 切り替えて何本も置く)。本の数と大きさは全部の和で、1 本も無ければ
+ * stats そのものを省く。
  */
 import { parseCdxj } from "../wacz/cdxj-parser.js";
 import type { WaczReader } from "../wacz/reader.js";
 import { iterateWarcMembers } from "../wacz/warc-iter.js";
 import type { ReportStats } from "./domain.js";
 
-const WARC_ENTRY = "archive/data.warc.gz";
 const CDXJ_ENTRY = "indexes/index.cdxj";
 
 export const computeStats = async (wacz: WaczReader): Promise<ReportStats | undefined> => {
   try {
-    const warcBuf = await wacz.readEntry(WARC_ENTRY);
-    if (!warcBuf) return undefined;
+    const entries = wacz.warcEntries();
+    if (entries.length === 0) return undefined;
 
     let count = 0;
-    for (const _member of iterateWarcMembers(warcBuf, { loose: true })) {
-      void _member;
-      count += 1;
+    let archiveBytes = 0;
+    for (const entry of entries) {
+      const warcBuf = await wacz.readEntry(entry);
+      if (!warcBuf) continue;
+      archiveBytes += warcBuf.byteLength;
+      for (const _member of iterateWarcMembers(warcBuf, { loose: true })) {
+        void _member;
+        count += 1;
+      }
     }
 
     const cdxjBuf = await wacz.readEntry(CDXJ_ENTRY);
@@ -51,7 +56,7 @@ export const computeStats = async (wacz: WaczReader): Promise<ReportStats | unde
 
     return {
       warcRecordCount: count,
-      warcArchiveBytes: warcBuf.byteLength,
+      warcArchiveBytes: archiveBytes,
       hosts: Array.from(hosts).sort(),
     };
   } catch {

@@ -100,6 +100,20 @@ export class WaczReader {
     return Array.from(this.entries.keys());
   }
 
+  /**
+   * `archive/` の WARC (`.warc` / `.warc.gz`) を名前順に。1 本も無ければ空で、その欠落は
+   * `wacz/required-files` が言う。
+   *
+   * 名前を決め打たない。BrowserHive 21.0.0 からは `data-NNN.warc.gz` を大きさで切り替えて
+   * 何本も置き、それより前と他の producer は 1 本の `data.warc.gz` を置く。WARC を読む
+   * rule はどれもここから全部を読む —— 1 本目だけを読む rule は、2 本目の壊れを見ない。
+   */
+  warcEntries(): string[] {
+    return this.entryNames()
+      .filter((name) => name.startsWith("archive/") && /\.warc(\.gz)?$/.test(name))
+      .sort();
+  }
+
   hasEntry(name: string): boolean {
     return this.entries.has(name);
   }

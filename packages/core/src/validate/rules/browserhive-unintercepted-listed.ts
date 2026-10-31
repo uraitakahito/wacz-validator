@@ -26,7 +26,6 @@ import type { Issue, ValidationRule } from "../domain.js";
 import { parseWarcFields } from "../warc-fields.js";
 
 const RULE = "browserhive/unintercepted-listed";
-const WARC_ENTRY = "archive/data.warc.gz";
 
 export const browserhiveUninterceptedListedRule: ValidationRule = {
   name: "browserhive/unintercepted-listed",
@@ -46,30 +45,35 @@ export const browserhiveUninterceptedListedRule: ValidationRule = {
     profileVersions: { browserhive: ">=20.0.0" },
   },
   run: async (wacz) => {
-    const buf = await wacz.readEntry(WARC_ENTRY);
-    if (buf === undefined) return ok([]);
+    const entries = wacz.warcEntries();
+    const [firstEntry] = entries;
+    if (firstEntry === undefined) return ok([]);
 
     /** 取り込めなかった本文の URL (metadata の `WARC-Target-URI`)。 */
     const recorded = new Set<string>();
     /** metadata が指す response の `WARC-Record-ID` → その URL。 */
     const referred = new Map<string, string>();
-    /** response の `WARC-Record-ID` → `WARC-Truncated` の値。 */
-    const truncatedById = new Map<string, string | undefined>();
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null) continue;
-      const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
-      if (type === "response") {
-        const id = getHeader(record, "WARC-Record-ID");
-        if (id !== undefined) truncatedById.set(id, getHeader(record, "WARC-Truncated"));
-        continue;
+    /** response の `WARC-Record-ID` → `WARC-Truncated` の値と、その記録の在る本。 */
+    const truncatedById = new Map<string, { value: string | undefined; entry: string }>();
+    for (const entry of entries) {
+      const buf = await wacz.readEntry(entry);
+      if (buf === undefined) continue;
+      for (const member of iterateWarcMembers(buf, { loose: true })) {
+        const record = parseWarcRecord(member.raw);
+        if (record === null) continue;
+        const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
+        if (type === "response") {
+          const id = getHeader(record, "WARC-Record-ID");
+          if (id !== undefined) truncatedById.set(id, { value: getHeader(record, "WARC-Truncated"), entry });
+          continue;
+        }
+        if (type !== "metadata") continue;
+        if (parseWarcFields(record.body)["truncated"] !== "not-intercepted") continue;
+        const url = getHeader(record, "WARC-Target-URI") ?? "";
+        recorded.add(url);
+        const target = getHeader(record, "WARC-Refers-To");
+        if (target !== undefined) referred.set(target, url);
       }
-      if (type !== "metadata") continue;
-      if (parseWarcFields(record.body)["truncated"] !== "not-intercepted") continue;
-      const url = getHeader(record, "WARC-Target-URI") ?? "";
-      recorded.add(url);
-      const target = getHeader(record, "WARC-Refers-To");
-      if (target !== undefined) referred.set(target, url);
     }
 
     const capture = await readCapture(wacz);
@@ -85,11 +89,11 @@ export const browserhiveUninterceptedListedRule: ValidationRule = {
       if (!listed.has(url)) issue("unlisted", { url }, "datapackage.json");
     }
     for (const url of [...listed].sort()) {
-      if (!recorded.has(url)) issue("unrecorded", { url }, WARC_ENTRY);
+      if (!recorded.has(url)) issue("unrecorded", { url }, firstEntry);
     }
     for (const [id, url] of referred) {
-      const value = truncatedById.get(id);
-      if (value !== "unspecified") issue("truncated-header", { url, value: value ?? "-" }, WARC_ENTRY);
+      const found = truncatedById.get(id);
+      if (found?.value !== "unspecified") issue("truncated-header", { url, value: found?.value ?? "-" }, found?.entry ?? firstEntry);
     }
     return ok(issues);
   },

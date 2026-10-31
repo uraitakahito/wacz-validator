@@ -25,7 +25,6 @@ import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/payload-charset";
-const WARC_ENTRY = "archive/data.warc.gz";
 
 /** 文字の本文の型。`text/*` と、文字を運ぶ application の型。 */
 const isTextType = (type: string): boolean =>
@@ -131,28 +130,29 @@ export const browserhivePayloadCharsetRule: ValidationRule = {
     excludeProfiles: ["spec", "lenient"],
   },
   run: async (wacz) => {
-    const buf = await wacz.readEntry(WARC_ENTRY);
-    if (buf === undefined) return ok([]);
-
     const issues: Issue[] = [];
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null) continue;
-      if ((getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "response") continue;
-      const payload = httpEntityBody(record);
-      if (payload === null || payload.byteLength === 0) continue;
-      const head = record.body.subarray(0, record.body.byteLength - payload.byteLength).toString("latin1");
-      if (httpHeader(head, "content-encoding") !== undefined) continue;
-      const found = charsetFinding(httpHeader(head, "content-type") ?? "", payload);
-      if (found === undefined) continue;
-      const url = getHeader(record, "WARC-Target-URI") ?? "?";
-      issues.push({
-        rule: RULE,
-        severity: "warning",
-        messageKey: `${RULE}.${found.kind}`,
-        params: found.kind === "transcoded" ? { url, charset: found.charset } : { url },
-        location: { entry: WARC_ENTRY },
-      });
+    for (const entry of wacz.warcEntries()) {
+      const buf = await wacz.readEntry(entry);
+      if (buf === undefined) continue;
+      for (const member of iterateWarcMembers(buf, { loose: true })) {
+        const record = parseWarcRecord(member.raw);
+        if (record === null) continue;
+        if ((getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "response") continue;
+        const payload = httpEntityBody(record);
+        if (payload === null || payload.byteLength === 0) continue;
+        const head = record.body.subarray(0, record.body.byteLength - payload.byteLength).toString("latin1");
+        if (httpHeader(head, "content-encoding") !== undefined) continue;
+        const found = charsetFinding(httpHeader(head, "content-type") ?? "", payload);
+        if (found === undefined) continue;
+        const url = getHeader(record, "WARC-Target-URI") ?? "?";
+        issues.push({
+          rule: RULE,
+          severity: "warning",
+          messageKey: `${RULE}.${found.kind}`,
+          params: found.kind === "transcoded" ? { url, charset: found.charset } : { url },
+          location: { entry },
+        });
+      }
     }
     return ok(issues);
   },
