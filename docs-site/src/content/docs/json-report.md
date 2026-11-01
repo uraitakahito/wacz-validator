@@ -197,6 +197,49 @@ It is explicit rather than omitted because an empty `issues` has two possible
 meanings — "looked, found nothing" and "never looked". A consumer that assumes
 the first is being misled.
 
+## `warcinfo` — what the WARC files say about themselves
+
+A WARC file usually begins with a `warcinfo` record: who wrote the file, with
+which software, following which specification. The report carries every
+`warcinfo` record it found, with the body read as `application/warc-fields`
+lines:
+
+```ts file="packages/core/src/validate/domain.ts#report-warcinfo"
+```
+
+- Fields keep the spelling and the order they were written in, repeated names
+  included. A value folded onto the next line is joined.
+- `vocabulary` says whose name a field is: `dcterms` for a DCMI Metadata Terms
+  property (WARC 1.1 lets `warcinfo` and `metadata` bodies use any of them),
+  `warc` for one of the seven fields WARC 1.1 defines for `warcinfo`, and
+  `null` for anything else. Names are compared without regard to case, as WARC
+  1.1 requires. `ref` is the term's URI or the WARC 1.1 section.
+- In the JSON the validator emits, a field with a vocabulary also carries
+  `label`, the vocabulary's name in the requested language, so a viewer can
+  show it without wording of its own.
+- Records with structural damage are left out; `warc/record-structure` reports
+  the damage. A body that is not `application/warc-fields`, or is larger than
+  64 KiB, appears without `fields`.
+
+```json
+"warcinfo": [
+  {
+    "entry": "archive/data-000.warc.gz",
+    "index": 1,
+    "offset": 0,
+    "filename": "data-000.warc.gz",
+    "contentType": "application/warc-fields",
+    "fields": [
+      { "name": "software", "value": "browserhive/22.1.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 warcinfo field" },
+      { "name": "format", "value": "WARC File Format 1.1", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/format", "label": "Dublin Core term" },
+      { "name": "robots-policy", "value": "ignore", "vocabulary": null }
+    ]
+  }
+]
+```
+
+Like `stats`, the key is absent when no `warcinfo` record was found.
+
 ## Exit codes
 
 

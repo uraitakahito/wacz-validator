@@ -170,6 +170,8 @@
   "datapackage/wacz-version-required.unknown-version": "{entry} の \"wacz_version\" = \"{version}\" は既知の有効な値の範囲外です",
   "i18n.smoke": "{n} 個のファイルが不足",
   "report.more": "{message}（同じ本にほか {more} 件）",
+  "report.warcinfo.dcterms": "Dublin Core の語",
+  "report.warcinfo.warc": "WARC 1.1 の warcinfo の欄",
   "pages/page-schema.desc": "pages/pages.jsonl の各 page 行は url と ts を持つ valid JSON である必要がある(WACZ §5.2.3)",
   "pages/page-schema.missing-prop": "pages/pages.jsonl の {line} 行目に必須プロパティがありません: {props}",
   "pages/page-schema.not-json": "pages/pages.jsonl の {line} 行目は有効な JSON ではありません",

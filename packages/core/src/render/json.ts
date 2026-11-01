@@ -39,5 +39,17 @@ export const renderJson = (report: Report, locale: Locale): string => {
       ...(conformance !== undefined && { conformance }),
     };
   });
-  return `${JSON.stringify({ ...report, issues }, null, 2)}\n`;
+  // warcinfo の欄に、語彙の表示名を locale で付ける。dashboard は自分の言葉を持たないので、issue の
+  // message と同じく、ここで解いて渡す（WireReport の WireWarcinfoField）。
+  const warcinfo = report.warcinfo?.map((record) =>
+    record.fields === undefined
+      ? record
+      : {
+          ...record,
+          fields: record.fields.map((field) =>
+            field.vocabulary === null ? field : { ...field, label: t(`report.warcinfo.${field.vocabulary}`, {}, locale) },
+          ),
+        },
+  );
+  return `${JSON.stringify({ ...report, issues, ...(warcinfo !== undefined && { warcinfo }) }, null, 2)}\n`;
 };

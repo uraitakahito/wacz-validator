@@ -4,7 +4,9 @@
  * 7 本の rule は同じ記録を見る。engine は rule を並べて走らせ（`Promise.all`）、
  * `WaczReader.readEntry` は呼ぶたびに entry を展開し直す（HTTP なら取り直す）ので、rule ごとに
  * 読むと同じ本を 7 回展開することになる。ここで reader ごとに 1 度だけ読み、記録の見出しと
- * 構造の診断だけを覚える。block の中身は持たない（どの rule も長さしか使わない）。
+ * 構造の診断だけを覚える。block の中身は持たない（どの rule も長さしか使わない）。warcinfo だけは、
+ * 本文を欄に読んだ結果（文字列）を持つ（報告の `warcinfo` の欄のため。`describe/warcinfo.ts`）。
+ * 本文の Buffer は展開した本全体を指すので、持つと本を丸ごと抱えることになる。
  *
  * 圧縮した本は gzip の member を順に解き（`warc/members-independent` と同じ iterator を寛容に
  * 使う。解けない member から先は、その rule が言う）、member の中を記録に区切る。圧縮して
@@ -14,7 +16,8 @@
 import type { WaczReader } from "../wacz/reader.js";
 import type { WarcHeader } from "../wacz/warc-header.js";
 import { iterateWarcMembers } from "../wacz/warc-iter.js";
-import { inspectWarcRecords, type WarcStructureProblem } from "../wacz/warc-records.js";
+import { parseWarcFieldsBody, type NamedFields } from "../wacz/named-fields.js";
+import { inspectWarcRecords, type InspectedWarcRecord, type WarcStructureProblem } from "../wacz/warc-records.js";
 
 export interface ScannedRecord {
   /** `archive/` の中の本の名（ZIP の entry 名）。 */
@@ -32,6 +35,11 @@ export interface ScannedRecord {
   problems: readonly WarcStructureProblem[];
   /** 構造の問題が無いか、あっても欄を信じてよいもの（版・折り返し）だけ。欄の rule はこれだけを見る。 */
   sound: boolean;
+  /**
+   * warcinfo の本文を欄に読んだ結果。構造が健全で、`Content-Type` が `application/warc-fields` で、
+   * 本文が {@link WARCINFO_FIELDS_MAX} 以下の warcinfo だけが持つ。
+   */
+  warcinfoFields?: NamedFields;
 }
 
 export interface ScannedFile {
@@ -41,11 +49,30 @@ export interface ScannedFile {
 
 const isGzip = (buf: Buffer): boolean => buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
 
+/** warcinfo の本文を欄に読むのは、この大きさまで。走査の結果は、記録の分だけメモリに残る。 */
+export const WARCINFO_FIELDS_MAX = 64 * 1024;
+
+const lastHeader = (record: InspectedWarcRecord, name: string): string | undefined =>
+  record.record?.headers.filter((h) => h.name.toLowerCase() === name).at(-1)?.value;
+
+/** `Content-Type` が `application/warc-fields` か（引数と大文字小文字は見ない）。 */
+const isWarcFields = (contentType: string | undefined): boolean =>
+  contentType?.split(";")[0]?.trim().toLowerCase() === "application/warc-fields";
+
+const warcinfoFieldsOf = (one: InspectedWarcRecord): NamedFields | undefined => {
+  if (!one.sound || one.record === null) return undefined;
+  if (lastHeader(one, "warc-type")?.toLowerCase() !== "warcinfo") return undefined;
+  if (!isWarcFields(lastHeader(one, "content-type"))) return undefined;
+  if (one.record.body.length > WARCINFO_FIELDS_MAX) return undefined;
+  return parseWarcFieldsBody(one.record.body);
+};
+
 /** 1 冊の本を記録に区切って検める。試験から直接呼ぶために export する。 */
 export const scanWarcFile = (entry: string, buf: Buffer): ScannedRecord[] => {
   const records: ScannedRecord[] = [];
   const add = (raw: Buffer, base: number | undefined): void => {
     for (const one of inspectWarcRecords(raw)) {
+      const warcinfoFields = warcinfoFieldsOf(one);
       records.push({
         entry,
         index: records.length + 1,
@@ -55,6 +82,7 @@ export const scanWarcFile = (entry: string, buf: Buffer): ScannedRecord[] => {
         blockLength: one.record?.body.length ?? 0,
         problems: one.problems,
         sound: one.sound,
+        ...(warcinfoFields !== undefined && { warcinfoFields }),
       });
     }
   };

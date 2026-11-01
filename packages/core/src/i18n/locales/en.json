@@ -170,6 +170,8 @@
   "datapackage/wacz-version-required.unknown-version": "{entry} \"wacz_version\" = \"{version}\" is outside the known-good set",
   "i18n.smoke": "{n, plural, one {# file} other {# files}} missing",
   "report.more": "{message} (and {more, plural, one {1 more} other {# more}} like this in the same file)",
+  "report.warcinfo.dcterms": "Dublin Core term",
+  "report.warcinfo.warc": "WARC 1.1 warcinfo field",
   "pages/page-schema.desc": "each pages/pages.jsonl page line must be valid JSON with url and ts (WACZ §5.2.3)",
   "pages/page-schema.missing-prop": "pages/pages.jsonl line {line} is missing required properties: {props}",
   "pages/page-schema.not-json": "pages/pages.jsonl line {line} is not valid JSON",

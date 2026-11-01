@@ -49,6 +49,8 @@ export type {
   S3Uri,
   Severity,
   ValidationRule,
+  WarcinfoField,
+  WarcinfoRecord,
 } from "./validate/domain.js";
 export {
   ALL_PROFILES,

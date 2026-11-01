@@ -191,6 +191,44 @@ jq -r '.profile.version // "unpinned"'   # バージョンだけが要るとき
 です —— 「見て、問題が無かった」と「そもそも見ていない」。consumer が前者だと
 思い込むと、報告が嘘に近づきます。
 
+## `warcinfo` — WARC の本が自分について書いていること
+
+WARC の本は、ふつう `warcinfo` の記録で始まります。誰が、どのソフトで、どの仕様に従って書いた本かを
+書く記録です。報告は、見つけた `warcinfo` の記録を全部載せ、本文を `application/warc-fields` の行として
+読んだ欄を添えます。
+
+```ts file="packages/core/src/validate/domain.ts#report-warcinfo"
+```
+
+- 欄は、書かれた綴りと順のまま並べ、同じ名前の繰り返しも残します。次の行へ折り返した値はつなぎます。
+- `vocabulary` は、その名前がどの語彙のものかを言います。`dcterms` は DCMI Metadata Terms の語
+  （WARC 1.1 は `warcinfo` と `metadata` の本文に、そのどれを使ってもよいとしています）、`warc` は
+  WARC 1.1 が `warcinfo` のために名前を決めた 7 つの欄、`null` はどちらでもない名前です。WARC 1.1 の
+  決まりどおり、名前の大文字小文字は区別しません。`ref` は語の URI か、WARC 1.1 の節です。
+- 検証器が出す JSON では、語彙のある欄に `label`（頼まれた言語での語彙の名前）も付きます。表示する側は、
+  自分の言葉を持たずにそのまま出せます。
+- 構造が壊れた記録は載せません。その壊れは `warc/record-structure` が言います。本文が
+  `application/warc-fields` でない記録と、64 KiB を超える記録は、`fields` なしで載ります。
+
+```json
+"warcinfo": [
+  {
+    "entry": "archive/data-000.warc.gz",
+    "index": 1,
+    "offset": 0,
+    "filename": "data-000.warc.gz",
+    "contentType": "application/warc-fields",
+    "fields": [
+      { "name": "software", "value": "browserhive/22.1.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 の warcinfo の欄" },
+      { "name": "format", "value": "WARC File Format 1.1", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/format", "label": "Dublin Core の語" },
+      { "name": "robots-policy", "value": "ignore", "vocabulary": null }
+    ]
+  }
+]
+```
+
+`stats` と同じく、`warcinfo` の記録が 1 件も無ければ key ごと出ません。
+
 ## exit code
 
 
