@@ -30,15 +30,15 @@ Pick a page that touches several hosts. With a single host you get one chain, an
 neither sharing nor substitution is visible.
 
 ```sh
-cd ~/projects/crawler/browserhive
+cd ~/projects/web-capture/browserhive
 pnpm run stack:up
 
-WACZ=$(grpcurl -cacert dev-stack/tls/insecure-dev-tls-ca.crt \
-  -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
+WACZ=$(curl -sS --cacert dev-stack/tls/insecure-dev-tls-ca.crt \
+  -H 'content-type: application/json' \
   -d '{"url":"https://www.iana.org/","labels":["chain-demo"],
        "captureFormats":{"png":false,"webp":false,"html":false,
                          "links":false,"mhtml":false,"wacz":true}}' \
-  browserhive.browserhive:50051 browserhive.v1.CaptureService/Capture \
+  https://127.0.0.1:50061/captures \
   | jq -r .report.artifacts.wacz)
 echo "$WACZ"
 ```
@@ -47,9 +47,10 @@ echo "$WACZ"
 s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
 ```
 
-The dev stack speaks TLS, so grpcurl is given the stack's development CA.
-`Capture` answers once the capture has finished — seconds for this page — and the
-response says where the WACZ went. **Take the location from the response rather
+The dev stack speaks TLS, so curl is given the stack's development CA; the
+address is the port the dev stack publishes on the host's loopback.
+`POST /captures` answers once the capture has finished — seconds for this page —
+and the response says where the WACZ went. **Take the location from the response rather
 than assembling the key yourself**: the name carries slots you would have to know
 about (the empty correlation id is why there are two underscores). Stay in this
 shell; the next step reads `$WACZ`.
@@ -63,10 +64,13 @@ behaviour. Chain verification itself does not depend on the version.
 ## 2. Pull it down
 
 ```sh
-cd ~/projects/crawler/wacz-validator
+cd ~/projects/web-capture/wacz-validator
 AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
-  aws --endpoint-url http://seaweedfs.crawler-storage:8333 s3 cp "$WACZ" ./demo.wacz
+  aws --endpoint-url http://127.0.0.1:8333 s3 cp "$WACZ" ./demo.wacz
 ```
+
+This reads from the host, so it uses the port the shared store publishes on the
+host's loopback.
 
 ## 3. Take a baseline
 

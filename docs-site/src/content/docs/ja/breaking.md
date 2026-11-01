@@ -29,15 +29,15 @@ validator の「緑」は 2 通りの意味を持ちます ― 検査して問�
 共有や差し替えの様子が見えません。
 
 ```sh
-cd ~/projects/crawler/browserhive
+cd ~/projects/web-capture/browserhive
 pnpm run stack:up
 
-WACZ=$(grpcurl -cacert dev-stack/tls/insecure-dev-tls-ca.crt \
-  -import-path src/rpc/proto -proto browserhive/v1/capture.proto \
+WACZ=$(curl -sS --cacert dev-stack/tls/insecure-dev-tls-ca.crt \
+  -H 'content-type: application/json' \
   -d '{"url":"https://www.iana.org/","labels":["chain-demo"],
        "captureFormats":{"png":false,"webp":false,"html":false,
                          "links":false,"mhtml":false,"wacz":true}}' \
-  browserhive.browserhive:50051 browserhive.v1.CaptureService/Capture \
+  https://127.0.0.1:50061/captures \
   | jq -r .report.artifacts.wacz)
 echo "$WACZ"
 ```
@@ -46,9 +46,9 @@ echo "$WACZ"
 s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
 ```
 
-dev スタックは TLS で話すので、grpcurl にはスタックの開発用 CA を渡します。
-`Capture` は取り込みが終わってから答え(このページなら数秒)、応答が WACZ の
-置き場所を持っています。**鍵は自分で組み立てず、応答から取ってください** ―
+dev スタックは TLS で話すので、curl にはスタックの開発用 CA を渡します。宛先は
+dev スタックが host の loopback に出している口です。`POST /captures` は取り込みが
+終わってから答え(このページなら数秒)、応答が WACZ の置き場所を持っています。**鍵は自分で組み立てず、応答から取ってください** ―
 名前には知っていないと組めない枠があります(correlation id が空なので、
 `_` が 2 つ続きます)。次の段で `$WACZ` を読むので、同じ shell のまま進みます。
 
@@ -61,10 +61,12 @@ dev スタックは TLS で話すので、grpcurl にはスタックの開発用
 ## 2. S3 から手元へ落とす
 
 ```sh
-cd ~/projects/crawler/wacz-validator
+cd ~/projects/web-capture/wacz-validator
 AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
-  aws --endpoint-url http://seaweedfs.crawler-storage:8333 s3 cp "$WACZ" ./demo.wacz
+  aws --endpoint-url http://127.0.0.1:8333 s3 cp "$WACZ" ./demo.wacz
 ```
+
+host から読むので、共有 store が host の loopback に出している口を使います。
 
 ## 3. 基準を取る
 
