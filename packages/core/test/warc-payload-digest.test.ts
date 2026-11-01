@@ -7,6 +7,7 @@
  * `warc/fields-by-type` が言う）。分割した記録の digest は論理記録全体の payload のもので、
  * 1 つの segment の block とは合わない。どちらも照らさない。conversion は block を payload として照らす。
  */
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { sha256Base32 } from "../src/wacz/digest.js";
 import type { FixtureOptions } from "./fixtures/generator.js";
@@ -74,5 +75,33 @@ describe("warc/payload-digest が照らす記録", () => {
 
   it("payloadDigestBad は応答が無いと組めない（warcinfo に digest を書かない）", async () => {
     await expect(reportFor({ payloadDigestBad: true })).rejects.toThrow(/warcResponses/);
+  });
+});
+
+describe("warc/payload-digest が読む digest の書き方", () => {
+  const BODY = "<p>ok</p>";
+  const hex = createHash("sha256").update(BODY).digest("hex");
+  const withDigest = (digest: string): FixtureOptions => ({
+    warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: BODY }],
+    warcRecordPatches: [{ index: 1, set: { "WARC-Payload-Digest": digest } }],
+  });
+
+  it("Base16（16 進）の digest も、大文字でも小文字でも照らせる（Scoop は Base16 で書く）", async () => {
+    expect(await digestIssues(withDigest(`sha256:${hex}`))).toEqual([]);
+    expect(await digestIssues(withDigest(`sha256:${hex.toUpperCase()}`))).toEqual([]);
+  });
+
+  it("Base32 は大小と末尾の padding を揃えて読む", async () => {
+    const b32 = sha256Base32(Buffer.from(BODY)).slice("sha256:".length);
+    expect(await digestIssues(withDigest(`sha256:${b32.toLowerCase()}`))).toEqual([]);
+    expect(await digestIssues(withDigest(`sha256:${b32}====`))).toEqual([]);
+  });
+
+  it("値が違えば、宣言と同じ書き方の計算値を添えて不一致", async () => {
+    const wrong = `sha256:${"0".repeat(64)}`;
+    const report = await reportFor(withDigest(wrong));
+    const issue = report.issues.find((i) => i.rule === RULE);
+    expect(issue?.messageKey).toBe(`${RULE}.mismatch`);
+    expect((issue?.details as { actual?: string } | undefined)?.actual).toBe(`sha256:${hex}`);
   });
 });

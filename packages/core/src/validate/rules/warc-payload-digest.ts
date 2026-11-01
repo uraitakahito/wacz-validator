@@ -21,8 +21,12 @@
  *                          (§5.9・§7)。1 つの segment の block とは合わない
  *                          ので照らさない
  *
- * digest フォーマットは `sha256:<BASE32>` (RFC 4648、uppercase、
- * padding なし)。他のアルゴリズム (`sha1:...` 等) を emit する
+ * digest の値は Base32 (RFC 4648、uppercase、padding なし) と Base16
+ * (16 進) のどちらでも読む。WARC 1.1 は書き方を決めておらず、注釈
+ * (recommendation #80) は Base32 を大文字・Base16 を小文字で書き、読む側は
+ * 大小と padding を揃えて読むことを勧める。BrowserHive・Webrecorder は
+ * Base32、Scoop は Base16 で書く (Base32 とだけ比べていたころは、Scoop の
+ * 正しい digest を全部「不一致」と言っていた)。他のアルゴリズム (`sha1:...` 等) を emit する
  * producer は warning ではなく info レベルの note として受け入れる。
  * spec が任意の `algorithm:value` を許容しており、wacz-validator は
  * spec-coverage suite ではないため。
@@ -34,7 +38,7 @@
  */
 import { ok } from "../../result.js";
 import { formatHexLines } from "../../render/hex.js";
-import { sha256Base32 } from "../../wacz/digest.js";
+import { sha256Base32, sha256Hex } from "../../wacz/digest.js";
 import { getHeader, httpEntityBody, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
@@ -71,6 +75,20 @@ export const warcPayloadDigestRule: ValidationRule = {
     }
     return ok(issues);
   },
+};
+
+/**
+ * 宣言された sha256 の値（`sha256:` の後ろ）が payload の digest と同じか。Base16（64 桁の 16 進）
+ * なら 16 進で、それ以外は Base32 で比べる（大小と末尾の padding は揃える）。不一致のときに見せる
+ * 計算値は、宣言と同じ書き方にする。
+ */
+const compareSha256 = (declaredValue: string, payload: Buffer): { same: boolean; computed: string } => {
+  if (/^[0-9a-f]{64}$/i.test(declaredValue)) {
+    const computed = sha256Hex(payload);
+    return { same: `sha256:${declaredValue.toLowerCase()}` === computed, computed };
+  }
+  const computed = sha256Base32(payload);
+  return { same: `sha256:${declaredValue.replace(/=+$/, "").toUpperCase()}` === computed, computed };
 };
 
 /** 1 本の全 member の digest を照らす。 */
@@ -118,8 +136,8 @@ const digestsOf = (entry: string, warcBuf: Buffer): Issue[] => {
       continue;
     }
 
-    const computed = sha256Base32(payload);
-    if (computed.toUpperCase() !== declared.toUpperCase()) {
+    const { same, computed } = compareSha256(declared.slice(declared.indexOf(":") + 1), payload);
+    if (!same) {
       issues.push({
         rule: "warc/payload-digest",
         severity: "warning",

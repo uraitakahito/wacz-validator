@@ -4,7 +4,8 @@
  * WACZ は 2 つの異なる digest フォーマットを使う:
  *   - `datapackage.json` resource hash:    `sha256:<hex>`     (この module)
  *   - WARC `WARC-Payload-Digest` header:   `sha256:<base32>`  (`warc/payload-digest`
- *                                                              rule が使う)
+ *                                                              rule が使う。rule は
+ *                                                              Base16 の値も読む)
  *
  * 後で片方を触る人にこの非対称性が見えるよう、2 形式を 1 モジュール
  * にまとめている。
