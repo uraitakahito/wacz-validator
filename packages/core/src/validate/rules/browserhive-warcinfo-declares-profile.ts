@@ -6,7 +6,8 @@
  * 先頭の warcinfo の `conformsTo` で名乗ると定める。見るのは 3 つ:
  *
  *   - 各本の warcinfo に `conformsTo` がちょうど 1 つ在る。2 つ並ぶと、読み手はどちらを正とすればよいか
- *     決められない (`parseWarcFields` は後の値で上書きするので、数えるのに `warcFieldValues` を使う)
+ *     決められない。WARC 1.1 では欄の名前の大文字小文字を区別しないので、`ConformsTo` も同じ欄に数え、
+ *     折り返した値はつないで読む（`wacz/named-fields.ts` の `fieldValues`）
  *   - 値が BrowserHive WARC Profile の版の URL (`https://uraitakahito.github.io/browserhive-warc-spec/N.N.N/`)。
  *     WARC 1.1 そのもの (IIPC の頁) を名乗る本は、BrowserHive の決まりに辿り着けない
  *   - 全部の本で同じ値。1 つの取り込みは 1 つの producer が書くので、版が違えば、別の取り込みの本が
@@ -26,7 +27,7 @@ import { getHeader, parseWarcRecord, type ParsedWarcRecord } from "../../wacz/wa
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import { profileAtLeast, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
-import { warcFieldValues } from "../warc-fields.js";
+import { fieldValues, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 
 const RULE = "browserhive/warcinfo-declares-profile";
 
@@ -72,7 +73,7 @@ export const browserhiveWarcinfoDeclaresProfileRule: ValidationRule = {
       const record = firstRecord(buf);
       if (record === null || (getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "warcinfo") continue;
 
-      const values = warcFieldValues(record.body, "conformsTo");
+      const values = fieldValues(parseWarcFieldsBody(record.body).fields, "conformsTo");
       const [value] = values;
       if (value === undefined) {
         issue("missing", { entry }, entry);

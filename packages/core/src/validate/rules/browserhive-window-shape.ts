@@ -18,7 +18,7 @@ import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
-import { parseWarcFields } from "../warc-fields.js";
+import { fieldRecord, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 
 const RULE = "browserhive/window-shape";
 
@@ -53,7 +53,7 @@ export const browserhiveWindowShapeRule: ValidationRule = {
         const record = parseWarcRecord(member.raw);
         if (record === null) continue;
         if ((getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
-        const fields = parseWarcFields(record.body);
+        const fields = fieldRecord(parseWarcFieldsBody(record.body).fields);
         const value = fields["window"];
         if (value === undefined) continue;
         const url = getHeader(record, "WARC-Target-URI");
