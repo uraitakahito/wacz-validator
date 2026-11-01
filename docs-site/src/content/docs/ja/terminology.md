@@ -61,7 +61,7 @@ JSON の `filename` / `offset` / `length` が要点で、「`archive/` のどの
 できます。
 
 索引が壊れると **WARC は無傷なのに再生できない**という状態になります。
-[rule](/wacz-validator/ja/rules/) 22 個のうち 6 つが CDXJ を見ているのはそのためです。
+[rule](/wacz-validator/ja/rules/) のうち、`cdxj-` で始まるものが CDXJ を見ているのはそのためです。
 
 WACZ 1.1.1 §5.2.2 は「インデックスファイルは CDXJ データを含まなければならず
 (MUST)、gzip 圧縮されてもよい (MAY)」と定めるだけで、形式そのものは
