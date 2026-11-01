@@ -21,6 +21,7 @@ import { browserhiveUninterceptedListedRule } from "./browserhive-unintercepted-
 import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js";
 import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
+import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -131,6 +132,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveWarcFilesRule,
   // 1 つの交信 (response・request・metadata) が同じ本に在るか (同じく 1.14.0)。
   browserhiveExchangeInOneFileRule,
+  // 各本の warcinfo が BrowserHive WARC Profile の版を 1 つだけ名乗り、全部の本で同じか (WACZ Profile 1.16.0)。
+  browserhiveWarcinfoDeclaresProfileRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

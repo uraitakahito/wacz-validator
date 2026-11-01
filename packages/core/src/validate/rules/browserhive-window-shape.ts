@@ -9,7 +9,10 @@
  *
  * **版で分けない。** 1.12.0 より前の archive に `window` の欄は無いので、見るものが無い。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.12.0/#windows
+ * WACZ Profile 1.16.0 から、記録の形は BrowserHive WARC Profile へ移った (1.0.0 の Records of windows not
+ * opened)。ウィンドウを開かせないこと自体は、WACZ Profile の windows に残る。
+ *
+ * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#records-of-windows-not-opened
  */
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
@@ -28,10 +31,10 @@ export const browserhiveWindowShapeRule: ValidationRule = {
   conformance: "MUST",
   docs: [
     {
-      label: "BrowserHive WACZ Profile §windows",
+      label: "BrowserHive WARC Profile §Records of windows not opened",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.12.0/#windows",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.12.0/ja/#windows",
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#records-of-windows-not-opened",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/#records-of-windows-not-opened",
       },
     },
   ],

@@ -135,6 +135,11 @@ export interface FixtureOptions {
   /** 主の本の warcinfo に `WARC-Filename` を書く。省けば書かない (既定の標本は 1.13.0 までの形)。 */
   warcinfoFilename?: string;
   /**
+   * 主の本の warcinfo の本文に、`software` の後ろへ足す行 (`conformsTo: …` など)。そのまま書くので、
+   * 同じ鍵を 2 度書くこともできる。省けば `software` だけ (既定の標本は 1.15.0 までの形)。
+   */
+  warcinfoLines?: string[];
+  /**
    * `archive/` に足す本。書いた順に ZIP へ入る (読む側は名前順に並べ直す)。応答の行は CDXJ にも
    * `name` (か `cdxjFilename`) で並ぶ。resources にも載る。
    */
@@ -368,6 +373,8 @@ export interface ExtraWarcSpec {
   name: string;
   /** warcinfo の `WARC-Filename`。省けば書かない。 */
   warcinfoFilename?: string;
+  /** warcinfo の本文に `software` の後ろへ足す行。省けば `software` だけ。 */
+  warcinfoLines?: string[];
   /** true なら warcinfo を書かず、応答から始める (先頭の記録を見る rule 用)。 */
   omitWarcinfo?: boolean;
   /** CDXJ の `filename` に書く名。省けば `name`。同梱しない本を指す行を作るのに使う。 */
@@ -403,8 +410,13 @@ export interface WarcRecordInfo {
  * rule #10 を発火させる。それ以外のときは実体 body から digest を
  * 計算して、デフォルト fixture では rule が pass する。
  */
-const buildWarcInfoBytes = (software: string, payloadDigestBad: boolean, filename?: string): Buffer => {
-  const body = `software: ${software}\r\n`;
+const buildWarcInfoBytes = (
+  software: string,
+  payloadDigestBad: boolean,
+  filename?: string,
+  lines: readonly string[] = [],
+): Buffer => {
+  const body = [`software: ${software}`, ...lines].map((line) => `${line}\r\n`).join("");
   const bodyBuf = Buffer.from(body, "utf-8");
   const digest = payloadDigestBad
     ? "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -548,10 +560,11 @@ const buildWarcGz = (
     responses?: WarcResponseSpec[];
     requests?: WarcRequestSpec[];
     warcinfoFilename?: string;
+    warcinfoLines?: string[];
     omitWarcinfo?: boolean;
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
-  const raw = buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename);
+  const raw = buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename, opts.warcinfoLines);
   const gz = gzipSync(raw);
   // bit を 1 つ反転して gzip member が decode できないようにする。
   // gzip *の後* に corrupt させているのは、corruption が iterator に
@@ -706,6 +719,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   const warc = buildWarcGz(software, {
     payloadDigestBad: options.payloadDigestBad ?? false,
     ...(options.warcinfoFilename !== undefined && { warcinfoFilename: options.warcinfoFilename }),
+    ...(options.warcinfoLines !== undefined && { warcinfoLines: options.warcinfoLines }),
     ...(options.warcCorruptAt !== undefined && { corruptAt: options.warcCorruptAt }),
     ...(options.warcIncompleteRecords !== undefined && {
       incompleteRecords: options.warcIncompleteRecords,
@@ -728,6 +742,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     warc: buildWarcGz(software, {
       payloadDigestBad: false,
       ...(spec.warcinfoFilename !== undefined && { warcinfoFilename: spec.warcinfoFilename }),
+      ...(spec.warcinfoLines !== undefined && { warcinfoLines: spec.warcinfoLines }),
       ...(spec.omitWarcinfo === true && { omitWarcinfo: true }),
       ...(spec.corruptAt !== undefined && { corruptAt: spec.corruptAt }),
       ...(spec.responses !== undefined && { responses: spec.responses }),

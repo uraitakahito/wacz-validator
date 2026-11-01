@@ -11,7 +11,9 @@
  * **archive 自身の宣言 (`conformsTo`) でも分ける。** 1.14.0 より前の archive は 1 本なので、
  * またぎようがないが、読む量を減らすために同じ線で切る。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.14.0/#archive-files
+ * WACZ Profile 1.16.0 から、この決まりは BrowserHive WARC Profile へ移った (1.0.0 の Records and files)。
+ *
+ * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#files
  */
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
@@ -33,10 +35,10 @@ export const browserhiveExchangeInOneFileRule: ValidationRule = {
   conformance: "MUST",
   docs: [
     {
-      label: "BrowserHive WACZ Profile §Archive files",
+      label: "BrowserHive WARC Profile §Records and files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.14.0/#archive-files",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.14.0/ja/#archive-files",
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#files",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/#files",
       },
     },
   ],
