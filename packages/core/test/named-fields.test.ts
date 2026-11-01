@@ -25,14 +25,14 @@ describe("parseWarcFieldsBody", () => {
    * 値はこの試験のために組んだもので、仕様の本文は写していない。
    */
   const sampleB1Shape = body([
-    "software: Example-Crawler/1.0 https://crawler.example.org",
-    "hostname: crawl01.example.org",
+    "software: Fixture-Crawler/1.0 https://crawler.site.test",
+    "hostname: crawl01.site.test",
     "ip: 192.0.2.10",
     "isPartOf: example-crawl-2026",
     "description: test crawl with WARC output",
     "operator: Example Operator",
     "http-header-user-agent:",
-    " Mozilla/5.0 (compatible; example-crawler/1.0 +https://crawler.example.org)",
+    " Mozilla/5.0 (compatible; fixture-crawler/1.0 +https://crawler.site.test)",
     "format: WARC file version 1.1",
     "conformsTo:",
     " https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
@@ -52,7 +52,7 @@ describe("parseWarcFieldsBody", () => {
       "conformsTo",
     ]);
     expect(fieldValues(fields, "http-header-user-agent")).toEqual([
-      "Mozilla/5.0 (compatible; example-crawler/1.0 +https://crawler.example.org)",
+      "Mozilla/5.0 (compatible; fixture-crawler/1.0 +https://crawler.site.test)",
     ]);
     expect(fieldValues(fields, "conformsTo")).toEqual([
       "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
@@ -97,7 +97,7 @@ describe("parseWarcFieldsBody", () => {
   });
 
   it("Buffer の本文も、文字列の本文と同じに読む", () => {
-    const text = body(["format: WARC File Format 1.1", "conformsTo: https://example.org/spec/"]);
+    const text = body(["format: WARC File Format 1.1", "conformsTo: https://spec.site.test/warc/"]);
     expect(parseWarcFieldsBody(Buffer.from(text, "utf-8"))).toEqual(parseWarcFieldsBody(text));
   });
 });
