@@ -27,7 +27,7 @@ import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
-import { parseWarcFields } from "../warc-fields.js";
+import { fieldRecord, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 
 /** 未完了比率がこれを超えたら info から warning に上げる。 */
 const WARN_RATIO = 0.1;
@@ -108,7 +108,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
         continue;
       }
       if (type !== "metadata") continue;
-      const fields = parseWarcFields(record.body);
+      const fields = fieldRecord(parseWarcFieldsBody(record.body).fields);
       // 開かせなかったウィンドウの記録（profile 1.12.0）は、取得の記録ではない。未完了にも、方針の省略にも数えない。
       if (fields["window"] !== undefined) continue;
       const reason = classify(fields);

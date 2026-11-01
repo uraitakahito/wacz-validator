@@ -23,7 +23,7 @@ import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import { isRecord, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
-import { parseWarcFields } from "../warc-fields.js";
+import { fieldRecord, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 
 const RULE = "browserhive/unintercepted-listed";
 
@@ -68,7 +68,7 @@ export const browserhiveUninterceptedListedRule: ValidationRule = {
           continue;
         }
         if (type !== "metadata") continue;
-        if (parseWarcFields(record.body)["truncated"] !== "not-intercepted") continue;
+        if (fieldRecord(parseWarcFieldsBody(record.body).fields)["truncated"] !== "not-intercepted") continue;
         const url = getHeader(record, "WARC-Target-URI") ?? "";
         recorded.add(url);
         const target = getHeader(record, "WARC-Refers-To");

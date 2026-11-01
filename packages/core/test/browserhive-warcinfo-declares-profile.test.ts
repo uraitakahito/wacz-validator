@@ -114,6 +114,20 @@ describe("browserhive/warcinfo-declares-profile", () => {
     ]);
   });
 
+  it("名前の大文字小文字が違うだけの conformsTo も同じ欄に数える —— WARC 1.1 は欄の名前の大文字小文字を区別しない", async () => {
+    expect(await run(archive({ first: [`conformsTo: ${WARC_1_0}`, `ConformsTo: ${IIPC}`] }))).toEqual([
+      bad("repeated", { entry: FIRST, count: "2", found: `${WARC_1_0}, ${IIPC}` }, FIRST),
+    ]);
+  });
+
+  it("値を次の行へ折り返した conformsTo も、つないで読む —— 折り返しは文法上は合法", async () => {
+    expect(await run(archive({ first: ["conformsTo:", ` ${WARC_1_0}`] }))).toEqual([]);
+  });
+
+  it("コロンの後に空白の無い conformsTo も読む —— コロンの後の空白は任意", async () => {
+    expect(await run(archive({ first: [`conformsTo:${WARC_1_0}`] }))).toEqual([]);
+  });
+
   it("conformsTo が無ければ error", async () => {
     expect(await run(archive({ second: { warcinfoLines: [] } }))).toEqual([bad("missing", { entry: SECOND }, SECOND)]);
   });

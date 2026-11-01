@@ -19,7 +19,8 @@
  * 区切りを誤るが、それは WARC を block に抱えた記録くらいで、そのときは長さの問題が先に出ている。
  */
 import { Buffer } from "node:buffer";
-import type { ParsedWarcRecord, WarcHeader } from "./warc-header.js";
+import { readNamedFields } from "./named-fields.js";
+import type { ParsedWarcRecord } from "./warc-header.js";
 
 const CRLFCRLF = Buffer.from("\r\n\r\n");
 const LFLF = Buffer.from("\n\n");
@@ -83,8 +84,6 @@ export interface InspectedWarcRecord {
   sound: boolean;
 }
 
-/** RFC 7230 の token。欄の名に許される文字。 */
-const FIELD_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
 const VERSION_LINE = /^WARC\/(\d+\.\d+)$/;
 const DIGITS = /^\d+$/;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
@@ -141,33 +140,6 @@ const resync = (
   };
 };
 
-/** 見出しの行（版の行を除く）から欄を読む。折り返しは前の欄の値に足す。 */
-const readFields = (lines: readonly string[], problems: WarcStructureProblem[]): WarcHeader[] => {
-  const headers: WarcHeader[] = [];
-  lines.forEach((line, i) => {
-    // 版の行が 1 行目なので、欄の行は 2 行目から。
-    const lineNo = i + 2;
-    if (line.startsWith(" ") || line.startsWith("\t")) {
-      const previous = headers.at(-1);
-      if (previous === undefined) {
-        problems.push({ kind: "bad-field-line", line: lineNo, found: line.trim().slice(0, 40) });
-        return;
-      }
-      problems.push({ kind: "folded-line", line: lineNo, found: previous.name });
-      previous.value = `${previous.value} ${line.trim()}`.trim();
-      return;
-    }
-    const colon = line.indexOf(":");
-    const name = colon === -1 ? "" : line.slice(0, colon);
-    if (!FIELD_NAME.test(name)) {
-      problems.push({ kind: "bad-field-line", line: lineNo, found: line.slice(0, 40) });
-      return;
-    }
-    headers.push({ name, value: line.slice(colon + 1).trim() });
-  });
-  return headers;
-};
-
 const inspectOne = (buf: Buffer, start: number): InspectedWarcRecord => {
   const problems: WarcStructureProblem[] = [];
   const done = (end: number, record: ParsedWarcRecord | null, version?: string): InspectedWarcRecord => ({
@@ -193,10 +165,11 @@ const inspectOne = (buf: Buffer, start: number): InspectedWarcRecord => {
     return done(buf.length, null, version);
   }
   if (!isUtf8(buf.subarray(start, blankLineEnd))) problems.push({ kind: "non-utf8" });
-  const headers = readFields(
+  const { fields: headers, problems: fieldProblems } = readNamedFields(
     lines.slice(1).map((line) => line.toString("utf-8")),
-    problems,
+    2,
   );
+  problems.push(...fieldProblems);
 
   // 記録を閉じる並びは、見出しを閉じた空行と同じ改行で探す（LF で書いた記録は LF LF で閉じている）。
   const terminator = blankIsCrlf ? CRLFCRLF : LFLF;
