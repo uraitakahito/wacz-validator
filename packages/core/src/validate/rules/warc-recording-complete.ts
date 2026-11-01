@@ -64,9 +64,9 @@ export const warcRecordingCompleteRule: ValidationRule = {
   conformance: "MAY",
   docs: [
       {
-        label: "WARC 1.1 metadata record",
+        label: "WARC 1.1 §metadata",
         url: {
-          en: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+          en: "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#metadata",
         },
       },
   ],

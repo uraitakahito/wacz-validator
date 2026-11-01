@@ -145,6 +145,28 @@ export interface FixtureOptions {
    */
   extraWarcs?: ExtraWarcSpec[];
   /**
+   * 主の本の全記録の版の行。既定は `WARC/1.1`。`WARC/1.0` や `ARC/1.1` にして
+   * `warc/record-structure` の版の見方を試す。
+   */
+  warcVersion?: string;
+  /** 主の本の全記録の見出しと終端の改行を LF だけにする（`warc/record-structure` の反証用）。 */
+  warcHeaderLineEnding?: "lf";
+  /**
+   * 主の本の記録を 1 つ選んで見出しを書き換える。`index` は積んだ順（warcinfo が 0、応答・要求・
+   * metadata・revisit・分割の列・生の member と続く）。欄を消す・書いてはいけない欄を足す・値を壊す・
+   * Content-Length をずらす・折り返す、を `warc/*` の rule の反証に使う。
+   */
+  warcRecordPatches?: WarcRecordPatch[];
+  /** 主の本に足す `WARC-Type: revisit` の記録。metadata の後ろに並ぶ。索引には載せない。 */
+  warcRevisits?: WarcRevisitSpec[];
+  /** 主の本に足す分割の列（先頭の記録 ＋ continuation）。revisit の後ろに並ぶ。索引には載せない。 */
+  warcSegmented?: WarcSegmentedSpec[];
+  /**
+   * 主の本の末尾に足す生の member。渡したバイト列をそのまま 1 つの gzip member にする。
+   * 記録の形をしていないバイト列（版の行が無い・空行が無い）を作るのに使う。索引には載せない。
+   */
+  warcRawMembers?: Buffer[];
+  /**
    * When true, store the WARC entry as DEFLATE rather than STORE
    * (browserhive's invariant from packager.ts). Triggers rule #6.
    */
@@ -388,9 +410,67 @@ export interface ExtraWarcSpec {
   metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
 }
 
+/**
+ * 記録 1 つの見出しの書き換え。組み立てた記録のバイト列に後から当てるので、どの builder が作った
+ * 記録にも同じ口で効く。
+ */
+export interface WarcRecordPatch {
+  /** 積んだ順の位置（0 始まり）。 */
+  index: number;
+  /** 見出しを置き換える（同じ名があれば置き換え、無ければ末尾に足す）。`null` はその見出しを消す。 */
+  set?: Record<string, string | null>;
+  /** 同じ名の見出しがあっても、もう 1 行足す（繰り返しの反証用）。 */
+  add?: Record<string, string>;
+  /** `Content-Length` の値だけをこの数に書き換える（実体はそのまま）。 */
+  contentLength?: number;
+  /** この名の見出しの値を途中で折り返し、2 行目を空白で始める（§4 の LWS）。 */
+  fold?: string;
+  /** 版の行をこの文字列に置き換える。 */
+  version?: string;
+  /** 見出しと終端の改行を LF だけにする。 */
+  lineEnding?: "lf";
+  /** 記録の終端の CRLF CRLF を落とす。 */
+  dropTerminator?: boolean;
+  /** block の末尾にこのバイト列を足す（Content-Length は変えない）。 */
+  appendToBlock?: string;
+}
+
+/** `warcRevisits` の 1 件。 */
+export interface WarcRevisitSpec {
+  uri: string;
+  /** `WARC-Profile`。省けば identical-payload-digest の URI。`null` なら書かない。 */
+  profile?: string | null;
+  /** `WARC-Payload-Digest`。省けば書かない。 */
+  payloadDigest?: string;
+  refersTo?: string;
+  refersToTargetUri?: string;
+  refersToDate?: string;
+  /** block（HTTP の状態行と見出しの文）。省けば block 無し（`Content-Length: 0`）。 */
+  block?: string;
+  /** `WARC-Truncated`。省けば書かない。 */
+  truncated?: string;
+  recordId?: string;
+}
+
+/** `warcSegmented` の 1 列。 */
+export interface WarcSegmentedSpec {
+  uri: string;
+  /** 各 segment の block。`parts[0]` が先頭の記録、以降が continuation。 */
+  parts: string[];
+  /** 先頭の記録の type。既定 `resource`。 */
+  originType?: "resource" | "response";
+  /** `WARC-Record-ID` の連番の基点。省けば列ごとに 600 から。 */
+  idBase?: number;
+}
+
+/** 分割の列の n 番目（0 始まり）の記録の `WARC-Record-ID`。 */
+export const segmentRecordId = (idBase: number, n: number): string =>
+  `<urn:uuid:00000000-0000-0000-0000-${String(idBase + n).padStart(12, "0")}>`;
+
 /** 組み立てた WARC の各メンバ (gzip 1 つ = レコード 1 つ) の位置。 */
 export interface WarcRecordInfo {
-  type: "warcinfo" | "response" | "request" | "metadata";
+  /** `segment` は分割の列の記録（先頭も continuation も）、`raw` は `warcRawMembers` の member。どちらも索引に載せない。 */
+  type: "warcinfo" | "response" | "request" | "metadata" | "revisit" | "segment" | "raw";
   offset: number;
   length: number;
   uri?: string;
@@ -549,6 +629,113 @@ const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
   return Buffer.concat([Buffer.from(headers, "utf-8"), http, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
+/** identical-payload-digest の revisit profile（WARC 1.1 §6.7.2）。 */
+const REVISIT_IDENTICAL_PAYLOAD_DIGEST = "http://netpreserve.org/warc/1.1/revisit/identical-payload-digest";
+
+/** `WARC-Type: revisit` の記録を 1 件組み立てる。block を渡さなければ block 無し（`Content-Length: 0`）。 */
+const buildRevisitBytes = (idx: number, spec: WarcRevisitSpec): Buffer => {
+  const block = Buffer.from(spec.block ?? "", "utf-8");
+  const profile = spec.profile === undefined ? REVISIT_IDENTICAL_PAYLOAD_DIGEST : spec.profile;
+  const headers = [
+    "WARC/1.1",
+    "WARC-Type: revisit",
+    `WARC-Record-ID: ${spec.recordId ?? `<urn:uuid:00000000-0000-0000-0000-${String(idx + 900).padStart(12, "0")}>`}`,
+    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Target-URI: ${spec.uri}`,
+    ...(profile === null ? [] : [`WARC-Profile: ${profile}`]),
+    ...(spec.payloadDigest === undefined ? [] : [`WARC-Payload-Digest: ${spec.payloadDigest}`]),
+    ...(spec.refersTo === undefined ? [] : [`WARC-Refers-To: ${spec.refersTo}`]),
+    ...(spec.refersToTargetUri === undefined ? [] : [`WARC-Refers-To-Target-URI: ${spec.refersToTargetUri}`]),
+    ...(spec.refersToDate === undefined ? [] : [`WARC-Refers-To-Date: ${spec.refersToDate}`]),
+    ...(spec.truncated === undefined ? [] : [`WARC-Truncated: ${spec.truncated}`]),
+    ...(block.byteLength > 0 ? ["Content-Type: application/http;msgtype=response"] : []),
+    `Content-Length: ${String(block.byteLength)}`,
+    "",
+    "",
+  ].join("\r\n");
+  return Buffer.concat([Buffer.from(headers, "utf-8"), block, Buffer.from("\r\n\r\n", "utf-8")]);
+};
+
+/**
+ * 分割の列（WARC 1.1 §7）を組み立てる。`parts[0]` が先頭の記録（元の type・`WARC-Segment-Number: 1`）、
+ * 以降が continuation（`WARC-Segment-Origin-ID`・連番・最後に `WARC-Segment-Total-Length`）。
+ */
+const buildSegmentedBytes = (spec: WarcSegmentedSpec, seriesIdx: number): Buffer[] => {
+  const base = spec.idBase ?? 600 + seriesIdx * 20;
+  const originId = segmentRecordId(base, 0);
+  const originType = spec.originType ?? "resource";
+  const blocks = spec.parts.map((part) => Buffer.from(part, "utf-8"));
+  const total = blocks.reduce((sum, block) => sum + block.byteLength, 0);
+  return blocks.map((block, n) => {
+    const last = n === blocks.length - 1;
+    const headers =
+      n === 0
+        ? [
+            "WARC/1.1",
+            `WARC-Type: ${originType}`,
+            `WARC-Record-ID: ${originId}`,
+            "WARC-Date: 2026-05-13T00:00:00Z",
+            `WARC-Target-URI: ${spec.uri}`,
+            `Content-Type: ${originType === "response" ? "application/http;msgtype=response" : "text/plain"}`,
+            "WARC-Segment-Number: 1",
+            `Content-Length: ${String(block.byteLength)}`,
+          ]
+        : [
+            "WARC/1.1",
+            "WARC-Type: continuation",
+            `WARC-Record-ID: ${segmentRecordId(base, n)}`,
+            "WARC-Date: 2026-05-13T00:00:00Z",
+            `WARC-Target-URI: ${spec.uri}`,
+            `WARC-Segment-Origin-ID: ${originId}`,
+            `WARC-Segment-Number: ${String(n + 1)}`,
+            ...(last ? [`WARC-Segment-Total-Length: ${String(total)}`] : []),
+            `Content-Length: ${String(block.byteLength)}`,
+          ];
+    return Buffer.concat([Buffer.from([...headers, "", ""].join("\r\n"), "utf-8"), block, Buffer.from("\r\n\r\n", "utf-8")]);
+  });
+};
+
+/**
+ * 組み立てた記録（`\r\n\r\n` で閉じた見出し・block・終端）の見出しを書き換える。どの builder が
+ * 作った記録にも同じ口で当てるため、バイト列を見出しの行に戻してから組み直す。
+ */
+const patchRecord = (raw: Buffer, patch: Omit<WarcRecordPatch, "index">): Buffer => {
+  const sep = raw.indexOf("\r\n\r\n");
+  const [versionLine = "WARC/1.1", ...lines] = raw.subarray(0, sep).toString("utf-8").split("\r\n");
+  let block = raw.subarray(sep + 4, raw.length - 4);
+  let fields = lines.map((line): [string, string] => {
+    const colon = line.indexOf(":");
+    return [line.slice(0, colon), line.slice(colon + 1).trim()];
+  });
+  const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+  for (const [name, value] of Object.entries(patch.set ?? {})) {
+    if (value === null) {
+      fields = fields.filter(([n]) => !same(n, name));
+      continue;
+    }
+    const at = fields.findIndex(([n]) => same(n, name));
+    if (at === -1) fields.push([name, value]);
+    else fields[at] = [name, value];
+  }
+  for (const [name, value] of Object.entries(patch.add ?? {})) fields.push([name, value]);
+  if (patch.contentLength !== undefined) {
+    const length = String(patch.contentLength);
+    fields = fields.map(([n, v]) => (same(n, "Content-Length") ? [n, length] : [n, v]));
+  }
+  if (patch.appendToBlock !== undefined) block = Buffer.concat([block, Buffer.from(patch.appendToBlock, "utf-8")]);
+  const eol = patch.lineEnding === "lf" ? "\n" : "\r\n";
+  const headerLines = fields.map(([n, v]) => {
+    if (patch.fold === undefined || !same(n, patch.fold)) return `${n}: ${v}`;
+    // `;` の後か最後の空白で折る。どちらも無ければ真ん中で（値の意味は変わる）。
+    const semi = v.lastIndexOf(";");
+    const space = v.lastIndexOf(" ");
+    const cut = semi > 0 ? semi + 1 : space > 0 ? space : Math.floor(v.length / 2);
+    return `${n}: ${v.slice(0, cut).trimEnd()}${eol} ${v.slice(cut).trimStart()}`;
+  });
+  const head = [patch.version ?? versionLine, ...headerLines].join(eol) + eol + eol;
+  return Buffer.concat([Buffer.from(head, "utf-8"), block, Buffer.from(patch.dropTerminator === true ? "" : eol + eol, "utf-8")]);
+};
+
 const buildWarcGz = (
   software: string,
   opts: {
@@ -562,59 +749,93 @@ const buildWarcGz = (
     warcinfoFilename?: string;
     warcinfoLines?: string[];
     omitWarcinfo?: boolean;
+    version?: string;
+    lineEnding?: "lf";
+    patches?: WarcRecordPatch[];
+    revisits?: WarcRevisitSpec[];
+    segmented?: WarcSegmentedSpec[];
+    rawMembers?: Buffer[];
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
-  const raw = buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename, opts.warcinfoLines);
-  const gz = gzipSync(raw);
-  // bit を 1 つ反転して gzip member が decode できないようにする。
-  // gzip *の後* に corrupt させているのは、corruption が iterator に
-  // 可視であってほしいため (producer が書こうとした uncompressed な
-  // raw bytes に corruption を入れるのではない)。
-  if (opts.corruptAt !== undefined && opts.corruptAt < gz.byteLength) {
-    // 範囲付き index 書き込み (corruptAt < gz.byteLength)。
-    // security/detect-object-injection rule はこの preset では無効。
-    // ここでの index アクセスは意図的な fixture mutation。
-    gz[opts.corruptAt] = (gz[opts.corruptAt] ?? 0) ^ 0xff;
+  // 記録を積んだ順に並べる。`warcRecordPatches` の `index` はこの並びの位置。
+  const raws: { raw: Buffer; info: Omit<WarcRecordInfo, "offset" | "length">; verbatim?: true }[] = [];
+  if (opts.omitWarcinfo !== true) {
+    raws.push({
+      raw: buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename, opts.warcinfoLines),
+      info: { type: "warcinfo" },
+    });
   }
+  // 応答レコードは warcinfo の直後。索引にも offset / length つきで並ぶ。
+  (opts.responses ?? []).forEach((spec, i) => {
+    raws.push({
+      raw: buildResponseBytes(i, spec),
+      info: { type: "response", uri: spec.uri, mime: spec.mime, status: spec.status ?? 200 },
+    });
+  });
+  // 要求レコードは応答の後ろ。索引には並べない。
+  (opts.requests ?? []).forEach((spec, i) => {
+    raws.push({ raw: buildRequestBytes(i, spec), info: { type: "request", uri: spec.uri } });
+  });
+  // テスト用: 未完了 metadata を別 gzip member として連結。
+  const plainCount = opts.incompleteRecords ?? 0;
+  for (let i = 0; i < plainCount; i++) {
+    raws.push({ raw: buildIncompleteMetadataBytes(i), info: { type: "metadata" } });
+  }
+  // リッチ版(resourceType / blockedReason 付き)は plain の後ろに連結。
+  // idx は衝突しないよう plainCount からの連番にする。
+  (opts.incompleteSpec ?? []).forEach((spec, i) => {
+    raws.push({ raw: buildIncompleteMetadataBytes(plainCount + i, spec), info: { type: "metadata" } });
+  });
+  // 中身を指定した metadata は、さらにその後ろ。idx は衝突しないよう 500 から。
+  (opts.metadata ?? []).forEach((spec, i) => {
+    raws.push({ raw: buildFieldsMetadataBytes(500 + i, spec), info: { type: "metadata" } });
+  });
+  // WARC 1.1 の rule の試験用: revisit・分割の列・生の member。どれも索引には並べない。
+  (opts.revisits ?? []).forEach((spec, i) => {
+    raws.push({ raw: buildRevisitBytes(i, spec), info: { type: "revisit", uri: spec.uri } });
+  });
+  (opts.segmented ?? []).forEach((spec, i) => {
+    for (const raw of buildSegmentedBytes(spec, i)) raws.push({ raw, info: { type: "segment", uri: spec.uri } });
+  });
+  for (const raw of opts.rawMembers ?? []) raws.push({ raw, info: { type: "raw" }, verbatim: true });
+
+  // 見出しの書き換え。全記録に効く版・改行と、記録ごとの書き換え。何も無ければバイト列は変えない。
+  const global = {
+    ...(opts.version !== undefined && { version: opts.version }),
+    ...(opts.lineEnding !== undefined && { lineEnding: opts.lineEnding }),
+  };
+  const patched = raws.map(({ raw, verbatim }, index) => {
+    if (verbatim === true) return raw;
+    const own = (opts.patches ?? []).filter((p) => p.index === index);
+    if (own.length === 0 && Object.keys(global).length === 0) return raw;
+    return [global, ...own].reduce<Buffer>((bytes, patch) => patchRecord(bytes, patch), raw);
+  });
+
   // メンバを順に積み、それぞれの位置を記録する。warcinfo は常に offset 0 なので、
   // CDXJ・warc-offsets の既存の期待は変わらない。
   const members: Buffer[] = [];
   const records: WarcRecordInfo[] = [];
   let at = 0;
-  const push = (member: Buffer, info: Omit<WarcRecordInfo, "offset" | "length">): void => {
+  patched.forEach((raw, index) => {
+    const member = gzipSync(raw);
+    const info = raws[index]?.info ?? { type: "raw" };
+    // bit を 1 つ反転して warcinfo の gzip member が decode できないようにする。
+    // gzip *の後* に corrupt させているのは、corruption が iterator に
+    // 可視であってほしいため (producer が書こうとした uncompressed な
+    // raw bytes に corruption を入れるのではない)。
+    if (info.type === "warcinfo" && opts.corruptAt !== undefined && opts.corruptAt < member.byteLength) {
+      // 範囲付き index 書き込み (corruptAt < member.byteLength)。
+      // security/detect-object-injection rule はこの preset では無効。
+      // ここでの index アクセスは意図的な fixture mutation。
+      member[opts.corruptAt] = (member[opts.corruptAt] ?? 0) ^ 0xff;
+    }
     members.push(member);
     records.push({ ...info, offset: at, length: member.byteLength });
     at += member.byteLength;
-  };
-  if (opts.omitWarcinfo !== true) push(gz, { type: "warcinfo" });
-  // 応答レコードは warcinfo の直後。索引にも offset / length つきで並ぶ。
-  (opts.responses ?? []).forEach((spec, i) => {
-    push(gzipSync(buildResponseBytes(i, spec)), {
-      type: "response",
-      uri: spec.uri,
-      mime: spec.mime,
-      status: spec.status ?? 200,
-    });
   });
-  // 要求レコードは応答の後ろ。索引には並べない。
-  (opts.requests ?? []).forEach((spec, i) => {
-    push(gzipSync(buildRequestBytes(i, spec)), { type: "request", uri: spec.uri });
-  });
-  // テスト用: 未完了 metadata を別 gzip member として連結。
-  const plainCount = opts.incompleteRecords ?? 0;
-  for (let i = 0; i < plainCount; i++) {
-    push(gzipSync(buildIncompleteMetadataBytes(i)), { type: "metadata" });
-  }
-  // リッチ版(resourceType / blockedReason 付き)は plain の後ろに連結。
-  // idx は衝突しないよう plainCount からの連番にする。
-  (opts.incompleteSpec ?? []).forEach((spec, i) => {
-    push(gzipSync(buildIncompleteMetadataBytes(plainCount + i, spec)), { type: "metadata" });
-  });
-  // 中身を指定した metadata は、さらにその後ろ。idx は衝突しないよう 500 から。
-  (opts.metadata ?? []).forEach((spec, i) => {
-    push(gzipSync(buildFieldsMetadataBytes(500 + i, spec)), { type: "metadata" });
-  });
-  return { bytes: Buffer.concat(members), recordLength: gz.byteLength, offset: 0, records };
+  // CDXJ の warcinfo の行が使う長さ。warcinfo を書かない本（足す本だけ）では使われない。
+  const warcinfoLength = records.find((r) => r.type === "warcinfo")?.length ?? 0;
+  return { bytes: Buffer.concat(members), recordLength: warcinfoLength, offset: 0, records };
 };
 
 /** 応答レコード 1 件ぶんの CDXJ 行。offset / length は組み立てたメンバの実位置。 */
@@ -730,6 +951,12 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     ...(options.warcMetadata !== undefined && { metadata: options.warcMetadata }),
     ...(options.warcResponses !== undefined && { responses: options.warcResponses }),
     ...(options.warcRequests !== undefined && { requests: options.warcRequests }),
+    ...(options.warcVersion !== undefined && { version: options.warcVersion }),
+    ...(options.warcHeaderLineEnding !== undefined && { lineEnding: options.warcHeaderLineEnding }),
+    ...(options.warcRecordPatches !== undefined && { patches: options.warcRecordPatches }),
+    ...(options.warcRevisits !== undefined && { revisits: options.warcRevisits }),
+    ...(options.warcSegmented !== undefined && { segmented: options.warcSegmented }),
+    ...(options.warcRawMembers !== undefined && { rawMembers: options.warcRawMembers }),
   });
 
   const warcName = options.warcName ?? "data.warc.gz";

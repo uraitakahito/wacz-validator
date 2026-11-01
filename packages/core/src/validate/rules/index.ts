@@ -48,8 +48,10 @@ import { waczAuthSignatureRule } from "./wacz-auth-signature.js";
 import { waczRequiredFilesRule } from "./wacz-required-files.js";
 import { waczReservedDirsCleanRule } from "./wacz-reserved-dirs-clean.js";
 import { warcExtensionRule } from "./warc-extension.js";
+import { warcMandatoryFieldsRule } from "./warc-mandatory-fields.js";
 import { warcMembersIndependentRule } from "./warc-members-independent.js";
 import { warcPayloadDigestRule } from "./warc-payload-digest.js";
+import { warcRecordStructureRule } from "./warc-record-structure.js";
 import { warcRecordingCompleteRule } from "./warc-recording-complete.js";
 import { warcStorageStoreRule } from "./warc-storage-store.js";
 
@@ -95,6 +97,10 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   warcExtensionRule,
   warcStorageStoreRule,
   warcMembersIndependentRule,
+  // WARC 1.1 の記録の形と欄 (どの profile でも走る)。記録の形が崩れていれば欄の rule は
+  // その記録を見ないので、形を先に出す。
+  warcRecordStructureRule,
+  warcMandatoryFieldsRule,
   cdxjWarcOffsetsRule,
   cdxjPagesMainpageRule,
   warcPayloadDigestRule,
@@ -185,8 +191,10 @@ export {
   waczRequiredFilesRule,
   waczReservedDirsCleanRule,
   warcExtensionRule,
+  warcMandatoryFieldsRule,
   warcMembersIndependentRule,
   warcPayloadDigestRule,
+  warcRecordStructureRule,
   warcRecordingCompleteRule,
   warcStorageStoreRule,
 };

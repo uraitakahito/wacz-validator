@@ -32,9 +32,9 @@ export const warcMembersIndependentRule: ValidationRule = {
   conformance: "MUST",
   docs: [
       {
-        label: "WARC 1.1",
+        label: "WARC 1.1 §Record-at-time compression",
         url: {
-          en: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+          en: "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-at-time-compression",
         },
       },
   ],
