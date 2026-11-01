@@ -16,7 +16,15 @@ import { fileTransport } from "../../src/wacz/transport.js";
 import { buildWacz, type FixtureOptions } from "./generator.js";
 
 /** WARC 1.1 の決まりを、profile に依らず見る rule。 */
-export const WARC11_RULES: readonly string[] = ["warc/record-structure", "warc/mandatory-fields"];
+export const WARC11_RULES: readonly string[] = [
+  "warc/record-structure",
+  "warc/mandatory-fields",
+  "warc/fields-by-type",
+  "warc/field-values",
+  "warc/content-type",
+  "warc/revisit",
+  "warc/segmentation",
+];
 
 /** 組んだ WACZ を、渡した profile で検証した報告。 */
 export const reportFor = async (options: FixtureOptions = {}, profile: RuleProfile = "spec"): Promise<Report> => {

@@ -213,8 +213,11 @@ export const CORPUS: CorpusSpec[] = [
   },
   {
     name: "warc-payload-digest-bad",
-    description: "WARC-Payload-Digest header が実体と不一致 — warning",
-    options: { payloadDigestBad: true },
+    description: "応答の WARC-Payload-Digest が実体と不一致 — warning",
+    options: {
+      payloadDigestBad: true,
+      warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: "<p>ok</p>" }],
+    },
     expectRules: ["warc/payload-digest"],
   },
 
@@ -254,5 +257,93 @@ export const CORPUS: CorpusSpec[] = [
     description: "resources に未宣言の孤児ファイル(extra.bin)— MUST",
     options: { orphanFile: true },
     expectRules: ["datapackage/resources-complete"],
+  },
+
+  // ── WARC 1.1 の記録 (profile に依らない warc/* の rule) ─────────────────
+  // 記録の並びは warcinfo (0)・応答 (1)・…。`warcRecordPatches` の index はその位置。
+  {
+    name: "warc11-version-1-0",
+    description: "WARC の記録が WARC/1.0 を名乗る (1.1 の決まりで見て版を告げる。spec で warning)",
+    options: { warcVersion: "WARC/1.0" },
+    expectRules: ["warc/record-structure"],
+  },
+  {
+    name: "warc11-lf-line-endings",
+    description: "WARC の記録の見出しの行が CRLF でなく LF で終わる — error",
+    options: { warcHeaderLineEnding: "lf" },
+    expectRules: ["warc/record-structure"],
+  },
+  {
+    name: "warc11-content-length-mismatch",
+    description: "warcinfo の Content-Length が block の実体と合わない — error",
+    options: { warcRecordPatches: [{ index: 0, contentLength: 5 }] },
+    expectRules: ["warc/record-structure"],
+  },
+  {
+    name: "warc11-missing-record-id",
+    description: "warcinfo に WARC-Record-ID が無い (spec で warning)",
+    options: { warcRecordPatches: [{ index: 0, set: { "WARC-Record-ID": null } }] },
+    expectRules: ["warc/mandatory-fields"],
+  },
+  {
+    name: "warc11-warcinfo-payload-digest",
+    description: "payload の定義が無い warcinfo に WARC-Payload-Digest を書く (§5.9。spec で warning)",
+    options: {
+      warcRecordPatches: [
+        { index: 0, set: { "WARC-Payload-Digest": "sha256:AKHYCAGIN35Z6VJCEI6PWPKOKV244246G6CMPBDKI4MEL7CU54NQ" } },
+      ],
+    },
+    expectRules: ["warc/fields-by-type"],
+  },
+  {
+    name: "warc11-filename-on-response",
+    description: "response の記録に warcinfo だけの WARC-Filename を書く (spec で warning)",
+    options: {
+      warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: "<p>ok</p>" }],
+      warcRecordPatches: [{ index: 1, set: { "WARC-Filename": "data.warc.gz" } }],
+    },
+    expectRules: ["warc/fields-by-type"],
+  },
+  {
+    name: "warc11-target-uri-angle-brackets",
+    description: "WARC-Target-URI を山括弧で包む (1.1 で文法から外れた。spec で warning)",
+    options: {
+      warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: "<p>ok</p>" }],
+      warcRecordPatches: [{ index: 1, set: { "WARC-Target-URI": "<https://site.test/>" } }],
+    },
+    expectRules: ["warc/field-values"],
+  },
+  {
+    name: "warc11-response-without-content-type",
+    description: "block のある response に Content-Type が無い (should。spec で info)",
+    options: {
+      warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: "<p>ok</p>" }],
+      warcRecordPatches: [{ index: 1, set: { "Content-Type": null } }],
+    },
+    expectRules: ["warc/content-type"],
+  },
+  {
+    name: "warc11-revisit-without-digest",
+    description: "identical-payload-digest の revisit に WARC-Payload-Digest が無い (spec で warning)",
+    options: {
+      warcRevisits: [
+        {
+          uri: "https://site.test/",
+          refersTo: "<urn:uuid:00000000-0000-0000-0000-000000000200>",
+          refersToTargetUri: "https://site.test/",
+          refersToDate: "2026-05-13T00:00:00Z",
+        },
+      ],
+    },
+    expectRules: ["warc/revisit"],
+  },
+  {
+    name: "warc11-segment-number-gap",
+    description: "分割の列の continuation の番号が 2, 4 と飛ぶ (spec で warning)",
+    options: {
+      warcSegmented: [{ uri: "https://site.test/big", parts: ["one, ", "two, ", "three"] }],
+      warcRecordPatches: [{ index: 3, set: { "WARC-Segment-Number": "4" } }],
+    },
+    expectRules: ["warc/segmentation"],
   },
 ];

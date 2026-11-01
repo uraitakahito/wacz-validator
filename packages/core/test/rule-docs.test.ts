@@ -41,23 +41,36 @@ describe("rule docs", () => {
     }
   });
 
-  it("同じアンカーには同じ URL の組が使われている", () => {
+  it("同じ仕様書の同じ節には同じ URL の組が使われている", () => {
     // 出典を rule 側に直書きする形なので、同じ節を指す rule が複数ある
     // (`#indexes` は 5 rule、`#datapackage-json` は 4 rule)。1 つだけ版を
-    // 上げると静かに食い違うので、アンカーで束ねて突き合わせる。
-    const byAnchor = new Map<string, { rule: string; url: string }[]>();
+    // 上げると静かに食い違うので、節で束ねて突き合わせる。
+    //
+    // 束ねる鍵は「版の段を除いた URL ＋ アンカー」。アンカーだけで束ねると、別の仕様書の
+    // 同じ名の節 (BrowserHive WARC Profile の `#warcinfo` と WARC 1.1 の `#warcinfo`) が
+    // 同じ節に見える。版の段 (`/1.1.1/`) を除くので、版だけ違う URL は同じ鍵に入って落ちる。
+    const sectionOf = (url: string): string | undefined => {
+      const parsed = new URL(url);
+      if (parsed.hash === "") return undefined; // アンカー無しの URL は対象外
+      const path = parsed.pathname
+        .split("/")
+        .filter((segment) => !/^\d+(\.\d+)*$/.test(segment))
+        .join("/");
+      return `${parsed.host}${path}${parsed.hash}`;
+    };
+    const bySection = new Map<string, { rule: string; url: string }[]>();
     for (const { rule, doc } of allLinks) {
-      const anchor = doc.url.en.split("#")[1];
-      if (anchor === undefined) continue; // アンカー無しの URL は対象外
-      const seen = byAnchor.get(anchor) ?? [];
+      const section = sectionOf(doc.url.en);
+      if (section === undefined) continue;
+      const seen = bySection.get(section) ?? [];
       seen.push({ rule, url: JSON.stringify(doc.url) });
-      byAnchor.set(anchor, seen);
+      bySection.set(section, seen);
     }
-    for (const [anchor, entries] of byAnchor) {
+    for (const [section, entries] of bySection) {
       const distinct = new Set(entries.map((e) => e.url));
       expect(
         [...distinct],
-        `#${anchor} を指す ${String(entries.length)} 件で URL が食い違う: ` +
+        `${section} を指す ${String(entries.length)} 件で URL が食い違う: ` +
           entries.map((e) => e.rule).join(", "),
       ).toHaveLength(1);
     }

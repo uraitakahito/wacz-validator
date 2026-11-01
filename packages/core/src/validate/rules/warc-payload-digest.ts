@@ -2,17 +2,24 @@
  * Rule: warc/payload-digest
  *
  * `WARC-Payload-Digest` header は record の payload bytes に対する
- * 新しい SHA-256 と一致する必要がある。"Payload" は WARC 1.1 spec
- * §6.2 に従って record type ごとに異なる:
+ * 新しい SHA-256 と一致する必要がある。"Payload" は WARC 1.1 の §6 が
+ * record type ごとに定める:
  *
  *   - response / request:  HTTP entity body (内側の `\r\n\r\n` 区切り
  *                          の後の bytes)
- *   - warcinfo / metadata: record body をそのまま
- *   - resource:            record body をそのまま
+ *   - resource / conversion: record block をそのまま
  *   - revisit:             ここでは意図的にチェックしない — revisit
  *                          record は他 record の digest を再記述する
  *                          だけで自身に payload を持たないため、
  *                          local な sha が当てはまらない
+ *   - warcinfo / metadata: payload の定義が無い。§5.9 はこの記録に
+ *                          `WARC-Payload-Digest` を書くこと自体を禁じる
+ *                          ので、照らさない (書いてあることは
+ *                          `warc/fields-by-type` が言う)
+ *   - 分割した記録:        `WARC-Segment-Number` を持つ先頭と continuation
+ *                          の digest は、論理記録全体の payload のもの
+ *                          (§5.9・§7)。1 つの segment の block とは合わない
+ *                          ので照らさない
  *
  * digest フォーマットは `sha256:<BASE32>` (RFC 4648、uppercase、
  * padding なし)。他のアルゴリズム (`sha1:...` 等) を emit する
@@ -33,11 +40,13 @@ import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
 /**
- * `WARC-Payload-Digest` が record body をそのまま digest 対象にする
- * record type。それ以外は HTTP entity スライスを使う (response/request)
- * か、意味のある local payload を持たない (revisit)。
+ * `WARC-Payload-Digest` が record block をそのまま digest 対象にする
+ * record type (§6.4・§6.8)。response / request は HTTP entity スライスを使う。
  */
-const BODY_VERBATIM_TYPES = new Set(["warcinfo", "metadata", "resource"]);
+const BODY_VERBATIM_TYPES = new Set(["resource", "conversion"]);
+
+/** payload を照らさない record type。revisit は他の記録の payload、warcinfo / metadata は payload を持たない。 */
+const NOT_CHECKED_TYPES = new Set(["revisit", "warcinfo", "metadata"]);
 
 export const warcPayloadDigestRule: ValidationRule = {
   name: "warc/payload-digest",
@@ -77,7 +86,9 @@ const digestsOf = (entry: string, warcBuf: Buffer): Issue[] => {
     const declared = getHeader(record, "WARC-Payload-Digest");
     if (declared === undefined) continue; // spec 上 optional。
 
-    if (recordType === "revisit") continue; // header コメント参照。
+    if (NOT_CHECKED_TYPES.has(recordType)) continue; // header コメント参照。
+    // 分割した記録の digest は論理記録全体のもの (header コメント参照)。
+    if (recordType === "continuation" || getHeader(record, "WARC-Segment-Number") !== undefined) continue;
 
     // sha256 以外のアルゴリズムは spec で許容される。rule は
     // informational にこれを表面化して、当該行は不一致ではなく
