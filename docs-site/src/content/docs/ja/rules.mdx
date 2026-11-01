@@ -53,8 +53,11 @@ severity 欄に値が 2 つ以上並んでいる rule が、これに当たり�
 明示的に RFC 2119 を宣言しているのは
 [Data Package](https://uraitakahito.github.io/datapackage/ja/) だけです
 （各仕様書の冒頭に「本文書のキーワードは RFC 2119 に記述されたとおりに解釈される」とある）。
-**WACZ 1.1.1 / 1.2.0・wacz-auth 0.1.0・WARC 1.1 は `MUST` や `SHOULD` を使いながら、
+**WACZ 1.1.1 / 1.2.0・wacz-auth 0.1.0 は `MUST` や `SHOULD` を使いながら、
 RFC 2119 への言及がありません**（本文中に一度も現れないことを確認済み）。
+
+**WARC 1.1 は ISO の規格で、ISO の言い方を使います** —— 小文字の *shall*・*shall not*・*should*・*may* で、`MUST` は一度も現れません。
+wacz-validator は *shall* を `MUST`、*shall not* を `MUST NOT`、*should* を `SHOULD`、*may* を `MAY` として記録します。
 
 そこで wacz-validator は、**どの仕様に由来する適合レベルでも RFC 2119 の意味で扱います**。
 慣例に従った解釈であり、出典側が明示していない部分については wacz-validator の側の取り決めです。
@@ -84,9 +87,15 @@ spec がそう書いている、という事実だからです。
   `profile`、WACZ version、そして hash が実体と一致するか。
 - **`cdxj/*`** — index。wabac.js がロードできるか、offset が実在の WARC record
   を指すか、filename が `archive/` 相対か。
-- **`warc/*`** — WARC の内部。gzip member が独立して展開できるか、payload digest、
-  recording が完結しているか。
+- **`warc/*`** — WARC の内部。この接頭辞の下には 2 種類があります。
+  - [WARC 1.1](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/) が、誰の書いた記録にも求めること。
+    記録の形（版の行・CRLF・`Content-Length`・記録を閉じる CRLF CRLF）、記録が持たなければならない欄、type に書いてはいけない欄、欄の値の形、規格の勧める `Content-Type`、`revisit` の profile、分割した記録。
+    どの profile でも走り、指摘の等級の決め方は[プロファイル](/wacz-validator/ja/profiles/#warc-11-の-rule-の等級)にあります。
+  - WARC の置き方と記録のされ方。gzip member が独立して展開できるか、payload digest、recording が完結しているか。
 - **`pages/*`** — `pages/pages.jsonl` の schema 適合。
+- **`wacz-auth/*`** — `datapackage-digest.json` の署名。
+- **`browserhive/*`** — BrowserHive の WACZ と WARC の profile が定める、BrowserHive 自身の決まり。
+  `--profile browserhive` のときだけ走ります。
 
 ## 同じファイルを 2 つの rule が見る理由
 
@@ -98,6 +107,11 @@ spec がそう書いている、という事実だからです。
 同様に `datapackage.json` の存在チェックは `wacz/required-files` が担うので、
 [`datapackage/profile-required`](#datapackage-profile-required) は `profile` の**値**に専念できます(不在を
 二重に報告しません)。
+
+WARC 1.1 の rule は逆向きで、**1 つの欠陥は 1 本の rule が言います**。
+形の崩れた記録（欄になっていない見出しの行、block と合わない `Content-Length` など）は [`warc/record-structure`](#warc-record-structure) が言い、欄を読む rule はその記録を見ません。
+欄を信じられないからです。
+そうしないと、コロン 1 つの抜けが、欄の欠けとしても値の崩れとしても出てきます。
 
 ## rule を追加するとき
 

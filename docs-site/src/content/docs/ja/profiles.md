@@ -73,12 +73,27 @@ legacy な archive をトリアージするとき、つまり「正しいか?」
 
 ## どの rule が実際に変わるのか
 
-[Rules](/wacz-validator/ja/rules/) の表に **profile 上書き**列があり、どの rule が
-何に組み替えられるかが正確に出ています。空欄の rule は 3 つの profile すべてで
-同じ挙動です。
+[Rules](/wacz-validator/ja/rules/) の表の severity の欄には、各 rule の既定値の下に、どの profile が何に組み替えるかが正確に出ています。
+既定値の下に何も無い rule は、3 つの profile すべてで同じ挙動です。
 
-この列は各 rule の `applicability` 宣言から生成しているので、**要約ではなく
-一次情報**です。
+この行は各 rule の `applicability` 宣言から生成しているので、**要約ではなく一次情報**です。
+
+## WARC 1.1 の rule の等級
+
+WARC 1.1 が記録に求めることを見る `warc/*` の rule は、どの profile でも走ります。
+profile が変えるのは指摘の等級だけで、等級は指摘の種類で決まります。
+
+| 指摘 | `spec` | `browserhive` | `lenient` |
+| --- | --- | --- | --- |
+| 記録の形が崩れている（版の行が無い・CRLF でなく LF・block と合わない `Content-Length`・記録を閉じる CRLF CRLF が無い） | `error` | `error` | `error` |
+| 版の行が `WARC/1.1` でない | `warning` | `error` | `info` |
+| WARC 1.1 が要る欄が無い・禁じる欄が在る・値の形が違う（*shall*・*shall not*） | `warning` | `error` | `info` |
+| 勧めに従っていない（*should* と、注釈つきの本文の community recommendation） | `info` | `warning` | `info` |
+| 規格が決めていないもの（知らない record type・知らない切り詰めの理由・知らない `revisit` の profile） | `info` | `info` | `info` |
+
+形の崩れがどこでも `error` なのは、読む側が記録の境目を見失い、索引と replay も一緒に失うからです。
+*shall* に反する欄があっても wabac.js の replay はほとんど壊れないので、`spec` は `warning` にします。
+BrowserHive は自分の WARC を WARC 1.1 のファイルだと名乗るので、`browserhive` は同じ指摘を `error` にします。
 
 ## exit code
 

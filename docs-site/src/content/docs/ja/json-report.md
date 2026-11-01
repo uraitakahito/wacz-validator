@@ -71,6 +71,13 @@ producer バグが上の方に上がります。
   `SHOULD` / `SHOULD NOT` / `MAY`）。rule が書くのではなく rule 名から解決するので、
   rule 定義が唯一の情報源のままになります。
 
+### 同じ本で繰り返す指摘はまとめます
+
+WARC 1.1 の記録を見る `warc/*` の rule は、本の全部の記録で同じものを見つけることがあります。
+そのときは同じ本・同じ message の issue を 4 件まで出し、4 件目の `params.more` に、出さなかった残りの件数を入れます。
+その issue の `message` の末尾には「（同じ本にほか N 件）」が付きます。
+`summary` が数えるのは report に出した issue で、見つけた回数ではありません。
+
 ### `severity` と `conformance` は別の問いに答えます
 
 `severity` は違反に対して wacz-validator がどうするか、`conformance` は仕様が何を

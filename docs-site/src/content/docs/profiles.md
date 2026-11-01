@@ -74,12 +74,32 @@ but "is this salvageable?"
 
 ## Which rules a profile actually changes
 
-The [Rules](/wacz-validator/rules/) table has a **Profile overrides** column showing
-exactly which rules are re-graded and to what. Rules with an empty cell behave
-identically under all three profiles.
+In the [Rules](/wacz-validator/rules/) table, the severity column shows, under
+each rule's default, exactly which profiles re-grade it and to what. A rule with
+nothing under its default behaves identically under all three profiles.
 
-That column is generated from each rule's `applicability` declaration, so it is
-the authoritative answer — not a summary of one.
+Those lines are generated from each rule's `applicability` declaration, so they
+are the authoritative answer — not a summary of one.
+
+## How the WARC 1.1 rules are graded
+
+The `warc/*` rules that check what WARC 1.1 asks of a record run under every
+profile. A profile changes only how a finding is graded, and the grade follows
+the kind of finding:
+
+| Finding | `spec` | `browserhive` | `lenient` |
+| --- | --- | --- | --- |
+| The record's shape is broken (no version line, LF instead of CRLF, a `Content-Length` that does not match the block, no closing CRLF CRLF) | `error` | `error` | `error` |
+| The version line is not `WARC/1.1` | `warning` | `error` | `info` |
+| A field WARC 1.1 requires is missing, a field it forbids is present, or a value has the wrong form (*shall*, *shall not*) | `warning` | `error` | `info` |
+| A recommendation is not followed (*should*, and the community recommendations in the annotated text) | `info` | `warning` | `info` |
+| Something the standard leaves open: an unknown record type, an unknown truncation reason, an unknown `revisit` profile | `info` | `info` | `info` |
+
+A broken shape is an `error` everywhere because a reader loses the boundaries
+between records, and with them the index and replay. A field that breaks a
+*shall* rarely stops wabac.js from replaying, so `spec` reports it as a
+`warning`. BrowserHive declares its WARC files to be WARC 1.1 files, so
+`browserhive` makes the same finding an `error`.
 
 ## Exit codes
 

@@ -68,6 +68,17 @@ WACZ 1.1.1 §5.2.2 は「インデックスファイルは CDXJ データを含�
 [pywb の CDXJ Format](https://pywb.readthedocs.io/en/latest/manual/indexing.html#cdxj-index)
 を参照しています。
 
+## `warc/*` の rule が頼る WARC 1.1 の語
+
+### `payload`
+
+WARC の記録の block のうち、その記録が何についての記録かに当たる部分です（[WARC 1.1 §Terms and definitions](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#terms-and-definitions)）。
+どの部分かは record type で決まります。
+HTTP の `response` と `request` では entity body、`resource` と `conversion` では block 全体、`revisit` では訪ね直した先の payload です。
+`warcinfo` と `metadata` の記録には payload が**ありません**。
+そのため、この 2 つには `WARC-Payload-Digest` を書かず（[§WARC-Payload-Digest](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest)）、block の digest は `WARC-Block-Digest` に書きます。
+日本語の文中でも `payload` と英語のまま書きます。
+
 ## 適用ルール
 
 1. **その語が Terminology の「概念」を指すときだけ**英語化します。一般語
