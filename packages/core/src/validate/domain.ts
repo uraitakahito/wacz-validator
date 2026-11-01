@@ -433,6 +433,48 @@ export interface ReportEntry {
   issues: { rule: string; severity: Severity }[];
 }
 
+// #region report-warcinfo
+/** warcinfo の本文の 1 欄。 */
+export interface WarcinfoField {
+  /** 書かれた綴りのまま。 */
+  name: string;
+  /** 値。次の行へ折り返した値はつないである。 */
+  value: string;
+  /**
+   * どの語彙の名前か。`dcterms` は DCMI Metadata Terms の語、`warc` は WARC 1.1 が warcinfo のために
+   * 名前を決めた 7 欄、`null` はどちらでもない（作り手が決めた名前）。名前の大文字小文字は区別しない。
+   */
+  vocabulary: "dcterms" | "warc" | null;
+  /** `dcterms` なら語の URI、`warc` なら WARC 1.1 の warcinfo の節の URL。`null` のときは無い。 */
+  ref?: string;
+}
+
+/**
+ * WARC の本の中の warcinfo の記録 1 件。構造が壊れた記録は載せない（その壊れは
+ * `warc/record-structure` が言う）。
+ */
+export interface WarcinfoRecord {
+  /** `archive/` の中の本の名（ZIP の entry 名）。 */
+  entry: string;
+  /** 本の中で何番目の記録か（1 始まり）。 */
+  index: number;
+  /** 圧縮した本では member の先頭、圧縮していない本では記録の先頭のバイト位置。 */
+  offset: number;
+  recordId?: string;
+  date?: string;
+  /** `WARC-Filename`（warcinfo だけが書ける欄）。 */
+  filename?: string;
+  contentType?: string;
+  /**
+   * 本文を欄に読んだもの。書かれた順で、同じ名前の繰り返しも残す。`Content-Type` が
+   * `application/warc-fields` で、本文が 64 KiB 以下のときだけ在る。
+   */
+  fields?: WarcinfoField[];
+  /** 本文の行で見つかった問題（折り返し・読めない行）。無ければ key ごと出ない。 */
+  problems?: { kind: "bad-field-line" | "folded-line"; line: number; found: string }[];
+}
+// #endregion report-warcinfo
+
 // #region report
 export interface Report {
   /**
@@ -456,5 +498,10 @@ export interface Report {
    * 出ない** — {@link SkippedRule} を参照。
    */
   skipped?: readonly SkippedRule[];
+  /**
+   * 各 WARC の本の warcinfo と、その本文の欄。欄ごとに Dublin Core の語かどうかを持つ。
+   * **warcinfo が 1 件も無ければ key ごと出ない** —— {@link WarcinfoRecord} を参照。
+   */
+  warcinfo?: WarcinfoRecord[];
 }
 // #endregion report

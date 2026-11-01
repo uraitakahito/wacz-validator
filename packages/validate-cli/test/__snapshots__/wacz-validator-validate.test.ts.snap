@@ -137,6 +137,25 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
     "warnings": 1,
   },
   "validatorVersion": "<version>",
+  "warcinfo": [
+    {
+      "contentType": "application/warc-fields",
+      "date": "2026-05-13T00:00:00Z",
+      "entry": "archive/data.warc.gz",
+      "fields": [
+        {
+          "label": "WARC 1.1 warcinfo field",
+          "name": "software",
+          "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+          "value": "wacz-validator-fixture/0.0.0",
+          "vocabulary": "warc",
+        },
+      ],
+      "index": 1,
+      "offset": 0,
+      "recordId": "<urn:uuid:00000000-0000-0000-0000-000000000001>",
+    },
+  ],
 }
 `;
 
@@ -260,6 +279,25 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
     "warnings": 0,
   },
   "validatorVersion": "<version>",
+  "warcinfo": [
+    {
+      "contentType": "application/warc-fields",
+      "date": "2026-05-13T00:00:00Z",
+      "entry": "archive/data.warc.gz",
+      "fields": [
+        {
+          "label": "WARC 1.1 warcinfo field",
+          "name": "software",
+          "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+          "value": "wacz-validator-fixture/0.0.0",
+          "vocabulary": "warc",
+        },
+      ],
+      "index": 1,
+      "offset": 0,
+      "recordId": "<urn:uuid:00000000-0000-0000-0000-000000000001>",
+    },
+  ],
 }
 `;
 
@@ -351,5 +389,24 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
     "warnings": 0,
   },
   "validatorVersion": "<version>",
+  "warcinfo": [
+    {
+      "contentType": "application/warc-fields",
+      "date": "2026-05-13T00:00:00Z",
+      "entry": "archive/data.warc.gz",
+      "fields": [
+        {
+          "label": "WARC 1.1 warcinfo field",
+          "name": "software",
+          "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+          "value": "wacz-validator-fixture/0.0.0",
+          "vocabulary": "warc",
+        },
+      ],
+      "index": 1,
+      "offset": 0,
+      "recordId": "<urn:uuid:00000000-0000-0000-0000-000000000001>",
+    },
+  ],
 }
 `;

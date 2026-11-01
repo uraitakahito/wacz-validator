@@ -40,6 +40,7 @@ import { ok } from "../result.js";
 import type { WaczReader } from "../wacz/reader.js";
 import { buildEntries } from "./entries.js";
 import { computeStats } from "./stats.js";
+import { collectWarcinfo } from "../describe/warcinfo.js";
 import type {
   Issue,
   Report,
@@ -98,7 +99,7 @@ export const runValidation = async (
           return false;
         });
 
-  const [perRule, stats] = await Promise.all([
+  const [perRule, stats, warcinfo] = await Promise.all([
     Promise.all(
       activeRules.map(async (rule) => {
         const result = await rule.run(wacz);
@@ -109,6 +110,8 @@ export const runValidation = async (
       }),
     ),
     computeStats(wacz),
+    // 報告の warcinfo の欄。rule と同じ走査（reader ごとに 1 度）を使うので、本を読み直さない。
+    collectWarcinfo(wacz),
   ]);
 
   // `Issue[][]`(rule ごとの箱)を 1 本の列に均す。空の箱は消え、1 つの rule が
@@ -147,6 +150,8 @@ export const runValidation = async (
     // 同上。バージョンを指定しない実行では 1 件も入らないので key ごと出ず、
     // 従来の JSON と完全に一致する。
     ...(skipped.length > 0 && { skipped }),
+    // stats と同じく、読めなかった・1 件も無いときは key ごと出ない。
+    ...(warcinfo !== undefined && warcinfo.length > 0 && { warcinfo }),
   };
   return ok(report);
 };

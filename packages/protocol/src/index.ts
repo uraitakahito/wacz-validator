@@ -25,6 +25,8 @@ import type {
   Report,
   ResolvedDocLink,
   WarcHeader,
+  WarcinfoField,
+  WarcinfoRecord,
   WarcRecordSummary,
 } from "@wacz-validator/core";
 
@@ -159,9 +161,20 @@ export interface WireIssue extends Issue {
   docs?: readonly ResolvedDocLink[];
 }
 
+/** renderJson が語彙の表示名（`label`）を足した warcinfo の欄。`vocabulary` が `null` の欄には無い。 */
+export interface WireWarcinfoField extends WarcinfoField {
+  label?: string;
+}
+
+/** renderJson が欄に表示名を足した warcinfo の記録。 */
+export interface WireWarcinfoRecord extends Omit<WarcinfoRecord, "fields"> {
+  fields?: WireWarcinfoField[];
+}
+
 /** daemon が返す解決済み Report(renderJson 出力に対応)。 */
-export interface WireReport extends Omit<Report, "issues"> {
+export interface WireReport extends Omit<Report, "issues" | "warcinfo"> {
   issues: WireIssue[];
+  warcinfo?: WireWarcinfoRecord[];
 }
 
 export type RpcErrorCode = "openFailed" | "engineFailed" | "badRequest";
