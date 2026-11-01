@@ -5,6 +5,8 @@
  *
  *   - 名前: `archive/` に在るのは `data-NNN.warc.gz` だけで、`000` から飛びなく並ぶ
  *   - 先頭: 各本の最初の member が `warcinfo` で、`WARC-Filename` がその本の名 (`archive/` 無し)
+ *     (先頭の warcinfo の決まりは、WACZ Profile 1.16.0 から BrowserHive WARC Profile 1.0.0 の #warcinfo に在る。
+ *     名前・連番・大きさは WACZ Profile の Archive files に残る)
  *   - 大きさ: 最後以外の本は `settings.limits.maxWarcBytes` 以上 (producer は、いまの本がその大きさに
  *     達してから次を始めるので、途中の本がそれ未満なら切り替えの決まりが守られていない)
  *   - `settings.limits.maxWarcBytes` が正の整数

@@ -17,7 +17,9 @@
  * v19 までの archive の化けを洗い出すのが、この rule の役目の 1 つ。content-coding が残った本文
  * (`Content-Encoding` の在る応答) は、文字として読めないので見ない。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/#response-payloads
+ * WACZ Profile 1.16.0 から、この決まりは BrowserHive WARC Profile へ移った (1.0.0 の Response payloads)。
+ *
+ * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#response-payloads
  */
 import { ok } from "../../result.js";
 import { getHeader, httpEntityBody, parseWarcRecord } from "../../wacz/warc-header.js";
@@ -119,10 +121,10 @@ export const browserhivePayloadCharsetRule: ValidationRule = {
   conformance: "MUST",
   docs: [
     {
-      label: "BrowserHive WACZ Profile §Response payloads",
+      label: "BrowserHive WARC Profile §Response payloads",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/#response-payloads",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/ja/#response-payloads",
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#response-payloads",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/#response-payloads",
       },
     },
   ],

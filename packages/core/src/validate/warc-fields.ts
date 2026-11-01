@@ -14,3 +14,18 @@ export const parseWarcFields = (body: Buffer): Record<string, string> => {
   }
   return out;
 };
+
+/**
+ * `application/warc-fields` の本文から、ある鍵の値を**全部**、書かれた順に読む。
+ *
+ * `parseWarcFields` は同じ鍵を後の値で上書きするので、「ちょうど 1 つ在るか」を問う rule
+ * (`browserhive/warcinfo-declares-profile` の `conformsTo`) はこちらを使う。行の読み方は同じ。
+ */
+export const warcFieldValues = (body: Buffer, key: string): string[] => {
+  const out: string[] = [];
+  for (const line of body.toString("utf-8").split("\n")) {
+    const sep = line.indexOf(": ");
+    if (sep > 0 && line.slice(0, sep).trim() === key) out.push(line.slice(sep + 2).trim());
+  }
+  return out;
+};
