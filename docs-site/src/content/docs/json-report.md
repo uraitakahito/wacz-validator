@@ -75,6 +75,14 @@ by rule without parsing prose:
   `MUST NOT`, `SHOULD`, `SHOULD NOT`, `MAY`. Resolved from the rule name rather
   than written by the rule, so the rule definition stays the single source.
 
+### One finding repeated across a file is folded
+
+The `warc/*` rules that check WARC 1.1 records can find the same thing in every
+record of a file. They report the first four occurrences of a message in a file,
+and the fourth carries the number of the rest in `params.more`; its `message`
+ends with "(and N more like this in the same file)". `summary` counts the issues
+in the report, not every occurrence.
+
 ### `severity` and `conformance` answer different questions
 
 `severity` is what wacz-validator does about a violation; `conformance` is what the

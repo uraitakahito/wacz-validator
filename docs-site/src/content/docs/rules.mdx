@@ -55,9 +55,14 @@ much a rule matters**.
 :::note[Where the sources stand]
 Only [Data Package](https://uraitakahito.github.io/datapackage/) says so
 outright — each of its specification files opens with "the key words … are to
-be interpreted as described in RFC 2119". **WACZ 1.1.1 and 1.2.0, wacz-auth
-0.1.0 and WARC 1.1 use `MUST` and `SHOULD` without ever citing RFC 2119** —
-checked: the string does not appear in any of them.
+be interpreted as described in RFC 2119". **WACZ 1.1.1 and 1.2.0 and wacz-auth
+0.1.0 use `MUST` and `SHOULD` without ever citing RFC 2119** — checked: the
+string does not appear in any of them.
+
+**WARC 1.1 is an ISO standard and uses ISO's verbal forms instead** — lowercase
+*shall*, *shall not*, *should* and *may*, never `MUST`. wacz-validator records
+*shall* as `MUST`, *shall not* as `MUST NOT`, *should* as `SHOULD` and *may* as
+`MAY`.
 
 wacz-validator therefore reads every conformance level it records as RFC 2119 intends,
 whichever specification it came from. That follows the convention, but where a
@@ -93,9 +98,20 @@ Rules fall into groups by the layer they inspect:
   actually in the archive.
 - **`cdxj/*`** — the index: whether wabac.js can load it, whether its offsets
   point at real WARC records, and whether the filenames are archive-relative.
-- **`warc/*`** — inside the WARC: independently-decodable gzip members, payload
-  digests, and whether the recording is complete.
+- **`warc/*`** — inside the WARC. Two kinds sit under this prefix:
+  - what [WARC 1.1](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/)
+    asks of every record, whoever wrote it: the record's shape (version line,
+    CRLF, `Content-Length`, the closing CRLF CRLF), the fields it must carry,
+    the fields its type must not carry, the form of each field's value, the
+    `Content-Type` the standard recommends, `revisit` profiles and segmented
+    records. These run under every profile; how each finding is graded is on
+    [Profiles](/wacz-validator/profiles/#how-the-warc-11-rules-are-graded).
+  - how the WARC is stored and recorded: independently-decodable gzip members,
+    payload digests, and whether the recording is complete.
 - **`pages/*`** — `pages/pages.jsonl` against its schema.
+- **`wacz-auth/*`** — the signature in `datapackage-digest.json`.
+- **`browserhive/*`** — BrowserHive's own conventions, from the BrowserHive WACZ
+  and WARC profiles. They run only under `--profile browserhive`.
 
 ## Why some rules exist twice over
 
@@ -108,6 +124,13 @@ tells a producer where the problem is.
 Likewise `wacz/required-files` owns the "is `datapackage.json` there at all"
 question, so [`datapackage/profile-required`](#datapackage-profile-required) can concentrate on the *value* of
 `profile` without reporting the same absence twice.
+
+The WARC 1.1 rules go the other way: **one defect is reported by one rule.** A
+record whose shape is broken — a header line that is not a field, a
+`Content-Length` that does not match the block — is reported by
+[`warc/record-structure`](#warc-record-structure), and the rules that read fields
+skip that record, because its fields cannot be trusted. Without that, one
+missing colon would surface again as a missing field and a malformed value.
 
 ## Adding a rule
 

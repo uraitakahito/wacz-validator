@@ -38,8 +38,14 @@ search over the index possible.
 
 The index is why a replay tool does not have to download a whole WACZ: it reads
 the index, then fetches only the byte ranges it needs. If the index is wrong the
-archive is intact but unplayable, which is why six of the
-[rules](/wacz-validator/rules/) check it.
+archive is intact but unplayable, which is why the
+[rules](/wacz-validator/rules/) whose names start with `cdxj/` check it.
+
+## A WARC 1.1 term the `warc/*` rules lean on
+
+| Term | What it means here |
+| ---- | ------------------ |
+| `payload` | The part of a WARC record's block that the record is about ([WARC 1.1 §Terms and definitions](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#terms-and-definitions)). Which part depends on the record type: the entity body of an HTTP `response` or `request`, the whole block of a `resource` or `conversion`, and for a `revisit` the payload of the content it revisits. `warcinfo` and `metadata` records have **no** payload, so they do not carry `WARC-Payload-Digest` ([§WARC-Payload-Digest](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest)); the digest of their block goes in `WARC-Block-Digest`. |
 
 ## Scope
 
