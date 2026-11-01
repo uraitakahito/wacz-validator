@@ -216,8 +216,9 @@ export interface FixtureOptions {
    */
   mainPageUrlOverride?: string;
   /**
-   * When true, inject a deliberately-wrong `WARC-Payload-Digest` header
-   * into the warcinfo record. Triggers rule #10.
+   * true なら、主の本の最初の応答（`warcResponses[0]`）の `WARC-Payload-Digest` を、実体と合わない値に
+   * する。`warc/payload-digest` を鳴らす。応答が無ければ throw する（warcinfo には payload の定義が
+   * 無く、digest を書く記録ではないので、以前のように warcinfo には書かない）。
    */
   payloadDigestBad?: boolean;
   /**
@@ -485,29 +486,21 @@ export interface WarcRecordInfo {
 // ---------------------------------------------------------------------------
 
 /**
- * 単一の `warcinfo` レコードを組み立てる。`payloadDigestBad` が true
- * のとき、`WARC-Payload-Digest` を意図的に固定の偽値にセットして
- * rule #10 を発火させる。それ以外のときは実体 body から digest を
- * 計算して、デフォルト fixture では rule が pass する。
+ * 単一の `warcinfo` レコードを組み立てる。block の digest は `WARC-Block-Digest` に書く。
+ * warcinfo には payload の定義が無い（WARC 1.1 §6 が payload を定義するのは response・resource・
+ * revisit・conversion だけ）ので、§5.9 に従い `WARC-Payload-Digest` は書かない。BrowserHive の
+ * warcinfo と同じ形。
  */
-const buildWarcInfoBytes = (
-  software: string,
-  payloadDigestBad: boolean,
-  filename?: string,
-  lines: readonly string[] = [],
-): Buffer => {
+const buildWarcInfoBytes = (software: string, filename?: string, lines: readonly string[] = []): Buffer => {
   const body = [`software: ${software}`, ...lines].map((line) => `${line}\r\n`).join("");
   const bodyBuf = Buffer.from(body, "utf-8");
-  const digest = payloadDigestBad
-    ? "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-    : sha256Base32(bodyBuf);
   const headers = [
     "WARC/1.1",
     "WARC-Type: warcinfo",
     "WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-000000000001>",
     "WARC-Date: 2026-05-13T00:00:00Z",
     ...(filename === undefined ? [] : [`WARC-Filename: ${filename}`]),
-    `WARC-Payload-Digest: ${digest}`,
+    `WARC-Block-Digest: ${sha256Base32(bodyBuf)}`,
     `Content-Length: ${String(bodyBuf.byteLength)}`,
     "Content-Type: application/warc-fields",
     "",
@@ -567,12 +560,15 @@ const buildFieldsMetadataBytes = (
   return Buffer.concat([Buffer.from(headers, "utf-8"), body, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
+/** `payloadDigestBad` が最初の応答に書く、実体と合わない digest。 */
+const BAD_PAYLOAD_DIGEST = "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 /**
  * `WARC-Type: response` レコードを 1 件組み立てる。形は BrowserHive の書く応答と
  * 同じ: WARC の見出し → 空行 → HTTP の状態行と見出し → 空行 → entity body → `\r\n\r\n`。
  * `WARC-Payload-Digest` は entity body の sha256 (rule `warc/payload-digest` が pass する)。
  */
-const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
+const buildResponseBytes = (idx: number, spec: WarcResponseSpec, badDigest = false): Buffer => {
   const body = typeof spec.body === "string" ? Buffer.from(spec.body, "utf-8") : spec.body;
   const status = spec.status ?? 200;
   const http = Buffer.concat([
@@ -594,7 +590,7 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec): Buffer => {
     `WARC-Record-ID: ${spec.recordId ?? responseRecordId(idx)}`,
     "WARC-Date: 2026-05-13T00:00:00Z",
     `WARC-Target-URI: ${spec.uri}`,
-    `WARC-Payload-Digest: ${sha256Base32(body)}`,
+    `WARC-Payload-Digest: ${badDigest ? BAD_PAYLOAD_DIGEST : sha256Base32(body)}`,
     ...(spec.truncated === undefined ? [] : [`WARC-Truncated: ${spec.truncated}`]),
     "Content-Type: application/http;msgtype=response",
     `Content-Length: ${String(http.byteLength)}`,
@@ -761,14 +757,17 @@ const buildWarcGz = (
   const raws: { raw: Buffer; info: Omit<WarcRecordInfo, "offset" | "length">; verbatim?: true }[] = [];
   if (opts.omitWarcinfo !== true) {
     raws.push({
-      raw: buildWarcInfoBytes(software, opts.payloadDigestBad, opts.warcinfoFilename, opts.warcinfoLines),
+      raw: buildWarcInfoBytes(software, opts.warcinfoFilename, opts.warcinfoLines),
       info: { type: "warcinfo" },
     });
   }
   // 応答レコードは warcinfo の直後。索引にも offset / length つきで並ぶ。
+  if (opts.payloadDigestBad && (opts.responses ?? []).length === 0) {
+    throw new Error("payloadDigestBad は最初の応答の digest を壊す — warcResponses に応答を 1 つ以上渡す");
+  }
   (opts.responses ?? []).forEach((spec, i) => {
     raws.push({
-      raw: buildResponseBytes(i, spec),
+      raw: buildResponseBytes(i, spec, opts.payloadDigestBad && i === 0),
       info: { type: "response", uri: spec.uri, mime: spec.mime, status: spec.status ?? 200 },
     });
   });

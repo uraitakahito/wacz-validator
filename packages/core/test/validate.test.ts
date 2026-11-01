@@ -276,6 +276,7 @@ describe("validation engine — corrupted variants", () => {
   it("bad WARC-Payload-Digest → warc/payload-digest warns", async () => {
     const report = await runAgainstFixture(tmpDir, "bad-payload-digest.wacz", {
       payloadDigestBad: true,
+      warcResponses: [{ uri: "https://site.test/", mime: "text/html", body: "<p>ok</p>" }],
     });
     const issues = report.issues.filter((i) => i.rule === "warc/payload-digest");
     expect(issues).toHaveLength(1);

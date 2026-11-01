@@ -47,12 +47,17 @@ import { pagesPageSchemaRule } from "./pages-page-schema.js";
 import { waczAuthSignatureRule } from "./wacz-auth-signature.js";
 import { waczRequiredFilesRule } from "./wacz-required-files.js";
 import { waczReservedDirsCleanRule } from "./wacz-reserved-dirs-clean.js";
+import { warcContentTypeRule } from "./warc-content-type.js";
 import { warcExtensionRule } from "./warc-extension.js";
+import { warcFieldValuesRule } from "./warc-field-values.js";
+import { warcFieldsByTypeRule } from "./warc-fields-by-type.js";
 import { warcMandatoryFieldsRule } from "./warc-mandatory-fields.js";
 import { warcMembersIndependentRule } from "./warc-members-independent.js";
 import { warcPayloadDigestRule } from "./warc-payload-digest.js";
 import { warcRecordStructureRule } from "./warc-record-structure.js";
 import { warcRecordingCompleteRule } from "./warc-recording-complete.js";
+import { warcRevisitRule } from "./warc-revisit.js";
+import { warcSegmentationRule } from "./warc-segmentation.js";
 import { warcStorageStoreRule } from "./warc-storage-store.js";
 
 /**
@@ -101,6 +106,11 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // その記録を見ないので、形を先に出す。
   warcRecordStructureRule,
   warcMandatoryFieldsRule,
+  warcFieldsByTypeRule,
+  warcFieldValuesRule,
+  warcContentTypeRule,
+  warcRevisitRule,
+  warcSegmentationRule,
   cdxjWarcOffsetsRule,
   cdxjPagesMainpageRule,
   warcPayloadDigestRule,
@@ -190,11 +200,16 @@ export {
   waczAuthSignatureRule,
   waczRequiredFilesRule,
   waczReservedDirsCleanRule,
+  warcContentTypeRule,
   warcExtensionRule,
+  warcFieldValuesRule,
+  warcFieldsByTypeRule,
   warcMandatoryFieldsRule,
   warcMembersIndependentRule,
   warcPayloadDigestRule,
   warcRecordStructureRule,
   warcRecordingCompleteRule,
+  warcRevisitRule,
+  warcSegmentationRule,
   warcStorageStoreRule,
 };

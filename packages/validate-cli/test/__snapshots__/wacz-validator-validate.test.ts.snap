@@ -11,7 +11,7 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
       "issues": [],
       "path": "archive/data.warc.gz",
       "present": true,
-      "uncompressedSize": 252,
+      "uncompressedSize": 251,
     },
     {
       "compressionMethod": 8,
@@ -126,14 +126,14 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
   },
   "stats": {
     "hosts": [],
-    "warcArchiveBytes": 252,
+    "warcArchiveBytes": 251,
     "warcRecordCount": 1,
   },
   "summary": {
     "durationMs": 0,
     "failed": 1,
     "info": 0,
-    "passed": 22,
+    "passed": 27,
     "warnings": 1,
   },
   "validatorVersion": "<version>",
@@ -151,7 +151,7 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
       "issues": [],
       "path": "archive/data.warc.gz",
       "present": true,
-      "uncompressedSize": 252,
+      "uncompressedSize": 251,
     },
     {
       "compressionMethod": 8,
@@ -249,14 +249,14 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
     "hosts": [
       "site.test",
     ],
-    "warcArchiveBytes": 252,
+    "warcArchiveBytes": 251,
     "warcRecordCount": 1,
   },
   "summary": {
     "durationMs": 0,
     "failed": 1,
     "info": 0,
-    "passed": 22,
+    "passed": 27,
     "warnings": 0,
   },
   "validatorVersion": "<version>",
@@ -274,7 +274,7 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
       "issues": [],
       "path": "archive/data.warc.gz",
       "present": true,
-      "uncompressedSize": 252,
+      "uncompressedSize": 251,
     },
     {
       "compressionMethod": 8,
@@ -340,14 +340,14 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
     "hosts": [
       "site.test",
     ],
-    "warcArchiveBytes": 252,
+    "warcArchiveBytes": 251,
     "warcRecordCount": 1,
   },
   "summary": {
     "durationMs": 0,
     "failed": 0,
     "info": 0,
-    "passed": 23,
+    "passed": 28,
     "warnings": 0,
   },
   "validatorVersion": "<version>",
