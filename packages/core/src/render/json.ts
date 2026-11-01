@@ -26,9 +26,13 @@ export const renderJson = (report: Report, locale: Locale): string => {
       label: d.label,
       url: d.url[locale] ?? d.url.en,
     }));
+    // 同じ本の同じ指摘を丸めた issue（`WarcIssueBucket`）は、出さなかった件数を `params.more` に持つ。
+    // message の文はどの rule でも同じなので、rule ごとの文ではなくここで 1 度だけ付ける。
+    const more = issue.params?.["more"];
+    const message = t(issue.messageKey, issue.params ?? {}, locale);
     return {
       ...issue,
-      message: t(issue.messageKey, issue.params ?? {}, locale),
+      message: typeof more === "number" && more > 0 ? t("report.more", { message, more }, locale) : message,
       // params.section が表で解決できたときだけ spec への直リンクを同梱。
       ...(url !== undefined && { specUrl: url }),
       ...(docs !== undefined && { docs }),

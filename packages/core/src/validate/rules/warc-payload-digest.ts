@@ -45,9 +45,9 @@ export const warcPayloadDigestRule: ValidationRule = {
   conformance: "SHOULD",
   docs: [
       {
-        label: "WARC 1.1",
+        label: "WARC 1.1 §WARC-Payload-Digest",
         url: {
-          en: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+          en: "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
         },
       },
   ],

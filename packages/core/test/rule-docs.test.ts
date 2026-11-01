@@ -14,8 +14,23 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 import { DEFAULT_RULES, docsForRule } from "../src/validate/rules/index.js";
+import { WARC11_SPEC_BASE } from "../src/validate/warc11-fields.js";
 
 const allLinks = DEFAULT_RULES.flatMap((rule) => rule.docs.map((doc) => ({ rule: rule.name, doc })));
+
+/** 注釈つき WARC 1.1 の頁の見出しの id（2026-11-01 に頁から取った）。 */
+const WARC11_PAGE_ANCHORS = new Set([
+  "scope", "normative-references", "terms-definitions-and-abbreviated-terms", "file-and-record-model",
+  "named-fields", "general", "warc-record-id-mandatory", "content-length-mandatory", "warc-date-mandatory",
+  "warc-type-mandatory", "content-type", "warc-concurrent-to", "warc-block-digest", "warc-payload-digest",
+  "warc-ip-address", "warc-refers-to", "warc-refers-to-target-uri", "warc-refers-to-date", "warc-target-uri",
+  "warc-truncated", "warc-warcinfo-id", "warc-filename", "warc-profile", "warc-identified-payload-type",
+  "warc-segment-number", "warc-segment-origin-id", "warc-segment-total-length", "warc-record-types", "warcinfo",
+  "response", "http-and-https-schemes", "resource", "request", "metadata", "revisit",
+  "profile-identical-payload-digest", "profile-server-not-modified", "other-profiles", "conversion", "continuation",
+  "record-segmentation", "warc-file-name-size-and-compression", "annex-d-informative-compression-recommendations",
+  "record-at-time-compression", "gzip-warc-file-name-suffix",
+]);
 
 describe("rule docs", () => {
   it("全 URL は https", () => {
@@ -56,6 +71,18 @@ describe("rule docs", () => {
     for (const { rule, doc } of allLinks) {
       if (!doc.url.en.includes("/wacz/")) continue;
       expect(doc.url.ja, `${rule}: ${doc.label}`).toBeDefined();
+    }
+  });
+
+  it("WARC 1.1 を指すリンクは注釈つき 1.1 の頁の見出しを指す", () => {
+    // rule の `docs` は docs の抽出器がソースの文字列として読むので、基底を定数から組めず、
+    // 各 rule に文字列で書いてある。基底の揃いと、アンカーが頁に在ることをここで見る。
+    const warcLinks = allLinks.filter(({ doc }) => doc.url.en.includes("warc-specifications"));
+    expect(warcLinks.length).toBeGreaterThan(0);
+    for (const { rule, doc } of warcLinks) {
+      const [base, anchor] = doc.url.en.split("#");
+      expect(base, `${rule}: ${doc.label}`).toBe(WARC11_SPEC_BASE);
+      expect(WARC11_PAGE_ANCHORS.has(anchor ?? ""), `${rule}: #${String(anchor)}`).toBe(true);
     }
   });
 
