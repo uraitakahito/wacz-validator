@@ -17,6 +17,11 @@
  * **開かせなかったウィンドウの記録（`window` の欄。profile 1.12.0）も数えない。** 要求を出していないので、取得の記録ではない。
  * 内訳にもサンプルにも入れない。形は `browserhive/window-shape` が見る。
  *
+ * **DOM の写しの metadata（`snapshot` の欄。BrowserHive WARC Profile 1.1.0）も数えない。** 写しの `resource` が何かを
+ * 言う記録で、取得の記録ではない。WARC Profile は、読み手がこれを本文の無い応答や止めた要求の記録として数えることを
+ * 禁じる（MUST NOT）。`truncated`・`action`・`reason` のどれも持たないので、飛ばさなければ「未完了」に落ちる。
+ * window と同じく、内訳にもサンプルにも入れない。写しの辻褄は `browserhive/snapshots` が見る。
+ *
  * 規格との関係: この metadata 慣習は WARC/WACZ の規格そのものではなく
  * browserhive 固有。よって `applicability.excludeProfiles` で
  * `spec` / `lenient` を除外し、`--profile browserhive` のときだけ走る。
@@ -109,8 +114,9 @@ export const warcRecordingCompleteRule: ValidationRule = {
       }
       if (type !== "metadata") continue;
       const fields = fieldRecord(parseWarcFieldsBody(record.body).fields);
-      // 開かせなかったウィンドウの記録（profile 1.12.0）は、取得の記録ではない。未完了にも、方針の省略にも数えない。
-      if (fields["window"] !== undefined) continue;
+      // 開かせなかったウィンドウの記録（profile 1.12.0）と DOM の写しの metadata（WARC Profile 1.1.0）は、取得の記録
+      // ではない。未完了にも、方針の省略にも数えない。
+      if (fields["window"] !== undefined || fields["snapshot"] !== undefined) continue;
       const reason = classify(fields);
       byReason[reason] += 1;
       const rt = fields["resourceType"];

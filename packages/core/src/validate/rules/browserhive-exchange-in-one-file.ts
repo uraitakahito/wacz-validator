@@ -13,7 +13,11 @@
  *
  * WACZ Profile 1.16.0 から、この決まりは BrowserHive WARC Profile へ移った (1.0.0 の Records and files)。
  *
- * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#files
+ * **DOM の写しの組も同じ本に在る** (WARC Profile 1.1.0 の Records and files)。写しの `metadata` は `resource` を
+ * `WARC-Refers-To` で指すので、交信の metadata と同じ道で見つかる。組の metadata がどの本にも無いことは
+ * `browserhive/snapshots` が言う。
+ *
+ * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#files
  */
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
@@ -37,8 +41,8 @@ export const browserhiveExchangeInOneFileRule: ValidationRule = {
     {
       label: "BrowserHive WARC Profile §Records and files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#files",
-        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/#files",
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#files",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/ja/#files",
       },
     },
   ],
