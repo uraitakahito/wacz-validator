@@ -22,6 +22,7 @@ import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js"
 import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
+import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -150,6 +151,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveExchangeInOneFileRule,
   // 各本の warcinfo が BrowserHive WARC Profile の版を 1 つだけ名乗り、全部の本で同じか (WACZ Profile 1.16.0)。
   browserhiveWarcinfoDeclaresProfileRule,
+  // DOM の写しが、snapshots・WARC の resource と metadata の組・ページ一覧・索引で辻褄が合い、script を持たないか
+  // (WACZ Profile 1.17.0・WARC Profile 1.1.0)。
+  browserhiveSnapshotsRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   browserhiveTlsSanRule,

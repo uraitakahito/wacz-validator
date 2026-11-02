@@ -76,6 +76,11 @@ export interface FixtureOptions {
    * `datapackage.json` の `title` は `pageTitle` のまま。
    */
   mutatePageEntry?: (defaults: Record<string, unknown>) => Record<string, unknown>;
+  /**
+   * `pages/pages.jsonl` のページの行（header の次から）をこの並びで書く。既定の 1 行の代わり —— 写しの
+   * 時点ごとの行（`stage`）のように、行が 2 つ以上ある形を作る。`mutatePageEntry` とは併せられない。
+   */
+  pageEntries?: Record<string, unknown>[];
   /** Replace the CDXJ filename field on every entry (rule #3). */
   cdxjFilenameOverride?: string;
   /**
@@ -127,6 +132,12 @@ export interface FixtureOptions {
    */
   warcRequests?: WarcRequestSpec[];
   /**
+   * `WARC-Type: resource` の記録（block が内容そのもの）を要求の後ろに足す。BrowserHive の DOM の写しの形。
+   * 既定では索引にも行が並ぶ（鍵も JSON の `url` も `WARC-Target-URI` のまま、`status` は書かない）。
+   * `omitIndex` の記録は並べない。
+   */
+  warcResources?: WarcResourceSpec[];
+  /**
    * `archive/` の主の本の名。既定は `data.warc.gz` (1.13.0 までの BrowserHive と他の producer の形)。
    * BrowserHive 21.0.0 の形を作るなら `data-000.warc.gz`。CDXJ の `filename` と resources にも効く
    * (`cdxjFilenameOverride` が優先)。
@@ -153,7 +164,7 @@ export interface FixtureOptions {
   warcHeaderLineEnding?: "lf";
   /**
    * 主の本の記録を 1 つ選んで見出しを書き換える。`index` は積んだ順（warcinfo が 0、応答・要求・
-   * metadata・revisit・分割の列・生の member と続く）。欄を消す・書いてはいけない欄を足す・値を壊す・
+   * resource・metadata・revisit・分割の列・生の member と続く）。欄を消す・書いてはいけない欄を足す・値を壊す・
    * Content-Length をずらす・折り返す、を `warc/*` の rule の反証に使う。
    */
   warcRecordPatches?: WarcRecordPatch[];
@@ -197,7 +208,7 @@ export interface FixtureOptions {
    * `warc/recording-complete` の分類を動かす。未完了の metadata の後ろに連結する。
    * `uri` を省くと `WARC-Target-URI` の無いレコードになる（形の rule の反証用）。
    */
-  warcMetadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
+  warcMetadata?: WarcMetadataSpec[];
   /**
    * When set, override the CDXJ `offset` field on every entry with this
    * value (string form, matching the producer convention). Used to
@@ -287,6 +298,14 @@ export interface FixtureOptions {
    * archive が名乗る profile の版で決まりが変わる rule (1.11.0 の `deny`) の試験に使う。
    */
   conformsTo?: string;
+  /**
+   * `browserhive:capture.snapshots` をそのまま書き込む。undefined なら member ごと書かない ——
+   * profile 1.17.0 で必須になったが、それより前の archive には無い。
+   *
+   * 中身は検査しない。配列でない値も、記録を名指さない項目も、そのまま通す —— それを問題と呼ぶかは
+   * rule が決める。
+   */
+  snapshots?: unknown;
   /**
    * `browserhive:capture.dismissal` をそのまま書き込む。undefined なら member ごと
    * 書かない —— **除去は任意**で、不在は「配信されたままのページを保存した」という
@@ -390,6 +409,37 @@ export interface WarcRequestSpec {
   concurrentTo?: string;
 }
 
+/** `warcResources` の 1 件。block は内容そのもの（HTTP の包みを持たない）。 */
+export interface WarcResourceSpec {
+  /** `WARC-Target-URI`。 */
+  uri: string;
+  body: Buffer | string;
+  /** `Content-Type`。既定は `text/html; charset=utf-8`（BrowserHive の写しの型）。 */
+  contentType?: string;
+  /** `WARC-Record-ID`。省けば `resourceRecordId(idx)`。別の本と衝突させないときに渡す。 */
+  recordId?: string;
+  /** `WARC-Date`。省けば `2026-05-13T00:00:00Z`。 */
+  date?: string;
+  /** true なら索引に行を書かない（既定は書く）。 */
+  omitIndex?: boolean;
+}
+
+/** `warcResources` の `idx` 番目の resource の `WARC-Record-ID`。metadata の `refersTo` に渡す。 */
+export const resourceRecordId = (idx: number): string =>
+  `<urn:uuid:00000000-0000-0000-0000-${String(idx + 700).padStart(12, "0")}>`;
+
+/** 中身を指定した `WARC-Type: metadata` の記録 1 件（`warcMetadata`・`ExtraWarcSpec.metadata`）。 */
+export interface WarcMetadataSpec {
+  /** `WARC-Target-URI`。省けば書かない。 */
+  uri?: string;
+  /** `WARC-Refers-To`。省けば書かない。 */
+  refersTo?: string;
+  /** `WARC-Date`。省けば `2026-05-13T00:00:00Z`。 */
+  date?: string;
+  /** 本文の `key: value` の行。並べた順に書く。 */
+  fields: Record<string, string>;
+}
+
 /** `extraWarcs` の 1 本。 */
 export interface ExtraWarcSpec {
   /** `archive/` からの相対の名。例 `data-001.warc.gz`。 */
@@ -408,7 +458,8 @@ export interface ExtraWarcSpec {
   corruptAt?: number;
   responses?: WarcResponseSpec[];
   requests?: WarcRequestSpec[];
-  metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
+  resources?: WarcResourceSpec[];
+  metadata?: WarcMetadataSpec[];
 }
 
 /**
@@ -471,12 +522,14 @@ export const segmentRecordId = (idBase: number, n: number): string =>
 /** 組み立てた WARC の各メンバ (gzip 1 つ = レコード 1 つ) の位置。 */
 export interface WarcRecordInfo {
   /** `segment` は分割の列の記録（先頭も continuation も）、`raw` は `warcRawMembers` の member。どちらも索引に載せない。 */
-  type: "warcinfo" | "response" | "request" | "metadata" | "revisit" | "segment" | "raw";
+  type: "warcinfo" | "response" | "request" | "resource" | "metadata" | "revisit" | "segment" | "raw";
   offset: number;
   length: number;
   uri?: string;
   mime?: string;
   status?: number;
+  /** 索引に行を書かない resource（`WarcResourceSpec.omitIndex`）。 */
+  omitIndex?: true;
 }
 
 // ---------------------------------------------------------------------------
@@ -539,17 +592,14 @@ const buildIncompleteMetadataBytes = (
 };
 
 /** 本文を `fields` の `key: value` の行で組んだ `WARC-Type: metadata` レコードを 1 件組み立てる。 */
-const buildFieldsMetadataBytes = (
-  idx: number,
-  spec: { uri?: string; refersTo?: string; fields: Record<string, string> },
-): Buffer => {
+const buildFieldsMetadataBytes = (idx: number, spec: WarcMetadataSpec): Buffer => {
   const lines = Object.entries(spec.fields).map(([k, v]) => `${k}: ${v}`);
   const body = Buffer.from(`${lines.join("\r\n")}\r\n`, "utf-8");
   const headers = [
     "WARC/1.1",
     "WARC-Type: metadata",
     `WARC-Record-ID: <urn:uuid:00000000-0000-0000-0000-${String(idx).padStart(12, "0")}>`,
-    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Date: ${spec.date ?? "2026-05-13T00:00:00Z"}`,
     ...(spec.uri === undefined ? [] : [`WARC-Target-URI: ${spec.uri}`]),
     ...(spec.refersTo === undefined ? [] : [`WARC-Refers-To: ${spec.refersTo}`]),
     "Content-Type: application/warc-fields",
@@ -623,6 +673,30 @@ const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
     "",
   ].join("\r\n");
   return Buffer.concat([Buffer.from(headers, "utf-8"), http, Buffer.from("\r\n\r\n", "utf-8")]);
+};
+
+/**
+ * `WARC-Type: resource` レコードを 1 件組み立てる。形は BrowserHive の DOM の写しと同じ: block は内容そのもの
+ * で、payload も block なので 2 つの digest は同じ値（`warc/payload-digest` が pass する）。`WARC-Concurrent-To` は
+ * 書かない。
+ */
+const buildResourceBytes = (idx: number, spec: WarcResourceSpec): Buffer => {
+  const body = typeof spec.body === "string" ? Buffer.from(spec.body, "utf-8") : spec.body;
+  const digest = sha256Base32(body);
+  const headers = [
+    "WARC/1.1",
+    "WARC-Type: resource",
+    `WARC-Record-ID: ${spec.recordId ?? resourceRecordId(idx)}`,
+    `WARC-Target-URI: ${spec.uri}`,
+    `WARC-Date: ${spec.date ?? "2026-05-13T00:00:00Z"}`,
+    `Content-Type: ${spec.contentType ?? "text/html; charset=utf-8"}`,
+    `WARC-Block-Digest: ${digest}`,
+    `WARC-Payload-Digest: ${digest}`,
+    `Content-Length: ${String(body.byteLength)}`,
+    "",
+    "",
+  ].join("\r\n");
+  return Buffer.concat([Buffer.from(headers, "utf-8"), body, Buffer.from("\r\n\r\n", "utf-8")]);
 };
 
 /** identical-payload-digest の revisit profile（WARC 1.1 §6.7.2）。 */
@@ -739,9 +813,10 @@ const buildWarcGz = (
     corruptAt?: number;
     incompleteRecords?: number;
     incompleteSpec?: { resourceType?: string; blockedReason?: string }[];
-    metadata?: { uri?: string; refersTo?: string; fields: Record<string, string> }[];
+    metadata?: WarcMetadataSpec[];
     responses?: WarcResponseSpec[];
     requests?: WarcRequestSpec[];
+    resources?: WarcResourceSpec[];
     warcinfoFilename?: string;
     warcinfoLines?: string[];
     omitWarcinfo?: boolean;
@@ -774,6 +849,14 @@ const buildWarcGz = (
   // 要求レコードは応答の後ろ。索引には並べない。
   (opts.requests ?? []).forEach((spec, i) => {
     raws.push({ raw: buildRequestBytes(i, spec), info: { type: "request", uri: spec.uri } });
+  });
+  // resource の記録は要求の後ろ。既定では索引に並ぶ。
+  (opts.resources ?? []).forEach((spec, i) => {
+    const mime = (spec.contentType ?? "text/html; charset=utf-8").split(";")[0]?.trim() ?? "";
+    raws.push({
+      raw: buildResourceBytes(i, spec),
+      info: { type: "resource", uri: spec.uri, mime, ...(spec.omitIndex === true && { omitIndex: true as const }) },
+    });
   });
   // テスト用: 未完了 metadata を別 gzip member として連結。
   const plainCount = opts.incompleteRecords ?? 0;
@@ -851,6 +934,33 @@ const buildResponseCdxjLine = (filename: string, record: WarcRecordInfo): string
   return `${record.uri ?? ""} 20260513000000 ${json}\n`;
 };
 
+/**
+ * resource の記録 1 件ぶんの CDXJ 行。BrowserHive の写しの行と同じく、鍵も JSON の `url` も `WARC-Target-URI` の
+ * まま（urn に SURT の形は無い）で、`status` は書かない（応答ではない）。
+ */
+const buildResourceCdxjLine = (filename: string, record: WarcRecordInfo): string => {
+  const json = JSON.stringify({
+    url: record.uri,
+    mime: record.mime,
+    digest: "sha256:0000",
+    length: String(record.length),
+    offset: String(record.offset),
+    filename,
+  });
+  return `${record.uri ?? ""} 20260513000000 ${json}\n`;
+};
+
+/** 本の索引の行。応答の行の後ろに、索引に載せる resource の行。 */
+const indexLinesOf = (filename: string, records: readonly WarcRecordInfo[]): string =>
+  records
+    .filter((record) => record.type === "response")
+    .map((record) => buildResponseCdxjLine(filename, record))
+    .join("") +
+  records
+    .filter((record) => record.type === "resource" && record.omitIndex !== true)
+    .map((record) => buildResourceCdxjLine(filename, record))
+    .join("");
+
 // sha256:<base32> 用ヘルパ — fixture generator を self-contained に
 // 保つために src/wacz/digest.ts のものをミラーしている。
 const sha256Base32 = (bytes: Buffer): string => {
@@ -902,10 +1012,11 @@ const buildPagesJsonl = (
   pageTitle: string,
   ts: string,
   mutateEntry: (defaults: Record<string, unknown>) => Record<string, unknown> = (e) => e,
+  entries?: readonly Record<string, unknown>[],
 ): string => {
   const header = JSON.stringify({ format: "json-pages-1.0", id: taskId, title: pageTitle });
-  const entry = JSON.stringify(mutateEntry({ id: taskId, url: pageUrl, ts, title: pageTitle }));
-  return `${header}\n${entry}\n`;
+  const lines = entries ?? [mutateEntry({ id: taskId, url: pageUrl, ts, title: pageTitle })];
+  return `${header}\n${lines.map((line) => `${JSON.stringify(line)}\n`).join("")}`;
 };
 
 const buildFuzzyJson = (): string => `${JSON.stringify({ rules: [] }, null, 2)}\n`;
@@ -919,7 +1030,7 @@ const sha256Hex = (bytes: Buffer): string =>
 
 export interface BuiltFixture {
   bytes: Buffer;
-  /** WARC の各メンバの位置 (warcinfo・応答・metadata の順)。 */
+  /** 主の本の各メンバの位置（積んだ順: warcinfo・応答・要求・resource・metadata …）。 */
   warcRecords: WarcRecordInfo[];
 }
 
@@ -950,6 +1061,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     ...(options.warcMetadata !== undefined && { metadata: options.warcMetadata }),
     ...(options.warcResponses !== undefined && { responses: options.warcResponses }),
     ...(options.warcRequests !== undefined && { requests: options.warcRequests }),
+    ...(options.warcResources !== undefined && { resources: options.warcResources }),
     ...(options.warcVersion !== undefined && { version: options.warcVersion }),
     ...(options.warcHeaderLineEnding !== undefined && { lineEnding: options.warcHeaderLineEnding }),
     ...(options.warcRecordPatches !== undefined && { patches: options.warcRecordPatches }),
@@ -973,6 +1085,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
       ...(spec.corruptAt !== undefined && { corruptAt: spec.corruptAt }),
       ...(spec.responses !== undefined && { responses: spec.responses }),
       ...(spec.requests !== undefined && { requests: spec.requests }),
+      ...(spec.resources !== undefined && { resources: spec.resources }),
       ...(spec.metadata !== undefined && { metadata: spec.metadata }),
     }),
   }));
@@ -981,7 +1094,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   // pageUrl を使う。
   // cdxjOverride が指定されたら、well-formed な CDXJ 組み立てを丸ごと
   // バイパスして生の文字列を本文にする(非CDXJ を再現 → index-valid-data)。
-  // 応答レコードがあれば、その行を warcinfo の行の後ろに並べる。
+  // 応答レコードがあれば、その行を warcinfo の行の後ろに並べる。resource の行はさらにその後ろ（本ごと）。
   const cdxjBody =
     options.cdxjOverride ??
     buildCdxjLine(cdxjFilename, warc.recordLength, warc.offset, pageUrl, {
@@ -992,18 +1105,8 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
         lengthMismatch: options.cdxjLengthMismatch,
       }),
     }) +
-      warc.records
-        .filter((record) => record.type === "response")
-        .map((record) => buildResponseCdxjLine(cdxjFilename, record))
-        .join("") +
-      extraWarcs
-        .map((extra) =>
-          extra.warc.records
-            .filter((record) => record.type === "response")
-            .map((record) => buildResponseCdxjLine(extra.cdxjFilename, record))
-            .join(""),
-        )
-        .join("");
+      indexLinesOf(cdxjFilename, warc.records) +
+      extraWarcs.map((extra) => indexLinesOf(extra.cdxjFilename, extra.warc.records)).join("");
   const cdxjBytesPlain = Buffer.from(cdxjBody, "utf-8");
 
   // Index レイアウト — producer + legacy な `cdxjGzipped` knob に依存。
@@ -1046,7 +1149,10 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     indexEntries.push({ name: cdxjEntryName, bytes: cdxjBytes });
   }
 
-  let pagesBody = buildPagesJsonl(taskId, pageUrl, pageTitle, capturedAt, options.mutatePageEntry);
+  if (options.pageEntries !== undefined && options.mutatePageEntry !== undefined) {
+    throw new Error("pageEntries と mutatePageEntry は併せられない —— 行を全部渡すなら、渡す行を変える");
+  }
+  let pagesBody = buildPagesJsonl(taskId, pageUrl, pageTitle, capturedAt, options.mutatePageEntry, options.pageEntries);
   if (options.pagesBadLine === "not-json") {
     pagesBody += "this is not json\n";
   } else if (options.pagesBadLine === "missing-prop") {
@@ -1213,6 +1319,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.settle !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["settle"] = options.settle;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.snapshots !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["snapshots"] = options.snapshots;
     datapackage["browserhive:capture"] = capture;
   }
   const datapackageBytes = Buffer.from(`${JSON.stringify(datapackage, null, 2)}\n`, "utf-8");
