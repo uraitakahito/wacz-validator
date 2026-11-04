@@ -2,7 +2,7 @@
 /**
  * `browserhive/snapshots` のテスト。
  *
- * 守っている主張は WACZ Profile 1.17.0 の snapshots・Pages・Archive files（索引の段落）と、BrowserHive WARC Profile
+ * 守っている主張は WACZ Profile 1.17.0 と 1.18.0（Pages の 1 行目は文書）の snapshots・Pages・Archive files（索引の段落）と、BrowserHive WARC Profile
  * 1.1.0 の Snapshots。取り込みが撮った DOM の写しは、datapackage の snapshots の項目・WARC の resource と metadata の
  * 組・ページ一覧の行・索引の行のどこから読んでも同じ物を指し、写しは script の要素を持たない。
  *
@@ -33,6 +33,7 @@ import { firedWarc11Rules } from "./fixtures/warc11.js";
 const RULE = "browserhive/snapshots";
 const WACZ_1_16 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.16.0/";
 const WACZ_1_17 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/";
+const WACZ_1_18 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/";
 const DATAPACKAGE: IssueLocation = { entry: "datapackage.json" };
 const PAGES = "pages/pages.jsonl";
 const INDEX = "indexes/index.cdxj";
@@ -454,6 +455,59 @@ describe("browserhive/snapshots", () => {
       const loud = await reportOf(archive({ warcResources: resources }));
       expect(loud.report.issues.filter((i) => i.rule === "cdxj/pages-mainpage").map((i) => i.messageKey)).toEqual([
         "cdxj/pages-mainpage.no-cdxj-record",
+      ]);
+    });
+  });
+
+  describe("WACZ Profile 1.18.0 —— ページ一覧の 1 行目は文書", () => {
+    /** 取り込みを求められた文書の行（stage 無し・ts は取り込みの開始）。 */
+    const DOC_ROW = { id: "task-1", url: DOC_A, ts: "2026-11-02T01:20:03.502Z", title: "Shop" };
+    const doc18 = (over: Partial<FixtureOptions> = {}): FixtureOptions =>
+      archive({ conformsTo: WACZ_1_18, pageEntries: [DOC_ROW, pageOf(A), pageOf(B)], mainPageUrlOverride: DOC_A, ...over });
+
+    it("文書の行の後に写しの行が並び、mainPageURL が文書の行なら何も言わない", async () => {
+      expect(await run(doc18())).toEqual([]);
+    });
+
+    it("写しを 1 つも撮らなかった archive は、文書の行 1 つで通る", async () => {
+      expect(await run(withheld({ conformsTo: WACZ_1_18 }))).toEqual([]);
+    });
+
+    it("写しの行だけ（1.17.0 の形）なら error", async () => {
+      expect(await run(doc18({ pageEntries: [pageOf(A), pageOf(B)], mainPageUrlOverride: A.url }))).toEqual([
+        bad("pages", { found: '["after-load","after-behaviors"]', expected: '[null,"after-load","after-behaviors"]' }, { entry: PAGES }),
+      ]);
+    });
+
+    it("文書の行が写しの後ろなら error", async () => {
+      expect(await run(doc18({ pageEntries: [pageOf(A), pageOf(B), DOC_ROW], mainPageUrlOverride: A.url }))).toEqual([
+        bad("pages", { found: '["after-load","after-behaviors",null]', expected: '[null,"after-load","after-behaviors"]' }, { entry: PAGES }),
+      ]);
+    });
+
+    it("文書の行が stage を持てば error", async () => {
+      const staged = { ...DOC_ROW, stage: "document" };
+      expect(await run(doc18({ pageEntries: [staged, pageOf(A), pageOf(B)] }))).toEqual([
+        bad("pages", { found: '["document","after-load","after-behaviors"]', expected: '[null,"after-load","after-behaviors"]' }, { entry: PAGES }),
+      ]);
+    });
+
+    it("mainPageURL が最初の写しなら error —— 1.18.0 からは文書の行", async () => {
+      expect(await run(doc18({ mainPageUrlOverride: A.url }))).toEqual([
+        bad("main-page", { found: A.url, expected: DOC_A }, DATAPACKAGE),
+      ]);
+    });
+
+    it("写しの行の url と ts は、文書の行の次（2 行目）から照らす", async () => {
+      const ts = "2026-11-02T01:20:05Z";
+      expect(await run(doc18({ pageEntries: [DOC_ROW, { ...pageOf(A), ts }, pageOf(B)] }))).toEqual([
+        mismatch("after-load", ["pages/pages.jsonl", "ts", ts], ["resource", "WARC-Date", A.date], { entry: PAGES, line: 3 }),
+      ]);
+    });
+
+    it("1.17.0 の archive は、いままでの形で照らす —— 文書の行が先頭なら error", async () => {
+      expect(await run(archive({ pageEntries: [DOC_ROW, pageOf(A), pageOf(B)], mainPageUrlOverride: DOC_A }))).toEqual([
+        bad("pages", { found: '[null,"after-load","after-behaviors"]', expected: '["after-load","after-behaviors"]' }, { entry: PAGES }),
       ]);
     });
   });

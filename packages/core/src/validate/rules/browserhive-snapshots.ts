@@ -177,8 +177,8 @@ export const browserhiveSnapshotsRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §Pages",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#pages",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/ja/#pages",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/#pages",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/ja/#pages",
       },
     },
     {
@@ -315,17 +315,22 @@ export const browserhiveSnapshotsRule: ValidationRule = {
       );
     }
 
-    // ページ一覧: 写しごとに 1 行を snapshots の順に。写しが無ければ stage の無い 1 行。
+    // ページ一覧。WACZ Profile 1.18.0 から: 1 行目は文書の行（stage 無し）、その後に写しごとに 1 行を
+    // snapshots の順に。1.17.0: 写しごとに 1 行を snapshots の順に、写しが無ければ stage の無い 1 行。
+    // 版は archive が名乗る conformsTo で分ける（store には 1.17.0 の archive も残る）。
+    const documentFirst = profileAtLeast(capture["conformsTo"], 1, 18);
     const pagesBuf = await wacz.readEntry(PAGES_ENTRY);
     const pages = pagesBuf === undefined ? null : readPageLines(pagesBuf.toString("utf-8"));
     if (pages !== null) {
-      const expected = JSON.stringify(taken.length > 0 ? taken.map((t) => t.stage) : [null]);
+      const stages = taken.map((t) => t.stage);
+      const expected = JSON.stringify(documentFirst ? [null, ...stages] : stages.length > 0 ? stages : [null]);
       const found = JSON.stringify(pages.map(({ page }) => page["stage"] ?? null));
       if (found !== expected) {
         issue("pages", { found, expected }, { entry: PAGES_ENTRY });
       } else {
+        const offset = documentFirst ? 1 : 0; // 1.18.0 からは、写しの行は文書の行の後
         taken.forEach(({ stage, resource }, i) => {
-          const row = pages[i];
+          const row = pages[i + offset];
           if (resource === undefined || row === undefined) return;
           const location: IssueLocation = { entry: PAGES_ENTRY, line: row.line };
           compare(
@@ -354,8 +359,9 @@ export const browserhiveSnapshotsRule: ValidationRule = {
         }
         seen.add(id);
       }
+      // mainPageURL は最初の行の url（1.18.0 からはいつでも＝文書の行、1.17.0 は写しが在るとき＝最初の写し）。
       const first = pages[0];
-      if (taken.length > 0 && first !== undefined) {
+      if ((documentFirst || taken.length > 0) && first !== undefined) {
         const mainPageURL = (await datapackageOf(wacz)).parsed?.mainPageURL;
         if (mainPageURL !== first.page["url"]) {
           issue("main-page", { found: shown(mainPageURL), expected: shown(first.page["url"]) }, inDatapackage);
