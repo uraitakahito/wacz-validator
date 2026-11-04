@@ -12,7 +12,10 @@
  *
  * ## 何を見るか
  *
- * git が追跡する text のファイルのうち、SCOPES に挙げた場所（試験と、試験が読む物）。
+ * git が repo の中身と見なす text のファイルのうち、SCOPES に挙げた場所（試験と、試験が読む物）。
+ * 追跡済みに加えて、まだ add していない新しいファイルも見る（ignore したものは見ない）。追跡済み
+ * だけを見ると、add する前の新しい試験に書いた名前が手元では素通りし、まっさらな checkout から
+ * 走る CI で、push した後に初めて赤になる。
  * 名前の形は 4 つ: example.com など・その SURT（com,example）・*.example・その SURT（example,a）。
  * 正規表現の中の \. も同じ名前として見る。
  *
@@ -22,7 +25,7 @@
  * .env.example（名前ではなくファイル名）と、zip や画像のような text でないファイル。
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 
 /** この repo の試験の場所。repo ごとに違うのはここだけ。 */
 const SCOPES = ["test", "packages/*/test/*", "scripts/*.test.mjs"];
@@ -38,9 +41,16 @@ const FIND = [
   /(?<![A-Za-z0-9-])example,[A-Za-z0-9-]+[),]/i,
 ];
 
-const files = execFileSync("git", ["ls-files", "--", ...SCOPES], { encoding: "utf8" })
-  .split("\n")
-  .filter(Boolean);
+// 既定（core.quotepath=true）の git は ASCII でない名前を引用符つきで出し、改行で切ると下の filter で
+// 黙って飛ばされるので、-z で読んで NUL で切る。
+const files = execFileSync(
+  "git",
+  ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...SCOPES],
+  { encoding: "utf8" },
+)
+  .split("\0")
+  // 一覧には、消したがまだ追跡しているファイル（git rm の前）と、入れ子の repo（ディレクトリ）も出る。
+  .filter((file) => file !== "" && statSync(file, { throwIfNoEntry: false })?.isFile() === true);
 let found = 0;
 for (const file of files) {
   const text = readFileSync(file, "utf8");
