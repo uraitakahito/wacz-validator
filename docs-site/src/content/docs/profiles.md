@@ -43,7 +43,7 @@ wacz-validator-validate --profile browserhive@2.1.0 archive.wacz
 Without a version, every rule runs, including the version-conditional ones —
 that is the previous behaviour, kept as the default.
 
-A rule held back by a version mismatch is reported in `skipped`. It is **not
+A rule held back by the version you name is reported in `skipped`. It is **not
 dropped silently**: a reader who cannot tell "nothing wrong" from "not looked
 at" is being misled.
 
@@ -63,6 +63,22 @@ archive was really produced by 1.0.0. `datapackage.json` carries a `software`
 field naming the producer and its version, but wacz-validator does not read it yet.
 **The version is the operator's claim.**
 :::
+
+#### The version the archive names
+
+Some `browserhive/*` rules check what a later version of the BrowserHive WACZ
+Profile introduced. Whether that applies is decided by the archive itself — by
+the profile version its `browserhive:capture.conformsTo` names — and not by
+`--profile`, so it holds with or without `@<x.y.z>`. An archive that names an
+earlier version, or none, gets nothing from such a rule: the rule runs, finds
+nothing to apply, and counts as passed.
+
+Such a rule is **not** listed in `skipped`, and the report does not say that it
+left the archive alone: `skipped` records only what the version in `--profile`
+held back. The version a rule applies from is written in its source, under
+`packages/core/src/validate/rules/`. Where a later version changed a
+requirement rather than adding one, a rule can also check an archive against
+the version it names.
 
 ### `lenient`
 

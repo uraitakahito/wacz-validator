@@ -23,6 +23,7 @@ import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
+import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -121,8 +122,6 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // browserhive profile 限定: tls member の証明書チェーンを、パッケージの中だけで
   // 検証する。ルートストアは見ない —— 検査する側の環境と時刻で答えが変わるため。
   browserhiveTlsChainRule,
-  // 同上。記録された san を、同じパッケージに入っている証明書と突き合わせる。
-  // san は browserhive 3.7.0 で入ったので版の条件を持つ。
   browserhiveAxtreeShapeRule,
   browserhiveBehaviorsShapeRule,
   browserhiveDismissalShapeRule,
@@ -154,8 +153,13 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // DOM の写しが、snapshots・WARC の resource と metadata の組・ページ一覧・索引で辻褄が合い、script を持たないか
   // (WACZ Profile 1.17.0・WARC Profile 1.1.0)。
   browserhiveSnapshotsRule,
+  // 取り込みのログ logs/capture.jsonl が在り、各行が決まった member と値を持ち、settings と document に合うか
+  // (WACZ Profile 1.19.0)。
+  browserhiveLogsShapeRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
+  // browserhive profile 限定: 記録された tls の san を、同じパッケージに入っている証明書と突き合わせる
+  // (browserhive/tls-chain と対)。san は browserhive 3.7.0 で入ったので版の条件を持つ。
   browserhiveTlsSanRule,
 ];
 

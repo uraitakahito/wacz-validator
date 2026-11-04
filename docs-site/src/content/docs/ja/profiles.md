@@ -43,7 +43,7 @@ wacz-validator-validate --profile browserhive@2.1.0 archive.wacz
 バージョンを添えなければ、バージョンに条件を持つ rule も**すべて走ります**
 （従来どおり）。
 
-バージョンが合わずに走らせなかった rule は、JSON の `skipped` に残ります ——
+添えたバージョンが合わずに走らせなかった rule は、JSON の `skipped` に残ります ——
 **黙って消しません**。読者が「問題なし」と「見ていない」を区別できないと、報告が嘘に
 近づくからです。
 
@@ -62,6 +62,19 @@ wacz-validator-validate --profile browserhive@2.1.0 archive.wacz
 検査しません。`datapackage.json` の `software` には producer 名とバージョンが
 書かれていますが、wacz-validator はまだ読んでいません。**バージョンは操作者の申告です。**
 :::
+
+#### archive が名乗る版
+
+`browserhive/*` の rule には、BrowserHive WACZ Profile の後の版で入った決まりを見るものがあります。
+その決まりを当てるかどうかは archive 自身が決めます —— `browserhive:capture.conformsTo` が名乗る
+profile の版で決まり、`--profile` では決まりません（`@<x.y.z>` を添えても添えなくても同じです）。
+それより前の版を名乗る archive と、版を名乗らない archive には、その rule は何も当てません。
+rule は走り、当てるものが無く、passed に数えられます。
+
+こうした rule は `skipped` に**載りません**。報告は、rule がその archive に何も当てなかったことを言いません ——
+`skipped` が記録するのは、`--profile` に添えた版が落とした rule だけです。rule がどの版から当たるかは、
+rule のソース（`packages/core/src/validate/rules/` の下）に書いてあります。後の版が決まりを足したのでなく
+変えたところでは、archive が名乗る版の決まりで照らす rule もあります。
 
 ### `lenient`
 

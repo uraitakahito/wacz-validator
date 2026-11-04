@@ -53,8 +53,12 @@ export const readCustomBehaviors = async (
 /**
  * `settings.behaviors` のうち、リクエストが運んできたと申告されているものの id。
  *
- * 1.5.0 で `string[]` から `{ id, origin }[]` になった。古い形は読まない ——
- * 版の条件で 1.5.0 未満のアーカイブには rule 自体が当たらないため。
+ * 1.5.0 で `string[]` から `{ id, origin }[]` になった。古い形（文字の項目）は読まずに飛ばすので、
+ * 1.5.0 より前の archive は、持ち込みを何も申告していない archive と同じに読む。
+ *
+ * それより前の archive に rule が当たらないわけではない。`browserhive/behaviors-shape` の版の条件は
+ * producer の版（`browserhive >=8.6.0`）で、archive の版ではなく、`--profile browserhive@<版>` を添えた
+ * 実行でしか効かない。版を添えない実行では、どの archive にもこの関数が当たる。
  */
 export const customIdsFromSettings = (
   capture: Record<string, unknown> | undefined,
