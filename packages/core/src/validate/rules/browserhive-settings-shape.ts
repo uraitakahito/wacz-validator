@@ -1,5 +1,5 @@
 /**
- * Rule: browserhive/settings-shape(browserhive profile 限定 · >=7.0.0)
+ * Rule: browserhive/settings-shape(browserhive profile 限定 · >=8.0.0)
  *
  * `browserhive:capture.settings` が、profile 1.3.0 が定める必須 member を
  * すべて持っているか。

@@ -330,6 +330,12 @@ export interface FixtureOptions {
    */
   behaviorsCustom?: Record<string, unknown>[] | string;
   /**
+   * `logs/capture.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、文字列ならそのまま書く
+   * (JSON として読めない行や、空のファイルを作るため)。resources にも載る。undefined ならエントリごと
+   * 作らない —— WACZ Profile 1.19.0 で必須になったが、それより前の archive には無い。
+   */
+  logs?: Record<string, unknown>[] | string;
+  /**
    * `storage/origins.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、
    * 文字列ならそのまま書く (JSON として読めない行を作るため)。
    */
@@ -1183,6 +1189,16 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
           "utf-8",
         );
 
+  const logsBytes =
+    options.logs === undefined
+      ? undefined
+      : Buffer.from(
+          typeof options.logs === "string"
+            ? options.logs
+            : options.logs.map((line) => `${JSON.stringify(line)}\n`).join(""),
+          "utf-8",
+        );
+
   const storageBytes =
     options.storageValues === undefined
       ? undefined
@@ -1252,6 +1268,16 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
             path: "behaviors/custom.jsonl",
             hash: sha256Hex(behaviorsCustomBytes),
             bytes: behaviorsCustomBytes.byteLength,
+          },
+        ]),
+    ...(logsBytes === undefined
+      ? []
+      : [
+          {
+            name: "capture.jsonl",
+            path: "logs/capture.jsonl",
+            hash: sha256Hex(logsBytes),
+            bytes: logsBytes.byteLength,
           },
         ]),
   ];
@@ -1381,6 +1407,9 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   }
   if (behaviorsCustomBytes !== undefined) {
     zip.append(behaviorsCustomBytes, { name: "behaviors/custom.jsonl", date: entryDate });
+  }
+  if (logsBytes !== undefined) {
+    zip.append(logsBytes, { name: "logs/capture.jsonl", date: entryDate });
   }
   if (axtreeBytes !== undefined) {
     zip.append(axtreeBytes, { name: "accessibility/axtree.jsonl", date: entryDate });
