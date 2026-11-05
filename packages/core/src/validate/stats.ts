@@ -31,7 +31,6 @@ export const computeStats = async (wacz: WaczReader): Promise<ReportStats | unde
       if (!warcBuf) continue;
       archiveBytes += warcBuf.byteLength;
       for (const _member of iterateWarcMembers(warcBuf, { loose: true })) {
-        void _member;
         count += 1;
       }
     }

@@ -98,7 +98,6 @@ describe("browserhive/warc-files", () => {
       bad("filename", { entry: SECOND, found: "data-000.warc.gz" }, SECOND),
     ]);
     const { warcinfoFilename: _dropped, ...noName } = archive();
-    void _dropped;
     expect(await run(noName)).toEqual([bad("filename", { entry: FIRST, found: "-" }, FIRST)]);
   });
 

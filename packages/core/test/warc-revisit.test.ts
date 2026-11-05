@@ -44,7 +44,6 @@ describe("warc/revisit", () => {
 
   it("identical-payload-digest に WARC-Payload-Digest が無ければ鳴る（この rule だけ）", async () => {
     const { payloadDigest: _drop, ...noDigest } = IDENTICAL;
-    void _drop;
     expect(await found(noDigest)).toEqual(["warning digest-missing -"]);
     expect(firedWarc11Rules(await reportFor({ warcRevisits: [noDigest] }))).toEqual([RULE]);
   });
@@ -77,7 +76,6 @@ describe("warc/revisit", () => {
     const legacy = { ...IDENTICAL, profile: "http://netpreserve.org/warc/1.0/revisit/identical-payload-digest" };
     expect(await found(legacy)).toEqual(["info profile-uri-1-0 http://netpreserve.org/warc/1.0/revisit/identical-payload-digest"]);
     const { payloadDigest: _drop, ...noDigest } = legacy;
-    void _drop;
     expect((await found(noDigest)).sort()).toEqual([
       "info profile-uri-1-0 http://netpreserve.org/warc/1.0/revisit/identical-payload-digest",
       "warning digest-missing -",

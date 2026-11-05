@@ -89,7 +89,6 @@ const archive = (over: Partial<FixtureOptions> = {}): FixtureOptions => ({
 /** ログのエントリを持たない archive（ほかは `archive(over)` と同じ）。 */
 const withoutLogs = (over: Partial<FixtureOptions> = {}): FixtureOptions => {
   const { logs: _dropped, ...rest } = archive(over);
-  void _dropped;
   return rest;
 };
 
@@ -319,7 +318,6 @@ describe("browserhive/logs-shape", () => {
 
     it("archive が版を名乗らなければ当てない", async () => {
       const { conformsTo: _dropped, ...unnamed } = broken();
-      void _dropped;
       expect(await run(unnamed)).toEqual([]);
     });
 

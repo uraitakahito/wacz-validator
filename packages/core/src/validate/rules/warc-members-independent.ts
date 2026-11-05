@@ -57,7 +57,6 @@ const walk = (entry: string, bytes: Buffer): Issue[] => {
   try {
     let memberCount = 0;
     for (const _member of iterateWarcMembers(bytes, { loose: false })) {
-      void _member;
       memberCount += 1;
     }
     if (memberCount === 0) {
