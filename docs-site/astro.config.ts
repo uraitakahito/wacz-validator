@@ -16,7 +16,10 @@ export default defineConfig({
   site: "https://uraitakahito.github.io",
   base: BASE,
   integrations: [
-    mermaid({ theme: "neutral" }),
+    // 配置は dagre、flowchart の折り返しの幅は 200 に固定する。mermaid 12 で既定が ELK と 120 に変わり、
+    // `@wacz-validator/core` のような名前が語の途中で折れた。この 2 つで mermaid 11 の配置に戻る
+    // (図 4 枚を light と dark で描いて見比べた)。
+    mermaid({ theme: "neutral", mermaidConfig: { layout: "dagre", flowchart: { wrappingWidth: 200 } } }),
     starlight({
       title: "wacz-validator Docs",
       customCss: ["./src/styles/tables.css"],
