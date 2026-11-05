@@ -102,6 +102,9 @@ export function makeConfig(workspaceDir) {
         ],
         "@typescript-eslint/no-import-type-side-effects": "error",
         "@typescript-eslint/consistent-type-imports": "error",
+        // 使わないと決めた変数は `_` で始める（分割代入で 1 つ捨てる・for...of で数えるだけ）。
+        // `void x;` で黙らせると no-meaningless-void-operator に当たる。
+        "@typescript-eslint/no-unused-vars": ["error", { varsIgnorePattern: "^_" }],
         "@typescript-eslint/naming-convention": [
           "warn",
           // const は UPPER_CASE 定数 / PascalCase React FC / camelCase の 3 形式を許容

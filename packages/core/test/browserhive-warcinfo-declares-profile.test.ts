@@ -141,7 +141,6 @@ describe("browserhive/warcinfo-declares-profile", () => {
 
   it("archive が版を名乗らなければ当てない", async () => {
     const { conformsTo: _dropped, ...unnamed } = archive({ first: [`conformsTo: ${IIPC}`] });
-    void _dropped;
     expect(await run(unnamed)).toEqual([]);
   });
 

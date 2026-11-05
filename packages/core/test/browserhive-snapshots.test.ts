@@ -217,7 +217,6 @@ describe("browserhive/snapshots", () => {
   describe("snapshots の形と時点の並び", () => {
     it("snapshots が無ければ error —— profile 1.17.0 から必須", async () => {
       const { snapshots: _dropped, ...options } = archive();
-      void _dropped;
       expect(await run(options)).toEqual([bad("shape", { at: "snapshots", found: "undefined" }, DATAPACKAGE)]);
     });
 
@@ -566,7 +565,6 @@ describe("browserhive/snapshots", () => {
 
     it("archive が版を名乗らなければ当てない", async () => {
       const { conformsTo: _dropped, ...unnamed } = archive({ snapshots: "after-load" });
-      void _dropped;
       expect(await run(unnamed)).toEqual([]);
     });
 
