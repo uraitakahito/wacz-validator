@@ -48,7 +48,7 @@
     /*
      * Language and Environment
      */
-    // Node 24 supports the full ES2024 surface (Array.prototype.groupBy,
+    // Node 26 supports the full ES2024 surface (Array.prototype.groupBy,
     // Promise.withResolvers, well-formed Unicode strings, …). No
     // explicit `lib` either — TypeScript infers it from `target`, which
     // pulls in lib.es2024.d.ts plus all DOM-less Node basics.

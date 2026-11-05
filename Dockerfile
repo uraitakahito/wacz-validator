@@ -16,9 +16,9 @@
 #
 # ## Node と pnpm の版
 #
-# base は .nvmrc と同じ Node 24。pnpm は corepack が package.json の packageManager から
-# 選ぶので、ここに版を書かない。Node 25 からは corepack が同梱されないので、base を上げる日は
-# pnpm の入れ方も一緒に変えること。
+# base は .nvmrc と同じ Node 26。pnpm は corepack が package.json の packageManager から
+# 選ぶので、ここに pnpm の版を書かない。corepack は Node 25 から同梱されないので、builder と deps の
+# 段で入れる（daemon と cli の段には残らない）。base を上げる日は .nvmrc と engines も一緒に変えること。
 #
 # ## 版
 #
@@ -53,10 +53,10 @@
 # ---------------------------------------------------------------------------
 # Stage 1: builder
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
+RUN npm i -g corepack@0.35.0 && corepack enable
 
 WORKDIR /build
 COPY . .
@@ -66,10 +66,10 @@ RUN pnpm --filter "@wacz-validator/daemon..." --filter "@wacz-validator/validate
 # ---------------------------------------------------------------------------
 # Stage 2: deps — prod の依存だけ
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
+RUN npm i -g corepack@0.35.0 && corepack enable
 
 WORKDIR /app
 # 全部の package の manifest を写す。入れない package (tui・devtools) も、lockfile と
@@ -89,7 +89,7 @@ RUN pnpm install --prod --frozen-lockfile --node-linker=hoisted \
 # ---------------------------------------------------------------------------
 # Stage 3: daemon — 常駐の検証 daemon
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS daemon
+FROM node:26-bookworm-slim AS daemon
 
 WORKDIR /app
 COPY --from=deps /app ./
@@ -109,7 +109,7 @@ ENTRYPOINT ["node", "packages/daemon/dist/cli.js"]
 # ---------------------------------------------------------------------------
 # Stage 4: cli — 1 回きりの検証 CLI (最後の段 = target を書かない build の既定)
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS cli
+FROM node:26-bookworm-slim AS cli
 
 WORKDIR /app
 COPY --from=deps /app ./

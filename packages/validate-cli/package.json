@@ -5,7 +5,7 @@
   "license": "Unlicense",
   "type": "module",
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=26"
   },
   "bin": {
     "wacz-validator-validate": "dist/wacz-validator-validate.js"
