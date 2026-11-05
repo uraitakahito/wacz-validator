@@ -2,7 +2,7 @@
  * Rule: browserhive/document-withheld (error · browserhive profile 限定 · >=13.0.0)
  *
  * ページから作った記録 (`pages.jsonl` の文字と題、アクセシビリティツリー) を、それを読んだ文書の
- * 扱いで決めているか。profile 1.11.0 の `browserhive:capture.document` に照らす。
+ * 扱いで決めているか。profile の `browserhive:capture.document` に照らす。
  *
  * **3 つは WARC の本文ではなく描画されたページから読む**ので、方針が文書の本文を archive に
  * 入れなくても、それだけでは文字は archive から消えない。profile はそれを `document` の節で
@@ -15,19 +15,27 @@
  *
  * ② `withheld` があれば、ページ行に `text` も `title` も無く、`accessibility/axtree.jsonl` も
  *    無いこと。ページ行が `textWithheld` を持つなら、値は `withheld` と等しいこと。
+ *    例外は after-load の写しの行で、その時点の文書から読む (profile 1.17.0 から) ので、`document.url` と URL が
+ *    違い、方針の当たらない文書の行は `text` と `title` を持てる —— 写した後でスクリプトが伏せる文書へ移った
+ *    取り込みの形。方針は URL で照らすので、同じ文書が pushState で方針の当たる URL へ移った場合も同じ。
+ *    ほかの行は見る: 文書の行と after-behaviors の行は `document` の文書から読み、方針の当たる文書は写さない。
+ *    **ページの文字と題を見る rule はここだけなので、文書の行だけに絞らない。** 絞ると、伏せた文書の文字が
+ *    写しの行に残る漏れを、どの rule も言わなくなる。
  *
  * ③ `withheld` が無ければ、ツリーの各行の `url` が `document.url` と等しいこと —— 要求の URL
  *    ではなく、読んだ文書を名乗る。
  *
- * 加えて、`document.url` が索引にも `no-archive`・`deny` の記録にも無ければ warning にする。身元が
- * archive の中を指していない —— 読んだ文書の要求が記録されていない。
+ * 加えて、`document.url` が索引にも `no-archive`・`deny` の記録にも写しの `document-uri` にも無ければ
+ * warning にする。身元が archive の中を指していない —— 読んだ文書の記録が無い。頁の中で URL だけが替わった
+ * 文書 (pushState) には、その URL の要求も応答も無いので、写しが身元を記録する。伏せた文書には写しが無いので、
+ * 伏せる URL へ pushState した文書には warning が残る —— その URL の記録は本当に無い。
  *
  * **`deny` の扱いは、archive が名乗る profile の版 (`conformsTo`) で分ける。** 1.11.0 から、
  * `deny` の当たった文書は要求されず、`withheld: "deny"` で伏せる。1.10.0 には `deny` の理由が無く、
  * そのころの BrowserHive (v13.0.0〜v17.0.0) は主文書への `deny` で要求を止められずにページを
  * 読んでいた。1.10.0 の archive では `deny` は何も伏せず、`deny` の記録も身元の在り処にならない ——
  * 身元が archive に無いという warning が、その漏れを言う。`conformsTo` が無いか読めなければ、
- * いまの版 (1.11.0) の決まりで照らす。呼び手が名乗る producer の版 (`--profile browserhive@x.y.z`)
+ * 1.11.0 からの決まりで照らす。呼び手が名乗る producer の版 (`--profile browserhive@x.y.z`)
  * ではなく archive 自身の宣言で分けるのは、同じ rule の中で決まりが変わるため —— 版を名乗らない
  * 実行でも、古い archive を新しい決まりで落とさない。
  *
@@ -38,12 +46,14 @@
  * **`document` の無い archive は見ない。** profile 1.10.0 より前の archive には身元が無く、
  * 照らしようがない。版を渡さずに走らせたとき、古い archive を一斉に落とさないためでもある。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/#document
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document
+ *   （`document-uri` は https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots）
  */
 import { ok } from "../../result.js";
+import { fieldValues, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
-import { parsePagesJsonl } from "../../wacz/pages.js";
+import { parsePagesJsonl, type PagesJsonlEntry } from "../../wacz/pages.js";
 import type { WaczReader } from "../../wacz/reader.js";
 import { AXTREE_ENTRY, readAxtree } from "../browserhive-axtree.js";
 import {
@@ -69,6 +79,9 @@ const UNATTRIBUTED = "unattributed";
 
 /** `conformsTo` の URL から読む profile の版。`/wacz-profile/1.11.0/` の形。 */
 const CONFORMS_TO_VERSION = /\/wacz-profile\/(\d+)\.(\d+)\.(\d+)\//;
+
+/** after-load の写しの行の `url` の頭。後ろに、その時点の文書の URL（断片なし）が続く。 */
+const AFTER_LOAD_URI = "urn:browserhive:snapshot:after-load:";
 
 /**
  * archive が `deny` を伏せる理由として扱う版 (profile 1.11.0 以降) を名乗るか。名乗りが無いか
@@ -107,10 +120,14 @@ const expectedFor = (
 };
 
 /**
- * WARC の metadata のうち、`actions` のどれかを名乗る記録が指す URL。BrowserHive は記録しなかった
- * 要求 (`no-archive`) と送らなかった要求 (`deny`) をこの形で残す。
+ * WARC の metadata が、文書の URL として記録しているもの。
+ *
+ * - `actions` のどれかを名乗る記録の `WARC-Target-URI`。BrowserHive は記録しなかった要求 (`no-archive`) と
+ *   送らなかった要求 (`deny`) をこの形で残す
+ * - 写しの metadata（`snapshot` の欄を持つ）の `document-uri` から断片を除いたもの。`document-uri` は
+ *   `location.href` なので断片を含み、`document.url` は含まない
  */
-const withheldRequestUrls = async (wacz: WaczReader, actions: ReadonlySet<string>): Promise<Set<string>> => {
+const documentUrlsInMetadata = async (wacz: WaczReader, actions: ReadonlySet<string>): Promise<Set<string>> => {
   const urls = new Set<string>();
   for (const entry of wacz.warcEntries()) {
     const buf = await wacz.readEntry(entry);
@@ -118,17 +135,22 @@ const withheldRequestUrls = async (wacz: WaczReader, actions: ReadonlySet<string
     for (const member of iterateWarcMembers(buf, { loose: true })) {
       const record = parseWarcRecord(member.raw);
       if (record === null || (getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
-      const action = record.body
-        .toString("utf-8")
-        .split("\n")
-        .map((line) => line.trim())
-        .some((line) => line.startsWith("action: ") && actions.has(line.slice("action: ".length)));
-      const url = getHeader(record, "WARC-Target-URI");
-      if (action && url !== undefined) urls.add(url);
+      const { fields } = parseWarcFieldsBody(record.body);
+      const target = getHeader(record, "WARC-Target-URI");
+      if (target !== undefined && fieldValues(fields, "action").some((action) => actions.has(action))) urls.add(target);
+      if (fieldValues(fields, "snapshot").length > 0) {
+        for (const uri of fieldValues(fields, "document-uri")) urls.add(uri.split("#", 1)[0] ?? uri);
+      }
     }
   }
   return urls;
 };
+
+/** after-load の写しの行が名乗る、その時点の文書の URL。その形の行でなければ `undefined`。 */
+const afterLoadDocumentUrl = (page: PagesJsonlEntry): string | undefined =>
+  page["stage"] === "after-load" && typeof page.url === "string" && page.url.startsWith(AFTER_LOAD_URI)
+    ? page.url.slice(AFTER_LOAD_URI.length)
+    : undefined;
 
 export const browserhiveDocumentWithheldRule: ValidationRule = {
   name: "browserhive/document-withheld",
@@ -138,8 +160,15 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §document",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/#document",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/ja/#document",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/ja/#document",
+      },
+    },
+    {
+      label: "BrowserHive WARC Profile §Snapshots",
+      url: {
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/ja/#snapshots",
       },
     },
   ],
@@ -176,6 +205,10 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
     const withheld = document["withheld"];
     const url = typeof document["url"] === "string" ? document["url"] : undefined;
     const declared = typeof withheld === "string" ? withheld : undefined;
+    const mimes = await mimesByUrl(wacz);
+    const settings = capture["settings"];
+    // 方針が読めなければ照らさない。settings の不在や形は別の rule が言う。
+    const policies = isRecord(settings) ? policiesOf(settings) : undefined;
 
     if (withheld !== undefined && (declared === undefined || (!policyReasons.has(declared) && declared !== UNATTRIBUTED))) {
       issues.push(issue("unknown-reason", { found: declared ?? typeName(withheld) }, DATAPACKAGE));
@@ -186,12 +219,9 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
       if (url === undefined) {
         issues.push(issue("missing-url", {}, DATAPACKAGE));
       } else {
-        const mimes = await mimesByUrl(wacz);
-        const settings = capture["settings"];
-        // 方針が読めなければ照らさない。settings の不在や形は別の rule が言う。
         const knownReason = withheld === undefined || (declared !== undefined && policyReasons.has(declared));
-        if (isRecord(settings) && knownReason) {
-          const expected = expectedFor(url, mimes.get(url) ?? [], policiesOf(settings), denyIsReason);
+        if (policies !== undefined && knownReason) {
+          const expected = expectedFor(url, mimes.get(url) ?? [], policies, denyIsReason);
           if (declared === undefined && expected !== undefined) {
             issues.push(issue("should-withhold", { url, expected }, DATAPACKAGE));
           } else if (declared !== undefined && expected === undefined) {
@@ -200,10 +230,10 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
             issues.push(issue("wrong-reason", { url, declared, expected }, DATAPACKAGE));
           }
         }
-        // 身元は archive の中を指す。索引に無ければ、no-archive (1.11.0 からは deny も) の記録を探す
-        // (WARC を読むのはこのときだけ)。
+        // 身元は archive の中を指す。索引に無ければ、no-archive (1.11.0 からは deny も) の記録と写しの
+        // document-uri を探す (WARC を読むのはこのときだけ)。
         const recordedAs: ReadonlySet<string> = new Set(denyIsReason ? ["no-archive", "deny"] : ["no-archive"]);
-        if (!mimes.has(url) && !(await withheldRequestUrls(wacz, recordedAs)).has(url)) {
+        if (!mimes.has(url) && !(await documentUrlsInMetadata(wacz, recordedAs)).has(url)) {
           issues.push(issue("not-in-archive", { url }, DATAPACKAGE, "warning"));
         }
       }
@@ -214,11 +244,19 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
     const tree = await readAxtree(wacz);
 
     if (withheld !== undefined) {
-      // ② 伏せたなら、ページから作ったものは無い。
+      // ② 伏せたなら、その文書から読んだものは無い。方針の当たらない文書の after-load の行は別の文書から読んだ物。
+      //    URL が同じなら伏せた文書そのもの。方針が読めなければ、URL で分かるものだけを分ける。
+      const readFromAnotherDocument = (page: PagesJsonlEntry): boolean => {
+        const at = afterLoadDocumentUrl(page);
+        if (at === undefined || at === url) return false;
+        return policies === undefined || expectedFor(at, mimes.get(at) ?? [], policies, denyIsReason) === undefined;
+      };
       const reason = declared ?? typeName(withheld);
       for (const page of pages) {
-        if (page["text"] !== undefined) issues.push(issue("text-present", { withheld: reason }, PAGES_ENTRY));
-        if (page.title !== undefined) issues.push(issue("title-present", { withheld: reason }, PAGES_ENTRY));
+        if (!readFromAnotherDocument(page)) {
+          if (page["text"] !== undefined) issues.push(issue("text-present", { withheld: reason }, PAGES_ENTRY));
+          if (page.title !== undefined) issues.push(issue("title-present", { withheld: reason }, PAGES_ENTRY));
+        }
         const textWithheld = page["textWithheld"];
         if (textWithheld !== undefined && textWithheld !== withheld) {
           issues.push(

@@ -6,8 +6,11 @@
  *
  * 1. `withheld` は、`document.url` に方針を照らし直した答えと一致する (両向き)。方針が当たったのに
  *    伏せていない archive も、当たっていないのに伏せた archive も落とす
- * 2. `withheld` があれば、ページから作ったもの (`pages.jsonl` の文字と題、アクセシビリティツリー) は無い
+ * 2. `withheld` があれば、ページから作ったもの (`pages.jsonl` の文字と題、アクセシビリティツリー) は無い。
+ *    after-load の写しの行はその時点の文書から読むので、伏せない文書の行は文字と題を持てる (1.17.0 から)
  * 3. 無ければ、ツリーの `url` は `document.url` と等しい —— 要求の URL ではない
+ *
+ * 加えて、身元は archive の中を指す (warning)。写しの `document-uri` も在り処になる。
  *
  * 場面はどれもサーバのリダイレクトを経た形にしてある。要求の URL (`PAGE`) と読んだ文書 (`DOC`) が
  * 違うので、身元の代わりに要求の URL で照らす実装は、どこかの行で赤になる。
@@ -100,6 +103,34 @@ const hidden =
     textWithheld: reason,
   });
 
+/** 伏せる文書へ移る前の文書。after-load の写しはここから読む。 */
+const EARLIER = "https://site.test/earlier";
+
+/** 写しの URL。時点と、その時点の文書の URL（断片なし）。 */
+const snapshotUri = (stage: string, url: string): string => `urn:browserhive:snapshot:${stage}:${url}`;
+
+/** 写しのページ行。その時点の文書から読んだ文字と題を持つ。 */
+const snapshotRow = (stage: string, url: string): Record<string, unknown> => ({
+  id: `task-${stage}`,
+  url: snapshotUri(stage, url),
+  ts: "2026-09-25T00:00:00.000Z",
+  stage,
+  title: "Earlier",
+  text: "earlier text",
+});
+
+/**
+ * 写しの metadata（WARC Profile 1.1.0）。`document-uri` はその時点の `location.href` で、断片を含む。
+ * `document.url` は断片を持たないので、照らすときは断片を除く。
+ */
+const snapshotMetadata = (
+  stage: string,
+  documentUri: string,
+): { uri: string; fields: Record<string, string> } => ({
+  uri: snapshotUri(stage, documentUri.split("#")[0] ?? documentUri),
+  fields: { snapshot: stage, "document-uri": documentUri, "secrets-replaced": "0" },
+});
+
 /** リダイレクトの 2 応答。中継の 302 と、着いた文書の HTML。 */
 const RESPONSES = [
   { uri: PAGE, mime: "", status: 302, body: "" },
@@ -136,6 +167,26 @@ const withheldAs = (
   mutatePageEntry: hidden(reason),
   ...over,
 });
+
+/** 3 つとも伏せた archive で、文書の行の後に `rows` を並べた形。 */
+const withheldWithRows = (
+  reason: string,
+  policies: Policies,
+  rows: Record<string, unknown>[],
+  over: Partial<FixtureOptions> = {},
+): FixtureOptions => {
+  const { mutatePageEntry: _mutate, ...rest } = withheldAs(reason, policies, over);
+  return {
+    ...rest,
+    pageEntries: [hidden(reason)({ id: "task", url: PAGE, ts: "2026-09-25T00:00:00.000Z" }), ...rows],
+  };
+};
+
+/** `options` の `settings` を落とした形。方針が読めないとき。 */
+const withoutSettings = (options: FixtureOptions): FixtureOptions => {
+  const { settings: _settings, ...rest } = options;
+  return rest;
+};
 
 /** fixture を 1 本作り、指定の selector で検査した report を返す。 */
 const reportFor = async (
@@ -360,6 +411,117 @@ describe("browserhive/document-withheld", () => {
     });
   });
 
+  describe("伏せたときの写しの行（after-load はその時点の文書から読む）", () => {
+    /** その行に文字と題があることを言う 2 件の error。 */
+    const leaked = (withheld: string): Issue[] => [
+      error("text-present", { withheld }, "pages/pages.jsonl"),
+      error("title-present", { withheld }, "pages/pages.jsonl"),
+    ];
+
+    it("伏せる文書へ移る前に撮った after-load の行は、文字と題を持てる", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-load", EARLIER)]),
+      );
+      expect(issues).toEqual([]);
+    });
+
+    it("どの文書か言えない（unattributed）ときも、after-load の行は文字と題を持てる", async () => {
+      const issues = await run(
+        withheldWithRows("unattributed", {}, [snapshotRow("after-load", EARLIER)], {
+          document: { withheld: "unattributed" },
+        }),
+      );
+      expect(issues).toEqual([]);
+    });
+
+    it("方針が読めなくても、URL の違う after-load の行は文字と題を持てる（方針には照らせない）", async () => {
+      const issues = await run(
+        withoutSettings(withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-load", EARLIER)])),
+      );
+      expect(issues).toEqual([]);
+    });
+
+    it("URL が document.url と同じ after-load の行に文字と題があれば、error で落とす（伏せた文書そのものの写し）", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-load", DOC)]),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("方針が読めなくても、URL が document.url と同じ行は error で落とす", async () => {
+      const issues = await run(
+        withoutSettings(withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-load", DOC)])),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("URL が違っても、URL の方針が当たる文書の after-load の行は error で落とす（伏せる文書は写さない）", async () => {
+      const policies: Policies = {
+        urlPolicies: [
+          { pattern: "*/landed", action: "no-body" },
+          { pattern: "*/earlier", action: "no-body" },
+        ],
+      };
+      const issues = await run(withheldWithRows("url-policy", policies, [snapshotRow("after-load", EARLIER)]));
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("URL が違っても、content-type の方針が当たる文書の after-load の行は error で落とす", async () => {
+      const policies: Policies = {
+        urlPolicies: [{ pattern: "*/landed", action: "no-body" }],
+        contentTypePolicies: [{ prefix: "text/csv", action: "no-body" }],
+      };
+      const issues = await run(
+        withheldWithRows("url-policy", policies, [snapshotRow("after-load", EARLIER)], {
+          warcResponses: [...RESPONSES, { uri: EARLIER, mime: "text/csv", body: "a,b" }],
+        }),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("unattributed でも、方針が当たる文書の after-load の行は error で落とす", async () => {
+      const issues = await run(
+        withheldWithRows("unattributed", noBody("*/earlier"), [snapshotRow("after-load", EARLIER)], {
+          document: { withheld: "unattributed" },
+        }),
+      );
+      expect(issues).toEqual(leaked("unattributed"));
+    });
+
+    it("after-behaviors の行は document の文書から読むので、URL が違っても文字と題があれば error で落とす", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-behaviors", EARLIER)]),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("写しの URL の形でない after-load の行は、文字と題があれば error で落とす（どの文書か読めない）", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [
+          { ...snapshotRow("after-load", EARLIER), url: EARLIER },
+        ]),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("stage の無い行は、url が写しの形でも、文字と題があれば error で落とす（文書の行）", async () => {
+      const { stage: _stage, ...row } = snapshotRow("after-load", EARLIER);
+      const issues = await run(withheldWithRows("url-policy", noBody("*/landed"), [row]));
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
+    it("textWithheld の検査は after-load の行にも効く", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [
+          { ...snapshotRow("after-load", EARLIER), textWithheld: "content-type" },
+        ]),
+      );
+      expect(issues).toEqual([
+        error("text-withheld-mismatch", { textWithheld: "content-type", withheld: "url-policy" }, "pages/pages.jsonl"),
+      ]);
+    });
+  });
+
   describe("伏せていないなら、ツリーは読んだ文書を名乗る", () => {
     it("ツリーの url が要求の URL なら、error で落とす", async () => {
       // 12.x の BrowserHive が書いていた形。ツリーは読んだ文書ではなく、要求の URL を名乗っていた。
@@ -421,6 +583,37 @@ describe("browserhive/document-withheld", () => {
       // 1.10.0 に deny の理由は無いので伏せないのが正しく、漏れはこの warning が言う。
       const issues = await run(written(DENY_DOC, { ...DENIED, conformsTo: CONFORMS_1_10 }));
       expect(issues.map((i) => `${i.severity} ${i.messageKey}`)).toEqual([`warning ${RULE}.not-in-archive`]);
+    });
+
+    describe("頁の中で URL だけが替わった文書（pushState）は、その URL の要求も応答も無い", () => {
+      /** `DOC` の応答が無い archive に、metadata を足した形。 */
+      const pushed = (metadata: NonNullable<FixtureOptions["warcMetadata"]>): FixtureOptions =>
+        written({}, {
+          warcResponses: [{ uri: PAGE, mime: "text/html", body: "<title>Start</title>start text" }],
+          warcMetadata: metadata,
+        });
+      const notInArchive = `warning ${RULE}.not-in-archive`;
+      const summary = (issues: Issue[]): string[] => issues.map((i) => `${i.severity} ${i.messageKey}`);
+
+      it("写しの metadata の document-uri が document.url なら、何も言わない", async () => {
+        expect(await run(pushed([snapshotMetadata("after-behaviors", DOC)]))).toEqual([]);
+      });
+
+      it("document-uri の断片は除いて照らす", async () => {
+        expect(await run(pushed([snapshotMetadata("after-behaviors", `${DOC}#top`)]))).toEqual([]);
+      });
+
+      it("document-uri が別の URL なら、warning を出す", async () => {
+        expect(summary(await run(pushed([snapshotMetadata("after-behaviors", `${DOC}/more`)])))).toEqual([notInArchive]);
+      });
+
+      it("snapshot の欄が無い metadata の document-uri は、身元にならない", async () => {
+        expect(summary(await run(pushed([{ uri: DOC, fields: { "document-uri": DOC } }])))).toEqual([notInArchive]);
+      });
+
+      it("action も document-uri も無い metadata は、WARC-Target-URI が文書の URL でも身元にならない", async () => {
+        expect(summary(await run(pushed([{ uri: DOC, fields: { truncated: "length" } }])))).toEqual([notInArchive]);
+      });
     });
   });
 
