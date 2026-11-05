@@ -85,7 +85,7 @@ const AFTER_LOAD_URI = "urn:browserhive:snapshot:after-load:";
 
 /**
  * archive が `deny` を伏せる理由として扱う版 (profile 1.11.0 以降) を名乗るか。名乗りが無いか
- * 読めなければ、いまの版の決まりで照らす。
+ * 読めなければ、1.11.0 からの決まりで照らす。
  */
 const denyWithholds = (conformsTo: unknown): boolean => {
   if (typeof conformsTo !== "string") return true;
