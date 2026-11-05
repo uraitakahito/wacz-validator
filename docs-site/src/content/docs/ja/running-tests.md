@@ -28,7 +28,7 @@ repo の検査 2 つ（`check:store-name`・`check:test-hosts`）と root の sc
 | `pnpm --filter @wacz-validator/core test:watch` | 1 パッケージを watch |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | 1 段階を全パッケージに |
 | `pnpm test:ui` | ブラウザの UI で全パッケージ（watch） |
-| `pnpm test:report` | `html/` に静的レポート |
+| `pnpm test:report` | `.vitest/` に静的レポート |
 
 `--filter` に渡すのはディレクトリ名ではなく**パッケージ名**です ―
 `@wacz-validator/contract`、`@wacz-validator/core`、`@wacz-validator/validate-cli`、`@wacz-validator/daemon`、
@@ -120,8 +120,8 @@ pnpm test:ui --tagsFilter 'docs && i18n'
 `pnpm test` は変わらず `pnpm -r test` を通ります。**両者が走らせる集合は同じ**で、
 それは合計が一致することで確かめてあります（190 passed / 10 skipped）。
 
-`pnpm test:report` は `html/` に静的レポートを出します。
-**`file://` では開けません** ―― `npx vite preview --outDir html` のように配信してください。
+`pnpm test:report` は `.vitest/` に静的レポートを出します。
+**`file://` では開けません** ―― `npx vite preview --outDir .vitest` のように配信してください。
 
 :::note
 `@wacz-validator/protocol` は `projects` に入れていません。テストが無いので、
