@@ -38,8 +38,8 @@
     "test:scripts runs the root scripts' own tests (scripts/*.test.mjs) with `node --test`.",
     "scripts/ is not a package, so neither `pnpm -r test` nor the vitest UI can see them.",
     "build-version.test.mjs builds throwaway git repos to check the version a build names.",
-    "test:report writes html/ and cannot be opened over file:// — serve it, e.g.",
-    "`npx vite preview --outDir html`.",
+    "test:report writes .vitest/ and cannot be opened over file:// — serve it, e.g.",
+    "`npx vite preview --outDir .vitest`.",
     "This repo no longer runs a store of its own: the WACZ files live in the shared store",
     "(seaweedfs.crawler-storage), brought up by seaweedfs/scripts/stack.sh. So there is no",
     "docker-compose.yml here and no image pin to compare — check:store-name is what remains,",
@@ -61,12 +61,12 @@
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.1.2",
-    "@vitest/ui": "^4.1.11",
+    "@types/node": "^26.6.6",
+    "@vitest/ui": "^5.0.5",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.2",
-    "typescript-eslint": "^8.67.0",
+    "typescript-eslint": "^8.72.1",
     "vite": "^8.2.1",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   }
 }

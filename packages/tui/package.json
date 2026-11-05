@@ -38,12 +38,12 @@
     "ws": "^8.22.1"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/ws": "^8.18.2",
-    "eslint": "^10.8.1",
+    "eslint": "^10.14.0",
     "ink-testing-library": "^4.0.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   }
 }

@@ -29,7 +29,7 @@ suite that does is skipped unless you ask for it — see below.
 | `pnpm --filter @wacz-validator/core test:watch` | one package, watching |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | one stage across all packages |
 | `pnpm test:ui` | every package in a browser UI (watch) |
-| `pnpm test:report` | a static report into `html/` |
+| `pnpm test:report` | a static report into `.vitest/` |
 
 `--filter` takes the package name, not the directory: `@wacz-validator/contract`,
 `@wacz-validator/core`, `@wacz-validator/validate-cli`, `@wacz-validator/daemon`, `@wacz-validator/protocol`,
@@ -125,8 +125,8 @@ configuration.
 same set**, which was checked by comparing the totals (190 passed / 10 skipped
 either way).
 
-`pnpm test:report` writes a static report into `html/`. It **cannot be opened
-over `file://`** — serve it, e.g. `npx vite preview --outDir html`.
+`pnpm test:report` writes a static report into `.vitest/`. It **cannot be opened
+over `file://`** — serve it, e.g. `npx vite preview --outDir .vitest`.
 
 :::note
 `@wacz-validator/protocol` is deliberately absent from `projects`. With no tests, it
