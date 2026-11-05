@@ -632,7 +632,7 @@ describe("browserhive/document-withheld", () => {
       ]);
     });
 
-    it("適合を名乗らない archive は、いまの版（1.11.0）の決まりで照らす", async () => {
+    it("適合を名乗らない archive は、1.11.0 からの決まりで照らす", async () => {
       expect(await run(written(DENY_DOC, DENIED))).toEqual([
         error("should-withhold", { url: DOC, expected: "deny" }, "datapackage.json"),
       ]);
