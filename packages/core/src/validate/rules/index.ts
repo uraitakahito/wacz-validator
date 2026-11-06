@@ -24,6 +24,7 @@ import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
+import { browserhiveUserAgentRecordedRule } from "./browserhive-user-agent-recorded.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
 import { browserhiveSettingsShapeRule } from "./browserhive-settings-shape.js";
@@ -156,6 +157,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // 取り込みのログ logs/capture.jsonl が在り、各行が決まった member と値を持ち、settings と document に合うか
   // (WACZ Profile 1.19.0)。
   browserhiveLogsShapeRule,
+  // settings.userAgent が、主文書の request レコードの User-Agent と同じか (WACZ Profile 1.20.0)。
+  browserhiveUserAgentRecordedRule,
   browserhiveStorageInventoryRule,
   browserhiveStorageShapeRule,
   // browserhive profile 限定: 記録された tls の san を、同じパッケージに入っている証明書と突き合わせる

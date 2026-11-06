@@ -38,6 +38,8 @@ const REQUIRED_MEMBERS = [
 ] as const;
 const POLICIES = "browserhive/url-policies";
 const V8 = { major: 8, minor: 0, patch: 0 };
+const PROFILE_1_19 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/";
+const PROFILE_1_20 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/";
 
 /** browserhive のアーカイブであることを示すだけの最小の目録。 */
 const minimalInventory: Record<string, unknown> = {
@@ -143,6 +145,30 @@ describe("browserhive/settings-shape", () => {
     expect(
       await run({ settings: settingsWithout("session") }, { major: 7, minor: 9, patch: 9 }),
     ).toEqual([]);
+  });
+
+  describe("userAgent（WACZ Profile 1.20.0 で必須）", () => {
+    it("1.20.0 を名乗って userAgent が無ければ落とす", async () => {
+      const issues = await run({ conformsTo: PROFILE_1_20, settings: goodSettings() });
+      expect(issues.map((i) => [i.messageKey, i.params?.["member"]])).toEqual([[`${SHAPE}.missing-member`, "userAgent"]]);
+    });
+
+    it("1.19.0 を名乗る archive には当てない", async () => {
+      expect(await run({ conformsTo: PROFILE_1_19, settings: goodSettings() })).toEqual([]);
+    });
+
+    it("版を名乗らない archive には当てない", async () => {
+      expect(await run({ settings: goodSettings() })).toEqual([]);
+    });
+
+    it("1.20.0 を名乗って userAgent が文字列でなければ落とす", async () => {
+      const issues = await run({ conformsTo: PROFILE_1_20, settings: goodSettings({ userAgent: 1 }) });
+      expect(issues.map((i) => [i.messageKey, i.params?.["member"]])).toEqual([[`${SHAPE}.wrong-type`, "userAgent"]]);
+    });
+
+    it("1.20.0 を名乗って文字列の userAgent が在れば何も言わない", async () => {
+      expect(await run({ conformsTo: PROFILE_1_20, settings: goodSettings({ userAgent: "Probe/1 BrowserHive" }) })).toEqual([]);
+    });
   });
 });
 
