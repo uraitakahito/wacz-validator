@@ -413,6 +413,8 @@ export interface WarcRequestSpec {
   recordId?: string;
   /** `WARC-Concurrent-To` に書く応答の `WARC-Record-ID`。省けば書かない。 */
   concurrentTo?: string;
+  /** HTTP の見出しに足す行（`host` の後ろ）。名前の綴りはそのまま書く。 */
+  httpHeaders?: readonly (readonly [string, string])[];
 }
 
 /** `warcResources` の 1 件。block は内容そのもの（HTTP の包みを持たない）。 */
@@ -663,7 +665,13 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec, badDigest = fal
 const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
   const url = new URL(spec.uri);
   const http = Buffer.from(
-    [`${spec.method ?? "GET"} ${url.pathname}${url.search} HTTP/1.1`, `host: ${url.host}`, "", ""].join("\r\n"),
+    [
+      `${spec.method ?? "GET"} ${url.pathname}${url.search} HTTP/1.1`,
+      `host: ${url.host}`,
+      ...(spec.httpHeaders ?? []).map(([name, value]) => `${name}: ${value}`),
+      "",
+      "",
+    ].join("\r\n"),
     "utf-8",
   );
   const headers = [

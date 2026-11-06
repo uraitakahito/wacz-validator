@@ -17,19 +17,27 @@
  *
  * `acceptLanguage` は任意なので見ない —— 不在は「設定しなかった」で、違反ではない。
  *
+ * `userAgent` は profile 1.20.0 で必須になった。**archive 自身の宣言 (`conformsTo`) で分ける** ——
+ * それより前の版を名乗る archive には、その member を書く決まりが無い。
+ *
  * 版の条件があるのは、`urlPolicies` が browserhive 8.0.0 で入ったため。
  * それ未満のアーカイブに 1.2.0 の MUST を当てて落とすのは、検証器として誤り。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/#settings
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/#settings
  */
 import { ok } from "../../result.js";
-import { isRecord, readCapture } from "../browserhive-storage.js";
+import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/settings-shape";
 
+interface Member {
+  readonly name: string;
+  readonly check: (v: unknown) => boolean;
+}
+
 /** どの型を期待するか。profile 1.3.0 §settings の表がそのまま並ぶ。 */
-const REQUIRED: readonly { readonly name: string; readonly check: (v: unknown) => boolean }[] = [
+const REQUIRED: readonly Member[] = [
   { name: "signature", check: (v) => typeof v === "string" },
   { name: "viewport", check: isRecord },
   { name: "devicePixelRatios", check: Array.isArray },
@@ -40,6 +48,9 @@ const REQUIRED: readonly { readonly name: string; readonly check: (v: unknown) =
   { name: "contentTypePolicies", check: Array.isArray },
 ];
 
+/** profile 1.20.0 で必須になった member。 */
+const REQUIRED_SINCE_1_20: readonly Member[] = [{ name: "userAgent", check: (v) => typeof v === "string" }];
+
 export const browserhiveSettingsShapeRule: ValidationRule = {
   name: "browserhive/settings-shape",
   descriptionKey: "browserhive/settings-shape.desc",
@@ -48,8 +59,8 @@ export const browserhiveSettingsShapeRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §settings",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/#settings",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/ja/#settings",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/#settings",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/ja/#settings",
       },
     },
   ],
@@ -76,7 +87,8 @@ export const browserhiveSettingsShapeRule: ValidationRule = {
     }
 
     const issues: Issue[] = [];
-    for (const { name, check } of REQUIRED) {
+    const required = profileAtLeast(capture["conformsTo"], 1, 20) ? [...REQUIRED, ...REQUIRED_SINCE_1_20] : REQUIRED;
+    for (const { name, check } of required) {
       const value = settings[name];
       if (value === undefined) {
         issues.push({
