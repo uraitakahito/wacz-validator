@@ -1,16 +1,20 @@
 /**
  * Rule: cdxj/pages-mainpage
  *
- * `datapackage.json#mainPageURL` は replay の正式なエントリポイント。
- * これが ReplayWeb.page で実際に動くためには 2 つが満たされる必要がある:
+ * `datapackage.json#mainPageURL` が名乗る最初のページが、WACZ の中に実際に在るか。
+ * 見るのは 2 つ:
  *
  *   1. `pages/pages.jsonl` に `url` が一致する entry がある
  *   2. `indexes/index.cdxj` に少なくとも 1 件、その URL を cover する
- *      レコードがある (無いと replay engine は何も出せない)
+ *      レコードがある (無いと、その URL を開く読み手は何も出せない)
  *
- * どちらかの gap でも、WACZ の "構造" を壊さずに replay landing page を
- * silent に壊す — 他の構造 check だけでは全 pass してしまうため、
- * wacz-validator が個別に捕まえるべき latent な corruption。
+ * どちらかの gap でも、WACZ の "構造" は壊れない — 他の構造 check だけでは全 pass
+ * してしまうため、wacz-validator が個別に捕まえる。
+ *
+ * 綴りは `mainPageURL` だけを読む。WACZ 1.1.1 の綴りは `mainPageUrl` だが、
+ * Webrecorder の py-wacz も BrowserHive も `mainPageURL` と書く。ReplayWeb.page 2.5.0 は
+ * どちらの綴りも読まないので、ここが食い違っても、その replay の開き方は変わらない。
+ * この欄を最初に開く読み手のための検査。
  *
  * Severity は `warning`: その WACZ は他 URL に対する部分的な replay
  * (index に登録されている URL への deep-link) には使える可能性が
