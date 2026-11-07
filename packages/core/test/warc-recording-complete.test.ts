@@ -146,6 +146,8 @@ describe("warc/recording-complete", () => {
           { uri: "https://site.test/h", fields: { incomplete: "true", reason: "stop-while-pending" } },
           // profile 1.13.0: 届いたのにバイト列で読めなかった本文
           { uri: "https://site.test/i.css", fields: { truncated: "not-intercepted", encodedDataLength: "812" } },
+          // WARC Profile 1.2.0: 隠す値を含むので落とした本文
+          { uri: "https://site.test/j.pdf", fields: { truncated: "secret", encodedDataLength: "4821" } },
         ],
       },
       "browserhive",
@@ -155,8 +157,8 @@ describe("warc/recording-complete", () => {
         | { recording?: { incomplete?: number; byReason?: Record<string, number> } }
         | undefined
     )?.recording;
-    expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, unintercepted: 1, blocked: 4 });
-    // 方針で省いた 4 件 (blocked) は内訳に残るが、未完了には数えない。読めなかった本文は失った本文なので数える。
+    expect(recording?.byReason).toEqual({ failed: 1, incomplete: 1, truncated: 2, unintercepted: 1, blocked: 5 });
+    // 方針で省いた 4 件と隠す値で落とした 1 件 (blocked) は内訳に残るが、未完了には数えない。読めなかった本文は失った本文なので数える。
     expect(recording?.incomplete).toBe(5);
   });
 
@@ -171,6 +173,16 @@ describe("warc/recording-complete", () => {
           { uri: "https://site.test/d.mp4", fields: { truncated: "url-policy" } },
         ],
       },
+      "browserhive",
+    );
+    expect(issues.some((i) => i.rule === RULE)).toBe(false);
+  });
+
+  it("隠す値を含むので落とした本文 (truncated: secret) しか無い archive にも何も出さない", async () => {
+    // secret を incomplete に落とすと、値を守った取り込みに「未完了」の warning が出る。
+    const issues = await issuesFor(
+      tmpDir,
+      { warcMetadata: [{ uri: "https://site.test/export?key=***", fields: { truncated: "secret" } }] },
       "browserhive",
     );
     expect(issues.some((i) => i.rule === RULE)).toBe(false);

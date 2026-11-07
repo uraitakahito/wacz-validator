@@ -82,7 +82,7 @@ export const warcPayloadDigestRule: ValidationRule = {
  * なら 16 進で、それ以外は Base32 で比べる（大小と末尾の padding は揃える）。不一致のときに見せる
  * 計算値は、宣言と同じ書き方にする。
  */
-const compareSha256 = (declaredValue: string, payload: Buffer): { same: boolean; computed: string } => {
+export const compareSha256 = (declaredValue: string, payload: Buffer): { same: boolean; computed: string } => {
   if (/^[0-9a-f]{64}$/i.test(declaredValue)) {
     const computed = sha256Hex(payload);
     return { same: `sha256:${declaredValue.toLowerCase()}` === computed, computed };

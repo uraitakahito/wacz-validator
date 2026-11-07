@@ -24,6 +24,7 @@ import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
+import { browserhiveRedactedRecordsRule } from "./browserhive-redacted-records.js";
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
 import { browserhiveUserAgentRecordedRule } from "./browserhive-user-agent-recorded.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
@@ -157,6 +158,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // DOM の写しが、snapshots・WARC の resource と metadata の組・ページ一覧・索引で辻褄が合い、script を持たないか
   // (WACZ Profile 1.17.0・WARC Profile 1.1.0)。
   browserhiveSnapshotsRule,
+  // 値を置き換えたレコードと、値を含む本文を落としたレコードの名乗りと形 (WARC Profile 1.2.0)。値が残っていないことは見ない。
+  browserhiveRedactedRecordsRule,
   // 取り込みのログ logs/capture.jsonl が在り、各行が決まった member と値を持ち、settings と document に合うか
   // (WACZ Profile 1.19.0)。
   browserhiveLogsShapeRule,
