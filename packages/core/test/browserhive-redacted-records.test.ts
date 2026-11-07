@@ -342,14 +342,16 @@ describe("browserhive/redacted-records", () => {
       ]);
     });
 
-    it.each(["response", "request"])("%s の HTTP のヘッダの後に本文が在れば言う", async (type) => {
-      const over: MessageSpec = { type, id: 1, body: "%PDF-1.7", head: ["X-Note: a"] };
-      const expected = ["truncated-body", { url: URI, type, bytes: "8" }];
-      if (type === "response") {
-        expect(await check(droppedResponse(over), metadata({ refersTo: recordId(1) }))).toEqual([expected]);
-      } else {
-        expect(await check(message({ ...over, truncated: "secret" }))).toEqual([expected]);
-      }
+    it("response の HTTP のヘッダの後に本文が在れば言う", async () => {
+      expect(await check(droppedResponse({ body: "%PDF-1.7" }), metadata({ refersTo: recordId(1) }))).toEqual([
+        ["truncated-body", { url: URI, type: "response", bytes: "8" }],
+      ]);
+    });
+
+    it("request の HTTP のヘッダの後に本文が在れば言う", async () => {
+      expect(await check(message({ truncated: "secret", body: "%PDF-1.7" }))).toEqual([
+        ["truncated-body", { url: URI, type: "request", bytes: "8" }],
+      ]);
     });
 
     it("値の大文字小文字は揃えて読む —— warc/field-values の読み方と同じ", async () => {
@@ -592,18 +594,13 @@ describe("browserhive/redacted-records", () => {
     });
 
     it("本ごとに分ける —— 1.2.0 を名乗る本だけを見る", async () => {
-      const book = (name: string, declared: string): { name: string; warcinfoLines: string[]; rawMembers: Buffer[] } => ({
-        name,
-        warcinfoLines: [`conformsTo: ${declared}`],
-        rawMembers: [message({ redacted: "nonsense" })],
-      });
+      const badRecords = [message({ redacted: "nonsense" })];
       const locationsOf = async (first: string, second: string): Promise<(string | undefined)[]> => {
-        const { warcinfoLines, rawMembers } = book("", first);
         const issues = await run({
           warcName: "data-000.warc.gz",
-          warcinfoLines,
-          warcRawMembers: rawMembers,
-          extraWarcs: [book("data-001.warc.gz", second)],
+          warcinfoLines: [`conformsTo: ${first}`],
+          warcRawMembers: badRecords,
+          extraWarcs: [{ name: "data-001.warc.gz", warcinfoLines: [`conformsTo: ${second}`], rawMembers: badRecords }],
         });
         return issues.map((issue) => issue.location?.entry);
       };
