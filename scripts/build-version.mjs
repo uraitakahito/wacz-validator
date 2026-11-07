@@ -6,7 +6,7 @@
  * この repo の版は **タグにしか無い**。どの package.json も `0.0.0` のままで、リリースで
  * 上げる決まりも無い (タグが唯一の版)。以前は gen-build-info.mjs が package.json を
  * 読んでいたので、daemon の `/healthz` の `version` も、報告の `validatorVersion` も、
- * どの build でも `"0.0.0"` だった。2026-09-26 に見たとき、dashboard の検証を受ける
+ * どの build でも `"0.0.0"` だった。2026-09-26 に見たとき、capture-workbench の検証を受ける
  * daemon は v0.28.1 のまま 2 日動いていて、v0.29.0 と v0.30.0 の rule はどれも
  * 画面に出ていなかった —— 版を訊いても `0.0.0` としか答えないので、誰も気づけなかった。
  *

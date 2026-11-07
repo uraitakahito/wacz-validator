@@ -27,7 +27,7 @@ frontend can present the same report**:
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser["dashboard (a browser client)"] -->|"REST"| daemon
+    browser["capture-workbench (a browser client)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli"] -->|validates with| core["@wacz-validator/core"]
     daemon -->|validates with| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -43,10 +43,10 @@ flowchart LR
 
 The daemon holding no state is what makes that cheap: a second frontend is a new
 client, not a new copy of the engine. The second frontend exists — [Web Capture](https://uraitakahito.github.io/capture-ledger/#web-capture)'s
-[dashboard](https://github.com/uraitakahito/dashboard) talks to the same handlers over
+[capture-workbench](https://github.com/uraitakahito/capture-workbench) talks to the same handlers over
 plain HTTP (`POST /validate`, `/lines`, `/line`, `/records`, `/record`, `/record/body`)
 and never imports core. Where the TUI walks an archive's contents over the
-WebSocket, the dashboard walks them over REST; both draw the tree from the same
+WebSocket, the workbench walks them over REST; both draw the tree from the same
 report and the same fields the daemon split.
 
 ## Why core carries no prose

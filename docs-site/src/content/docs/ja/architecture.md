@@ -27,7 +27,7 @@ validator は単一バイナリでも作れます。分離しているのは、*
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser["dashboard (browser のクライアント)"] -->|"REST"| daemon
+    browser["capture-workbench (browser のクライアント)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli"] -->|"検証に使う"| core["@wacz-validator/core"]
     daemon -->|"検証に使う"| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -43,9 +43,9 @@ flowchart LR
 
 daemon が state を持たないことが、それを安価にしています。2 つ目の frontend は
 新しいクライアントであって、engine の複製ではありません。その 2 つ目は既に在ります ——
-[Web Capture](https://uraitakahito.github.io/capture-ledger/ja/#web-capture) の [dashboard](https://github.com/uraitakahito/dashboard) は同じハンドラを素の
+[Web Capture](https://uraitakahito.github.io/capture-ledger/ja/#web-capture) の [capture-workbench](https://github.com/uraitakahito/capture-workbench) は同じハンドラを素の
 HTTP（`POST /validate`・`/lines`・`/line`・`/records`・`/record`・`/record/body`）で叩き、
-core を import しません。TUI は WebSocket で、dashboard は REST で archive の中身を
+core を import しません。TUI は WebSocket で、workbench は REST で archive の中身を
 歩きますが、木は同じ report から、field は daemon が割った同じものから描きます。
 
 ## core が prose を持たない理由
