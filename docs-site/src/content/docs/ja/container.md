@@ -4,7 +4,7 @@ description: 共有の SeaweedFS を使って s3:// の WACZ を検証する。
 ---
 
 この repo に stack file は無い。S3 API を話す [SeaweedFS](https://github.com/seaweedfs/seaweedfs)
-は **crawler の repo が共有する 1 つの store**（submodule の
+は **[Web Capture](https://uraitakahito.github.io/capture-ledger/ja/#web-capture) の repo が共有する 1 つの store**（submodule の
 [seaweedfs](https://github.com/uraitakahito/seaweedfs)）で、[Apple Container](https://github.com/apple/container)
 の上で [container-compose](https://github.com/Mcrich23/Container-Compose) が動かす。
 archive を生成する側、つまり BrowserHive や browser は含まれない。
@@ -39,7 +39,7 @@ container を用意していないのはこれが理由。
 
 ## store を起動する
 
-**この repo に store は無い。** crawler の 3 つの repo が共有する 1 つの store を使う
+**この repo に store は無い。** Web Capture の repo が共有する 1 つの store を使う
 （`wacz-validator` bucket はそこに在る）。submodule から起こす:
 
 ```sh

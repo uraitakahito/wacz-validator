@@ -42,7 +42,7 @@ flowchart LR
 ```
 
 The daemon holding no state is what makes that cheap: a second frontend is a new
-client, not a new copy of the engine. The second frontend exists — the crawler's
+client, not a new copy of the engine. The second frontend exists — [Web Capture](https://uraitakahito.github.io/capture-ledger/#web-capture)'s
 [dashboard](https://github.com/uraitakahito/dashboard) talks to the same handlers over
 plain HTTP (`POST /validate`, `/lines`, `/line`, `/records`, `/record`, `/record/body`)
 and never imports core. Where the TUI walks an archive's contents over the

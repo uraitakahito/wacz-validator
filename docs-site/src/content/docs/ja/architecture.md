@@ -43,7 +43,7 @@ flowchart LR
 
 daemon が state を持たないことが、それを安価にしています。2 つ目の frontend は
 新しいクライアントであって、engine の複製ではありません。その 2 つ目は既に在ります ——
-crawler の [dashboard](https://github.com/uraitakahito/dashboard) は同じハンドラを素の
+[Web Capture](https://uraitakahito.github.io/capture-ledger/ja/#web-capture) の [dashboard](https://github.com/uraitakahito/dashboard) は同じハンドラを素の
 HTTP（`POST /validate`・`/lines`・`/line`・`/records`・`/record`・`/record/body`）で叩き、
 core を import しません。TUI は WebSocket で、dashboard は REST で archive の中身を
 歩きますが、木は同じ report から、field は daemon が割った同じものから描きます。
