@@ -13,7 +13,7 @@
  * **archive 自身の宣言 (`conformsTo`) で分ける。** 1.20.0 より前の archive には `settings.userAgent` が無く、
  * この決まりも無い。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/#settings
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings
  */
 import { ok } from "../../result.js";
 import { httpHeader, parseRecord } from "../../wacz/records.js";
@@ -33,8 +33,8 @@ export const browserhiveUserAgentRecordedRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §settings",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/#settings",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/ja/#settings",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/ja/#settings",
       },
     },
   ],
