@@ -121,15 +121,18 @@ describe("browserhive/crashed-targets-listed", () => {
     ).toEqual([]);
   });
 
-  it("大文字を含む URL も、BrowserHive の並びどおりなら落とさない", async () => {
-    expect(
-      await run(
-        archive([
-          { type: "iframe", url: "https://a.test/a", status: "crashed" },
-          { type: "iframe", url: "https://a.test/B", status: "crashed" },
-        ]),
-      ),
-    ).toEqual([]);
+  it("コードポイント順なら何も言わない —— 言語の辞書順 (localeCompare) では並びが変わる URL で", async () => {
+    const entries = ["B", "a", "x-y", "x/y", "x?y", "x_y"].map((rest) => ({
+      type: "iframe",
+      url: `https://a.test/${rest}`,
+      status: "crashed",
+    }));
+    expect(await run(archive(entries))).toEqual([]);
+  });
+
+  it("言語の辞書順で並べた archive は error", async () => {
+    const entries = ["a", "B"].map((rest) => ({ type: "iframe", url: `https://a.test/${rest}`, status: "crashed" }));
+    expect(await run(archive(entries))).toEqual([bad("unsorted", { index: "1" })]);
   });
 
   it.each([
