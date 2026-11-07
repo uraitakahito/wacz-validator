@@ -7,7 +7,7 @@
  *   - 配列で必ず在る。各項目は `type` と `status` を文字列で持ち、`url` は在るなら文字列
  *   - `complete` は 4 つの配列がすべて空のときだけ `true`。一覧が空でないのに `true` なら、archive は
  *     ページの一部が取り込みの間に死んだことを、自分で打ち消している
- *   - `url`、`type`、`status` の順に整列し、`url` の無い項目を前に置く
+ *   - `url`、`type`、`status` の順に、それぞれコードポイント順で整列し、`url` の無い項目を前に置く
  *   - `url` に最初に当たる方針が `no-archive` か `deny` のときと、`document` が `withheld` を持つときは、
  *     `url` を書かない。target の URL は頁から来るので、残さないでと頼まれた物を持ち出してしまう
  *
@@ -40,14 +40,12 @@ const asCrashedTarget = (entry: unknown): CrashedTarget | undefined => {
   return typeof url === "string" ? { type, status, url } : undefined;
 };
 
-/**
- * producer と同じ比べ方 (`localeCompare`)。`url` の無い項目は空の字として前に来る。
- * code point で比べると、大文字を含む URL の並びを誤って落とす。
- */
+/** コードポイント順 (`<` は UTF-16 の順だが、URL と Chromium の語は ASCII なので同じ結果になる)。 */
+const inOrder = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/** `url` の無い項目は空の字として前に来る。 */
 const compare = (a: CrashedTarget, b: CrashedTarget): number =>
-  (a.url ?? "").localeCompare(b.url ?? "", "en") ||
-  a.type.localeCompare(b.type, "en") ||
-  a.status.localeCompare(b.status, "en");
+  inOrder(a.url ?? "", b.url ?? "") || inOrder(a.type, b.type) || inOrder(a.status, b.status);
 
 export const browserhiveCrashedTargetsListedRule: ValidationRule = {
   name: "browserhive/crashed-targets-listed",
