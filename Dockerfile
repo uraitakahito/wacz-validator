@@ -26,7 +26,7 @@
 # `unknown`、gitSha は `nogit` になる (scripts/build-version.mjs)。
 #
 # 開発用の別 image は無い。Apple Container のプラットフォーム DNS は
-# `seaweedfs.crawler-storage` (crawler が共有する store) を *ホストからも* 解決させるので、
+# `seaweedfs.crawler-storage` (Web Capture が共有する store) を *ホストからも* 解決させるので、
 # 開発時は host の pnpm で普通に動かせばよい。
 #
 # Build / run (CLI):

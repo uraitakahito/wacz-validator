@@ -4,7 +4,7 @@ description: Validate s3:// sources against the shared SeaweedFS store.
 ---
 
 This repository ships no stack file. The [SeaweedFS](https://github.com/seaweedfs/seaweedfs)
-that speaks the S3 API is **one store shared by the crawler repos**
+that speaks the S3 API is **one store shared by the [Web Capture](https://uraitakahito.github.io/capture-ledger/#web-capture) repos**
 ([seaweedfs](https://github.com/uraitakahito/seaweedfs), a submodule here), driven by
 [container-compose](https://github.com/Mcrich23/Container-Compose) on
 [Apple Container](https://github.com/apple/container). Nothing in it produces archives — no
@@ -40,7 +40,7 @@ there is no development container here.
 
 ## Start the store
 
-**There is no store in this repo.** The three crawler repos share one, and the `wacz-validator`
+**There is no store in this repo.** The Web Capture repos share one, and the `wacz-validator`
 bucket lives in it. Start it from the submodule:
 
 ```sh
