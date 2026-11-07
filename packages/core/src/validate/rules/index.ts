@@ -18,6 +18,7 @@ import { browserhiveBehaviorsShapeRule } from "./browserhive-behaviors-shape.js"
 import { browserhiveDenyEnforcedRule } from "./browserhive-deny-enforced.js";
 import { browserhiveWindowShapeRule } from "./browserhive-window-shape.js";
 import { browserhiveUninterceptedListedRule } from "./browserhive-unintercepted-listed.js";
+import { browserhiveCrashedTargetsListedRule } from "./browserhive-crashed-targets-listed.js";
 import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js";
 import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
@@ -143,6 +144,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // 取り込めなかった本文の記録が完全性の一覧と一致し、response が WARC-Truncated: unspecified を持つか
   // (profile 1.13.0 の payloads)。
   browserhiveUninterceptedListedRule,
+  // completeness.crashedTargets の形・complete との食い違い・整列・伏せる URL (WACZ Profile 1.21.0)。
+  browserhiveCrashedTargetsListedRule,
   // 文字の本文が、書き手が文字符号を変えた物に見えないか (profile 1.13.0 の payloads。推測なので warning)。
   browserhivePayloadCharsetRule,
   // archive/ の WARC の名前・連番・先頭の warcinfo・最後以外の本の大きさ (profile 1.14.0 の Archive files)。
