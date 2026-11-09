@@ -30,7 +30,7 @@
     "prepublishOnly": "pnpm check && pnpm build"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/client-s3": "^3.1163.0",
     "@wacz-validator/contract": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-draft-04": "^1.0.0",
