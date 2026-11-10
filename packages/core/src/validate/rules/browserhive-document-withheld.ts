@@ -39,6 +39,13 @@
  * ではなく archive 自身の宣言で分けるのは、同じ rule の中で決まりが変わるため —— 版を名乗らない
  * 実行でも、古い archive を新しい決まりで落とさない。
  *
+ * **値を置き換えた URL には方針を照らさない (WACZ Profile 1.22.0 の urlPolicies)。** 取り込みは置き換える前の URL に方針を
+ * 照らすので、シークレットを名乗る package で `***` を持つ URL は、取り込みが当てたのと別の方針に当たるか、どれにも当たらない。
+ * 置き換えで 2 つの URL が 1 つになるので、索引の MIME もどちらの URL の物か分からない。そういう `document.url` には ① を
+ * 当てず、そういう after-load の行は、伏せた文書の写しかを言えないので ② で落とさない。写しの URL と `document-uri` は残す値も
+ * 置き換えるので、`document.url` と同じ字とは限らない —— 値を置き換えた `document-uri` が在れば、身元の warning も出さない。
+ * `***` の無い URL は今までどおり見る。
+ *
  * **`datapackage.json` の `title` は見ない。** profile は「ページから読んではならない」と言う
  * だけで、何を書くかは定めていない。伏せた題を archive は持っていないので、読んだものかどうかを
  * 照らしようがない。
@@ -59,6 +66,7 @@ import { AXTREE_ENTRY, readAxtree } from "../browserhive-axtree.js";
 import {
   contentTypePolicyFor,
   firstUrlPolicy,
+  mayHoldReplacedValue,
   mimesByUrl,
   policiesOf,
   type Policies,
@@ -122,13 +130,17 @@ const expectedFor = (
 /**
  * WARC の metadata が、文書の URL として記録しているもの。
  *
- * - `actions` のどれかを名乗る記録の `WARC-Target-URI`。BrowserHive は記録しなかった要求 (`no-archive`) と
+ * - `recorded`: `actions` のどれかを名乗る記録の `WARC-Target-URI`。BrowserHive は記録しなかった要求 (`no-archive`) と
  *   送らなかった要求 (`deny`) をこの形で残す
- * - 写しの metadata（`snapshot` の欄を持つ）の `document-uri` から断片を除いたもの。`document-uri` は
+ * - `snapshots`: 写しの metadata（`snapshot` の欄を持つ）の `document-uri` から断片を除いたもの。`document-uri` は
  *   `location.href` なので断片を含み、`document.url` は含まない
  */
-const documentUrlsInMetadata = async (wacz: WaczReader, actions: ReadonlySet<string>): Promise<Set<string>> => {
-  const urls = new Set<string>();
+const documentUrlsInMetadata = async (
+  wacz: WaczReader,
+  actions: ReadonlySet<string>,
+): Promise<{ recorded: Set<string>; snapshots: Set<string> }> => {
+  const recorded = new Set<string>();
+  const snapshots = new Set<string>();
   for (const entry of wacz.warcEntries()) {
     const buf = await wacz.readEntry(entry);
     if (buf === undefined) continue;
@@ -137,13 +149,13 @@ const documentUrlsInMetadata = async (wacz: WaczReader, actions: ReadonlySet<str
       if (record === null || (getHeader(record, "WARC-Type") ?? "").toLowerCase() !== "metadata") continue;
       const { fields } = parseWarcFieldsBody(record.body);
       const target = getHeader(record, "WARC-Target-URI");
-      if (target !== undefined && fieldValues(fields, "action").some((action) => actions.has(action))) urls.add(target);
+      if (target !== undefined && fieldValues(fields, "action").some((action) => actions.has(action))) recorded.add(target);
       if (fieldValues(fields, "snapshot").length > 0) {
-        for (const uri of fieldValues(fields, "document-uri")) urls.add(uri.split("#", 1)[0] ?? uri);
+        for (const uri of fieldValues(fields, "document-uri")) snapshots.add(uri.split("#", 1)[0] ?? uri);
       }
     }
   }
-  return urls;
+  return { recorded, snapshots };
 };
 
 /** after-load の写しの行が名乗る、その時点の文書の URL。その形の行でなければ `undefined`。 */
@@ -220,7 +232,7 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
         issues.push(issue("missing-url", {}, DATAPACKAGE));
       } else {
         const knownReason = withheld === undefined || (declared !== undefined && policyReasons.has(declared));
-        if (policies !== undefined && knownReason) {
+        if (policies !== undefined && knownReason && !mayHoldReplacedValue(url, capture)) {
           const expected = expectedFor(url, mimes.get(url) ?? [], policies, denyIsReason);
           if (declared === undefined && expected !== undefined) {
             issues.push(issue("should-withhold", { url, expected }, DATAPACKAGE));
@@ -233,8 +245,12 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
         // 身元は archive の中を指す。索引に無ければ、no-archive (1.11.0 からは deny も) の記録と写しの
         // document-uri を探す (WARC を読むのはこのときだけ)。
         const recordedAs: ReadonlySet<string> = new Set(denyIsReason ? ["no-archive", "deny"] : ["no-archive"]);
-        if (!mimes.has(url) && !(await documentUrlsInMetadata(wacz, recordedAs)).has(url)) {
-          issues.push(issue("not-in-archive", { url }, DATAPACKAGE, "warning"));
+        if (!mimes.has(url)) {
+          const { recorded, snapshots } = await documentUrlsInMetadata(wacz, recordedAs);
+          // 値を置き換えた document-uri は残す値も置き換えてあるので、document.url と同じ字とは限らない (1.22.0)。
+          const found =
+            recorded.has(url) || snapshots.has(url) || [...snapshots].some((uri) => mayHoldReplacedValue(uri, capture));
+          if (!found) issues.push(issue("not-in-archive", { url }, DATAPACKAGE, "warning"));
         }
       }
     }
@@ -245,10 +261,13 @@ export const browserhiveDocumentWithheldRule: ValidationRule = {
 
     if (withheld !== undefined) {
       // ② 伏せたなら、その文書から読んだものは無い。方針の当たらない文書の after-load の行は別の文書から読んだ物。
-      //    URL が同じなら伏せた文書そのもの。方針が読めなければ、URL で分かるものだけを分ける。
+      //    URL が同じなら伏せた文書そのもの。方針が読めなければ、URL で分かるものだけを分ける。値を置き換えた URL の行は、
+      //    字が同じでも違っても伏せた文書の写しかを言えず、方針にも照らせない (1.22.0)。
       const readFromAnotherDocument = (page: PagesJsonlEntry): boolean => {
         const at = afterLoadDocumentUrl(page);
-        if (at === undefined || at === url) return false;
+        if (at === undefined) return false;
+        if (mayHoldReplacedValue(at, capture)) return true;
+        if (at === url) return false;
         return policies === undefined || expectedFor(at, mimes.get(at) ?? [], policies, denyIsReason) === undefined;
       };
       const reason = declared ?? typeName(withheld);

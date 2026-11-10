@@ -417,4 +417,43 @@ describe("browserhive/storage-shape", () => {
       }),
     ).toEqual([]);
   });
+
+  describe("隠すシークレット（WACZ Profile 1.22.0 の storage directory）", () => {
+    const WACZ_1_21 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/";
+    const WACZ_1_22 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/";
+    const withValues = (settings: Record<string, unknown>, conformsTo = WACZ_1_22): FixtureOptions => ({
+      conformsTo,
+      settings,
+      storage: goodInventory({ valuesRecorded: true }),
+      storageValues: [goodLine()],
+    });
+    const hiddenSecret = (names: string): Issue => ({
+      rule: SHAPE,
+      severity: "error",
+      messageKey: `${SHAPE}.hidden-secret`,
+      params: { entry: "storage/origins.jsonl", names },
+    });
+
+    it("隠すシークレットのある package が値のファイルを持てば報告する", async () => {
+      expect(await run(withValues({ secrets: ["api_token", "login"], secretArchive: { login: "keep" } }))).toEqual([
+        hiddenSecret("api_token"),
+      ]);
+    });
+
+    it("対照: どのシークレットも残すと頼んだ package は、値のファイルを持ってよい", async () => {
+      expect(await run(withValues({ secrets: ["api_token"], secretArchive: { api_token: "keep" } }))).toEqual([]);
+    });
+
+    it("隠すシークレットがあっても、値のファイルが無ければ何も言わない", async () => {
+      expect(await run({ conformsTo: WACZ_1_22, settings: { secrets: ["api_token"], secretArchive: {} }, storage: goodInventory() })).toEqual([]);
+    });
+
+    it("secretArchive が読めなければ、どのシークレットも名指されていない（隠す）と見る", async () => {
+      expect(await run(withValues({ secrets: ["api_token"] }))).toEqual([hiddenSecret("api_token")]);
+    });
+
+    it("1.21.0 を名乗る archive には当てない", async () => {
+      expect(await run(withValues({ secrets: ["api_token"], secretArchive: {} }, WACZ_1_21))).toEqual([]);
+    });
+  });
 });

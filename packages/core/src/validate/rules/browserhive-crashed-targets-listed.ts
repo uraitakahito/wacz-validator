@@ -11,6 +11,10 @@
  *   - `url` に最初に当たる方針が `no-archive` か `deny` のときと、`document` が `withheld` を持つときは、
  *     `url` を書かない。target の URL は頁から来るので、残さないでと頼まれた物を持ち出してしまう
  *
+ * **値を置き換えた URL には方針を照らさない (WACZ Profile 1.22.0 の urlPolicies)。** 取り込みは置き換える前の URL に方針を
+ * 照らすので、シークレットを名乗る package で `***` を持つ URL は、取り込みが当てたのと別の方針に当たりうる。そういう
+ * `url` は、方針を理由には落とさない。`document.withheld` を理由に落とすのは今までどおり。
+ *
  * **落ちたこと自体は確かめられない。** renderer の crash は WARC に現れないので、見るのは archive の申告が
  * 自分自身と食い違っていないかまで。
  *
@@ -19,7 +23,7 @@
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/#completeness-crashed-targets
  */
 import { ok } from "../../result.js";
-import { firstUrlPolicy, policiesOf } from "../browserhive-policies.js";
+import { firstUrlPolicy, mayHoldReplacedValue, policiesOf } from "../browserhive-policies.js";
 import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
@@ -107,6 +111,7 @@ export const browserhiveCrashedTargetsListedRule: ValidationRule = {
         issue("url-by-document", { url: target.url, withheld });
         continue;
       }
+      if (mayHoldReplacedValue(target.url, capture)) continue;
       const first = firstUrlPolicy(target.url, policies);
       if (first?.action === "no-archive" || first?.action === "deny") {
         issue("url-by-policy", { url: target.url, pattern: first.pattern, action: first.action });

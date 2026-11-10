@@ -19,12 +19,17 @@
  * 小文字を区別する。照合の規則は profile ではなく BrowserHive の model が定める (glob の
  * ワイルドカードは `*` だけ)。
  *
+ * **値を置き換えた URL には照らさない (WACZ Profile 1.22.0 の urlPolicies)。** 取り込みは置き換える前の URL に方針を
+ * 照らすので、シークレットを名乗る package で `***` を持つ URL は、取り込みが当てたのと別の方針に当たりうる。置き換えで
+ * 2 つの URL が 1 つになるので、索引の MIME もどちらの URL の物か分からない。そういう URL には何も言わない。
+ *
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.9.0/#completeness
  */
 import { ok } from "../../result.js";
 import {
   contentTypePolicyFor,
   firstUrlPolicy,
+  mayHoldReplacedValue,
   mimesByUrl,
   policiesOf,
 } from "../browserhive-policies.js";
@@ -64,7 +69,7 @@ export const browserhivePolicyNotTruncatedRule: ValidationRule = {
 
     const issues: Issue[] = [];
     for (const url of listed) {
-      if (typeof url !== "string") continue;
+      if (typeof url !== "string" || mayHoldReplacedValue(url, capture)) continue;
       // URL の方針は最初に当たったものだけが効き、当たれば content-type の方針より先に決まる。
       // deny / no-archive が先に当たった URL は応答として記録されないので、何も言わない。
       const first = firstUrlPolicy(url, policies);

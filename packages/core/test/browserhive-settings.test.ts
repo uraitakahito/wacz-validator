@@ -40,6 +40,8 @@ const POLICIES = "browserhive/url-policies";
 const V8 = { major: 8, minor: 0, patch: 0 };
 const PROFILE_1_19 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/";
 const PROFILE_1_20 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/";
+const PROFILE_1_21 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/";
+const PROFILE_1_22 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/";
 
 /** browserhive のアーカイブであることを示すだけの最小の目録。 */
 const minimalInventory: Record<string, unknown> = {
@@ -168,6 +170,71 @@ describe("browserhive/settings-shape", () => {
 
     it("1.20.0 を名乗って文字列の userAgent が在れば何も言わない", async () => {
       expect(await run({ conformsTo: PROFILE_1_20, settings: goodSettings({ userAgent: "Probe/1 BrowserHive" }) })).toEqual([]);
+    });
+  });
+
+  describe("secretArchive（WACZ Profile 1.22.0 で必須）", () => {
+    /** 1.22.0 どおりの settings。名前 `api_token` と `login` が渡され、`api_token` だけ値を残すと頼まれた。 */
+    const settings122 = (over: Record<string, unknown> = {}): Record<string, unknown> =>
+      goodSettings({ userAgent: "Probe/1 BrowserHive", secrets: ["api_token", "login"], secretArchive: { api_token: "keep" }, ...over });
+
+    const said = (issues: Issue[]): unknown[] => issues.map((i) => [i.messageKey, i.params]);
+
+    it("1.22.0 を名乗って secretArchive が無ければ落とす", async () => {
+      const { secretArchive: _dropped, ...settings } = settings122();
+      expect(said(await run({ conformsTo: PROFILE_1_22, settings }))).toEqual([[`${SHAPE}.missing-member`, { member: "secretArchive" }]]);
+    });
+
+    it.each([
+      ["配列", [], "array"],
+      ["文字列", "keep", "string"],
+    ])("1.22.0 を名乗って secretArchive が %s なら落とす", async (_label, secretArchive, found) => {
+      expect(said(await run({ conformsTo: PROFILE_1_22, settings: settings122({ secretArchive }) }))).toEqual([
+        [`${SHAPE}.wrong-type`, { member: "secretArchive", found }],
+      ]);
+    });
+
+    it("値を残すと頼まれたシークレットが無ければ、空の object を通す —— それが「全部隠した」の綴り", async () => {
+      expect(await run({ conformsTo: PROFILE_1_22, settings: settings122({ secretArchive: {} }) })).toEqual([]);
+    });
+
+    it("鍵が settings.secrets の部分集合で、値が keep なら何も言わない", async () => {
+      expect(await run({ conformsTo: PROFILE_1_22, settings: settings122() })).toEqual([]);
+      expect(
+        await run({ conformsTo: PROFILE_1_22, settings: settings122({ secretArchive: { api_token: "keep", login: "keep" } }) }),
+      ).toEqual([]);
+    });
+
+    it("鍵が settings.secrets に無ければ落とす", async () => {
+      expect(
+        said(await run({ conformsTo: PROFILE_1_22, settings: settings122({ secretArchive: { api_token: "keep", other: "keep" } }) })),
+      ).toEqual([[`${SHAPE}.secret-archive-name`, { name: "other" }]]);
+    });
+
+    it("settings.secrets が読めなければ、どの鍵も部分集合ではない", async () => {
+      expect(said(await run({ conformsTo: PROFILE_1_22, settings: settings122({ secrets: "api_token" }) }))).toEqual([
+        [`${SHAPE}.secret-archive-name`, { name: "api_token" }],
+      ]);
+    });
+
+    it.each([["drop"], [true], [null], ["KEEP"]])("値が %o なら落とす（値は文に載せない）", async (value) => {
+      expect(
+        said(await run({ conformsTo: PROFILE_1_22, settings: settings122({ secretArchive: { api_token: value } }) })),
+      ).toEqual([[`${SHAPE}.secret-archive-value`, { name: "api_token" }]]);
+    });
+
+    it("1.21.0 を名乗る archive には当てない —— 無くても、形が違っても", async () => {
+      expect(await run({ conformsTo: PROFILE_1_21, settings: goodSettings({ userAgent: "Probe/1 BrowserHive" }) })).toEqual([]);
+      expect(
+        await run({
+          conformsTo: PROFILE_1_21,
+          settings: goodSettings({ userAgent: "Probe/1 BrowserHive", secretArchive: { other: "drop" } }),
+        }),
+      ).toEqual([]);
+    });
+
+    it("版を名乗らない archive には当てない", async () => {
+      expect(await run({ settings: goodSettings({ secretArchive: { other: "drop" } }) })).toEqual([]);
     });
   });
 });

@@ -468,6 +468,8 @@ export interface ExtraWarcSpec {
   requests?: WarcRequestSpec[];
   resources?: WarcResourceSpec[];
   metadata?: WarcMetadataSpec[];
+  /** 本の末尾に足す生の member（`warcRawMembers` と同じ）。 */
+  rawMembers?: Buffer[];
 }
 
 /**
@@ -1101,6 +1103,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
       ...(spec.requests !== undefined && { requests: spec.requests }),
       ...(spec.resources !== undefined && { resources: spec.resources }),
       ...(spec.metadata !== undefined && { metadata: spec.metadata }),
+      ...(spec.rawMembers !== undefined && { rawMembers: spec.rawMembers }),
     }),
   }));
   // CDXJ "url" field は replay ツールが lookup する URL。何も

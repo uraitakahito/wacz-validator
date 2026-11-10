@@ -135,6 +135,47 @@ describe("browserhive/deny-enforced", () => {
     }
   });
 
+  describe("値を置き換えた URL（WACZ Profile 1.22.0 の urlPolicies）", () => {
+    /**
+     * 取り込みは置き換える前の URL（`https://site.test/tok-12345678/x`）に方針を照らし、先の no-body が当たって要求を
+     * 送った。置き換えた後の URL には、後ろの deny が当たる。
+     */
+    const policies = [
+      { pattern: "https://site.test/tok-*", action: "no-body" },
+      { pattern: "https://site.test/*", action: "deny" },
+    ];
+    const REPLACED = "https://site.test/***/x";
+    const PLAIN = "https://site.test/plain/x";
+    const archive = (url: string, over: { conformsTo?: string; secrets?: string[] } = {}): FixtureOptions => ({
+      conformsTo: over.conformsTo ?? "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/",
+      settings: { ...settingsWith(policies), secrets: over.secrets ?? ["api_token"], secretArchive: {} },
+      warcResponses: [{ uri: url, mime: "text/html", body: "" }],
+    });
+
+    it("シークレットを名乗る 1.22.0 の package では、*** を持つ URL に照らさない", async () => {
+      expect(await run(archive(REPLACED))).toEqual([]);
+    });
+
+    it("対照: 同じ archive でも、*** の無い URL は今までどおり落とす", async () => {
+      expect(await run(archive(PLAIN))).toEqual([sent(PLAIN, "https://site.test/*", "response")]);
+    });
+
+    it("1.21.0 を名乗る archive では、*** を持つ URL にも今までどおり照らす", async () => {
+      expect(await run(archive(REPLACED, { conformsTo: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/" }))).toEqual([
+        sent(REPLACED, "https://site.test/*", "response"),
+      ]);
+    });
+
+    it("置き換えの印は *** の 3 字 —— * を 2 つだけ持つ URL は今までどおり照らす", async () => {
+      const stars = "https://site.test/a**b/x";
+      expect(await run(archive(stars))).toEqual([sent(stars, "https://site.test/*", "response")]);
+    });
+
+    it("シークレットを名乗らない package では、*** はオリジンの字なので照らす", async () => {
+      expect(await run(archive(REPLACED, { secrets: [] }))).toEqual([sent(REPLACED, "https://site.test/*", "response")]);
+    });
+  });
+
   it("版で分けない —— 送らない約束は最初の版からある", async () => {
     const report = await reportFor(
       tmpDir,

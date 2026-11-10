@@ -18,12 +18,17 @@
  * 書いたので、その漏れはこの rule には見えない (身元が archive に無いという document-withheld の
  * warning が言う)。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/#urlpolicies
+ * **値を置き換えた URL には照らさない (WACZ Profile 1.22.0)。** 取り込みは値を置き換える前の URL に方針を照らすので、
+ * シークレットを名乗る package で `***` を持つ URL は、取り込みが当てたのと別の方針に当たりうる。先に `no-body` が
+ * 当たって送った要求の URL が、置き換えた後には `deny` に当たることもある。読み手はその答えを取り込みのしたことと
+ * 取ってはならないので、そういう URL の記録には何も言わない。`***` の無い URL は今までどおり見る。
+ *
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#urlpolicies
  */
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
-import { firstUrlPolicy, policiesOf } from "../browserhive-policies.js";
+import { firstUrlPolicy, mayHoldReplacedValue, policiesOf } from "../browserhive-policies.js";
 import { isRecord, readCapture } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
 
@@ -40,8 +45,8 @@ export const browserhiveDenyEnforcedRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §urlPolicies",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/#urlpolicies",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.11.0/ja/#urlpolicies",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#urlpolicies",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/ja/#urlpolicies",
       },
     },
   ],
@@ -52,7 +57,7 @@ export const browserhiveDenyEnforcedRule: ValidationRule = {
     const capture = await readCapture(wacz);
     const settings = capture?.["settings"];
     // 方針が読めなければ照らさない。settings の不在や形は別の rule が言う。
-    if (!isRecord(settings)) return ok([]);
+    if (capture === undefined || !isRecord(settings)) return ok([]);
     const policies = policiesOf(settings);
     if (!policies.urlPolicies.some((policy) => policy.action === "deny")) return ok([]);
 
@@ -68,7 +73,7 @@ export const browserhiveDenyEnforcedRule: ValidationRule = {
         const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
         if (!SENT_TYPES.has(type)) continue;
         const url = getHeader(record, "WARC-Target-URI");
-        if (url === undefined || reported.has(url)) continue;
+        if (url === undefined || reported.has(url) || mayHoldReplacedValue(url, capture)) continue;
         const first = firstUrlPolicy(url, policies);
         if (first?.action !== "deny") continue;
         reported.add(url);

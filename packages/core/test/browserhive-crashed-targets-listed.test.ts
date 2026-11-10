@@ -20,6 +20,7 @@ import { buildWacz, type FixtureOptions } from "./fixtures/generator.js";
 const RULE = "browserhive/crashed-targets-listed";
 const PROFILE_1_21 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/";
 const PROFILE_1_20 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.20.0/";
+const PROFILE_1_22 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/";
 
 const ADS = "https://ads.test/frame";
 const CRASHED = { type: "iframe", url: ADS, status: "crashed" };
@@ -168,6 +169,48 @@ describe("browserhive/crashed-targets-listed", () => {
     expect(await run(archive([CRASHED], { document: { withheld: "no-archive" } }))).toEqual([
       bad("url-by-document", { url: ADS, withheld: "no-archive" }),
     ]);
+  });
+
+  describe("値を置き換えた URL（WACZ Profile 1.22.0 の urlPolicies）", () => {
+    /** 置き換える前の URL（`https://ads.test/tok-12345678/frame`）には先の no-body が当たり、URL を書いてよかった。 */
+    const urlPolicies = [
+      { pattern: "https://ads.test/tok-*", action: "no-body" },
+      { pattern: "https://ads.test/*", action: "deny" },
+    ];
+    const REPLACED = "https://ads.test/***/frame";
+    const PLAIN = "https://ads.test/plain/frame";
+    const crashedAt = (url: string, over: { conformsTo?: string; secrets?: string[] } = {}): FixtureOptions =>
+      archive([{ type: "iframe", url, status: "crashed" }], {
+        conformsTo: over.conformsTo ?? PROFILE_1_22,
+        settings: { urlPolicies, secrets: over.secrets ?? ["api_token"], secretArchive: {} },
+      });
+
+    it("シークレットを名乗る 1.22.0 の package では、*** を持つ url に方針を照らさない", async () => {
+      expect(await run(crashedAt(REPLACED))).toEqual([]);
+    });
+
+    it("対照: 同じ archive でも、*** の無い url は今までどおり落とす", async () => {
+      expect(await run(crashedAt(PLAIN))).toEqual([bad("url-by-policy", { url: PLAIN, pattern: "https://ads.test/*", action: "deny" })]);
+    });
+
+    it("1.21.0 を名乗る archive では、*** を持つ url にも今までどおり照らす", async () => {
+      expect(await run(crashedAt(REPLACED, { conformsTo: PROFILE_1_21 }))).toEqual([
+        bad("url-by-policy", { url: REPLACED, pattern: "https://ads.test/*", action: "deny" }),
+      ]);
+    });
+
+    it("シークレットを名乗らない package では、*** を持つ url にも照らす", async () => {
+      expect(await run(crashedAt(REPLACED, { secrets: [] }))).toEqual([
+        bad("url-by-policy", { url: REPLACED, pattern: "https://ads.test/*", action: "deny" }),
+      ]);
+    });
+
+    it("主文書を伏せた取り込みで url を書けば、*** を持っていても error —— 方針に照らす話ではない", async () => {
+      const options = crashedAt(REPLACED);
+      expect(await run({ ...options, document: { withheld: "no-archive" } })).toEqual([
+        bad("url-by-document", { url: REPLACED, withheld: "no-archive" }),
+      ]);
+    });
   });
 
   it("1.21.0 より前を名乗る archive と、名乗らない archive には当てない", async () => {

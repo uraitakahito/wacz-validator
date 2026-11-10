@@ -11,6 +11,7 @@
  *
  * **方針で省いたもの (blocked) は未完了に数えない。** `deny`・`no-archive` の要求と、
  * `url-policy`・`content-type` で省いた本文は、要求者が頼んだ省略で、記録の欠けではない。
+ * 隠す値を含むので落とした本文 (`secret`。WARC Profile 1.2.0) も同じ —— 要求者がそのシークレットを残すと頼まなかった結果。
  * 以前は数えていて、`deny` しか当たらない archive にも「未完了」の warning が出ていた。
  * 内訳 (`byReason.blocked`) とサンプルには残すので、何を省いたかは見えるまま。
  *
@@ -50,6 +51,7 @@ type Reason = "failed" | "incomplete" | "truncated" | "unintercepted" | "blocked
  * - `truncated` が `too-large` / `task-cap`: 上限で落とした本文 ("truncated")
  * - `truncated` が `not-intercepted`: 届いたのにバイト列で読めなかった本文 ("unintercepted"。profile 1.13.0)
  * - `truncated` が `content-type` / `url-policy`: 方針で省いた本文 ("blocked")
+ * - `truncated` が `secret`: 隠す値を含むので落とした本文 ("blocked"。WARC Profile 1.2.0)
  * - `action` が `deny` / `no-archive`: 方針で記録しなかった要求 ("blocked")
  * - `reason: loadingFailed`: 失敗 ("failed")。残りは未完了 ("incomplete")
  */
@@ -57,7 +59,7 @@ const classify = (f: Record<string, string>): Reason => {
   const truncated = f["truncated"];
   if (truncated === "too-large" || truncated === "task-cap") return "truncated";
   if (truncated === "not-intercepted") return "unintercepted";
-  if (truncated === "content-type" || truncated === "url-policy") return "blocked";
+  if (truncated === "content-type" || truncated === "url-policy" || truncated === "secret") return "blocked";
   if (f["action"] === "deny" || f["action"] === "no-archive") return "blocked";
   if (f["reason"] === "loadingFailed") return "failed";
   return "incomplete"; // reason: "stop-while-pending" 等(stop 時の in-flight ドレイン)
