@@ -656,6 +656,149 @@ describe("browserhive/document-withheld", () => {
     });
   });
 
+  describe("値を置き換えた URL（WACZ Profile 1.22.0 の urlPolicies）", () => {
+    const WACZ_1_21 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/";
+    const WACZ_1_22 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/";
+    /** 値を置き換えた文書の URL と、同じ形で値を含まない URL。 */
+    const REPLACED = "https://site.test/landed/***";
+    const PLAIN = "https://site.test/landed/plain";
+    /** 置き換える前の URL（`…/landed/tok-12345678`）には、この no-body が当たった。置き換えた後の URL には当たらない。 */
+    const TOKEN_NO_BODY = noBody("https://site.test/landed/tok-*");
+    /** 置き換えで 2 つの URL が 1 つになった形。文書の HTML と、content-type の方針で省いた動画が同じ URL になった。 */
+    const VIDEO_NO_BODY: Policies = { contentTypePolicies: [{ prefix: "video/", action: "no-body" }] };
+
+    interface Over {
+      conformsTo?: string;
+      secrets?: string[];
+      secretArchive?: Record<string, string>;
+    }
+    const secretSettings = (policies: Policies, over: Over): Record<string, unknown> => ({
+      ...settingsWith(policies),
+      secrets: over.secrets ?? ["api_token"],
+      secretArchive: over.secretArchive ?? {},
+    });
+    const responsesAt = (url: string, ...mimes: string[]): NonNullable<FixtureOptions["warcResponses"]> => [
+      { uri: PAGE, mime: "", status: 302, body: "" },
+      ...mimes.map((mime) => ({ uri: url, mime, body: "" })),
+    ];
+
+    /** `url` の文書を url-policy で伏せた archive。置き換える前の URL には、そう決めた方針が当たった。 */
+    const withheldAt = (url: string, over: Over = {}): FixtureOptions => ({
+      pageUrl: PAGE,
+      conformsTo: over.conformsTo ?? WACZ_1_22,
+      warcResponses: responsesAt(url, "text/html"),
+      settings: secretSettings(TOKEN_NO_BODY, over),
+      document: { url, withheld: "url-policy" },
+      mutatePageEntry: hidden("url-policy"),
+    });
+
+    /** `url` の文書を伏せずに書いた archive。索引の MIME の 1 つに content-type の方針が当たる。 */
+    const writtenAt = (url: string, over: Over = {}): FixtureOptions => ({
+      pageUrl: PAGE,
+      conformsTo: over.conformsTo ?? WACZ_1_22,
+      warcResponses: responsesAt(url, "text/html", "video/mp4"),
+      settings: secretSettings(VIDEO_NO_BODY, over),
+      document: { url },
+      mutatePageEntry: shown,
+      axtree: snapshot(url),
+    });
+
+    it("伏せた文書の URL が *** を持てば、方針に照らし直さない", async () => {
+      expect(await run(withheldAt(REPLACED))).toEqual([]);
+    });
+
+    it("対照: 同じ archive でも、*** の無い URL は今までどおり照らして落とす", async () => {
+      expect(await run(withheldAt(PLAIN))).toEqual([
+        error("should-not-withhold", { url: PLAIN, declared: "url-policy" }, "datapackage.json"),
+      ]);
+    });
+
+    it("伏せなかった文書の URL が *** を持てば、索引の MIME に content-type の方針を照らさない", async () => {
+      expect(await run(writtenAt(REPLACED))).toEqual([]);
+    });
+
+    it("対照: 同じ archive でも、*** の無い URL は今までどおり MIME で照らして落とす", async () => {
+      expect(await run(writtenAt(PLAIN))).toEqual([
+        error("should-withhold", { url: PLAIN, expected: "content-type" }, "datapackage.json"),
+      ]);
+    });
+
+    it("1.21.0 を名乗る archive と、シークレットを名乗らない package では、*** を持つ URL にも今までどおり照らす", async () => {
+      const shouldNot = [error("should-not-withhold", { url: REPLACED, declared: "url-policy" }, "datapackage.json")];
+      expect(await run(withheldAt(REPLACED, { conformsTo: WACZ_1_21 }))).toEqual(shouldNot);
+      expect(await run(withheldAt(REPLACED, { secrets: [] }))).toEqual(shouldNot);
+    });
+
+    describe("伏せたときの after-load の行", () => {
+      const leaked = [
+        error("text-present", { withheld: "url-policy" }, "pages/pages.jsonl"),
+        error("title-present", { withheld: "url-policy" }, "pages/pages.jsonl"),
+      ];
+      /** 伏せた文書 `DOC` の前に、`at` の文書を写した archive。`at` の索引の MIME の 1 つに content-type の方針が当たる。 */
+      const rowAt = (at: string, over: Over = {}): FixtureOptions => ({
+        ...withheldWithRows("url-policy", { ...noBody("*/landed"), ...VIDEO_NO_BODY }, [snapshotRow("after-load", at)], {
+          warcResponses: [...RESPONSES, { uri: at, mime: "text/html", body: "" }, { uri: at, mime: "video/mp4", body: "" }],
+        }),
+        conformsTo: over.conformsTo ?? WACZ_1_22,
+        settings: secretSettings({ ...noBody("*/landed"), ...VIDEO_NO_BODY }, over),
+      });
+
+      it("写しの URL が *** を持てば、方針に照らさず、伏せた文書の写しとは言わない", async () => {
+        expect(await run(rowAt("https://site.test/earlier/***"))).toEqual([]);
+      });
+
+      it("対照: 同じ archive でも、*** の無い URL の行は今までどおり MIME で照らして落とす", async () => {
+        expect(await run(rowAt("https://site.test/earlier/plain"))).toEqual(leaked);
+      });
+
+      it("写しの URL が document.url と同じ字でも、*** を持てば伏せた文書の写しとは言わない —— 置き換えで 2 つの URL が 1 つになる", async () => {
+        const options = (url: string): FixtureOptions => ({
+          ...withheldWithRows("url-policy", noBody("*/landed/*"), [snapshotRow("after-load", url)], {
+            warcResponses: responsesAt(url, "text/html"),
+            document: { url, withheld: "url-policy" },
+          }),
+          conformsTo: WACZ_1_22,
+          settings: secretSettings(noBody("*/landed/*"), {}),
+        });
+        expect(await run(options(REPLACED))).toEqual([]);
+        expect(await run(options(PLAIN))).toEqual(leaked);
+      });
+
+      it("1.21.0 を名乗る archive では、*** を持つ写しの URL にも今までどおり照らす", async () => {
+        expect(await run(rowAt("https://site.test/earlier/***", { conformsTo: WACZ_1_21 }))).toEqual(leaked);
+      });
+    });
+
+    describe("身元（残す値は写しでだけ置き換える）", () => {
+      /** 残すシークレットの値を URL に持つ文書。pushState で移ったので、その URL の要求も応答も無い。 */
+      const KEPT = "https://site.test/landed?k=kept-value-1";
+      const notInArchive = `warning ${RULE}.not-in-archive`;
+      const summary = (issues: Issue[]): string[] => issues.map((i) => `${i.severity} ${i.messageKey}`);
+      const pushedTo = (documentUri: string, over: Over = {}): FixtureOptions => ({
+        ...written({}, {
+          warcResponses: [{ uri: PAGE, mime: "text/html", body: "<title>Start</title>start text" }],
+          warcMetadata: [snapshotMetadata("after-behaviors", documentUri)],
+          document: { url: KEPT },
+          axtree: snapshot(KEPT),
+        }),
+        conformsTo: over.conformsTo ?? WACZ_1_22,
+        settings: secretSettings({}, { secretArchive: { api_token: "keep" }, ...over }),
+      });
+
+      it("写しの document-uri が値を置き換えてあれば、document.url と同じ字でなくても warning を出さない", async () => {
+        expect(await run(pushedTo("https://site.test/landed?k=***"))).toEqual([]);
+      });
+
+      it("対照: document-uri が *** を持たない別の URL なら、今までどおり warning を出す", async () => {
+        expect(summary(await run(pushedTo("https://site.test/landed?k=other-value")))).toEqual([notInArchive]);
+      });
+
+      it("1.21.0 を名乗る archive では、*** を持つ document-uri も同じ字でなければ warning を出す", async () => {
+        expect(summary(await run(pushedTo("https://site.test/landed?k=***", { conformsTo: WACZ_1_21 })))).toEqual([notInArchive]);
+      });
+    });
+  });
+
   describe("走る範囲", () => {
     it("document の無い archive（1.9.0 以前）は見ない", async () => {
       // 方針に当たった文書の文字が残る、12.x の形。身元が無いので照らしようがない。

@@ -55,6 +55,7 @@
   "browserhive/storage-shape.areas-shape": "{line} 行目: areas は local と session を持ち、それぞれ JSON オブジェクトでなければならない",
   "browserhive/storage-shape.declared-but-absent": "storage.valuesRecorded は true だが {entry} がパッケージに無い",
   "browserhive/storage-shape.desc": "browserhive: storage/origins.jsonl を profile と、目録の申告の両方に照らす。読み手は valuesRecorded だけを見てアーカイブが値を運んでいるかを決めるので、両者は一致していなければならない。",
+  "browserhive/storage-shape.hidden-secret": "{entry} が在るが、package に隠すシークレット（{names}）がある —— 隠すシークレットのある package は保存された値を持たない。ページは behavior が渡した値を保存できる",
   "browserhive/storage-shape.missing-member": "{line} 行目: {members} が無い",
   "browserhive/storage-shape.not-json": "{entry} の {line} 行目が JSON オブジェクトでない",
   "browserhive/storage-shape.oversize-has-values": "{line} 行目: {origin} は目録で valuesOversize と記録されている —— 大きすぎて運べなかったはずのものが、ここに在る",

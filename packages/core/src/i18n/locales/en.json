@@ -55,6 +55,7 @@
   "browserhive/storage-shape.areas-shape": "line {line}: areas must contain local and session, each a JSON object",
   "browserhive/storage-shape.declared-but-absent": "storage.valuesRecorded is true but {entry} is not in the package",
   "browserhive/storage-shape.desc": "browserhive: checks storage/origins.jsonl against the profile, and against what the inventory says about it. A reader decides whether the archive carries stored values by reading valuesRecorded alone, so the two must agree.",
+  "browserhive/storage-shape.hidden-secret": "{entry} is present, but the package has a hidden secret ({names}): a package with a hidden secret does not carry the stored values, which a page can have taken from a behavior",
   "browserhive/storage-shape.missing-member": "line {line}: entry is missing {members}",
   "browserhive/storage-shape.not-json": "{entry} line {line} is not a JSON object",
   "browserhive/storage-shape.oversize-has-values": "line {line}: {origin} is recorded as valuesOversize in the inventory but has values here — the inventory says they were too large to carry, and here they are",

@@ -12,7 +12,7 @@
  */
 import { parseCdxj } from "../wacz/cdxj-parser.js";
 import type { WaczReader } from "../wacz/reader.js";
-import { isRecord } from "./browserhive-storage.js";
+import { isRecord, profileAtLeast } from "./browserhive-storage.js";
 
 const CDXJ_ENTRY = "indexes/index.cdxj";
 
@@ -71,6 +71,27 @@ export const policiesOf = (settings: Record<string, unknown>): Policies => ({
 /** URL に最初に当たった URL の方針。当たらなければ `undefined`。 */
 export const firstUrlPolicy = (url: string, policies: Policies): UrlPolicyEntry | undefined =>
   policies.urlPolicies.find((p) => globToRegExp(p.pattern).test(url));
+
+/**
+ * `url` が、シークレットの値を `***` に置き換えた URL かもしれないか。そうなら、方針に照らし直した答えも、
+ * 別の場所の URL と字が違うことも、取り込みのしたことを言わない。
+ *
+ * WACZ Profile 1.22.0 の urlPolicies: 取り込みは値を置き換える前の URL に方針を照らすので、シークレットを名乗る
+ * package で `***` を持つ URL は、取り込みが当てたのと別の方針に当たるか、どれにも当たらない。読み手はその答えを
+ * 取り込みのしたことと取ってはならない (MUST NOT)。置き換えで 2 つの URL が 1 つになるので、索引の MIME も
+ * どちらの URL の物か分からない。写しの URL と `document-uri` は残す値も置き換えるので、`document.url` と同じ字とは
+ * 限らない。
+ *
+ * 1.21.0 以前を名乗る archive と、シークレットを名乗らない package では `false` —— `***` はオリジンの字で、
+ * 今までどおり照らす。`settings.secrets` が読めなければ、名乗っていないと見る。URL は字のまま見る（`//` や host の
+ * 形を仮定しない）。
+ */
+export const mayHoldReplacedValue = (url: string, capture: Record<string, unknown>): boolean => {
+  if (!url.includes("***") || !profileAtLeast(capture["conformsTo"], 1, 22)) return false;
+  const settings = capture["settings"];
+  const secrets = isRecord(settings) ? settings["secrets"] : undefined;
+  return Array.isArray(secrets) && secrets.length > 0;
+};
 
 /** MIME のどれかに前方一致する content-type の方針。空の MIME (型が分からない応答) には当てない。 */
 export const contentTypePolicyFor = (

@@ -12,25 +12,29 @@
  * `datapackage/resources-complete`(ZIP の実体がすべて宣言されているか)と
  * `datapackage/resource-hashes`(宣言と実体の hash 一致)が既に見ている。
  *
- * 確かめるのは 5 つ:
+ * 確かめるのは 6 つ:
  *
  *   1. `valuesRecorded` とファイルの有無が一致している (**両方向**)
  *   2. 各行が JSON オブジェクトで、必須の member を持っている
  *   3. profile と stage が目録と同じ綴りである
  *   4. 目録で `unreadable` と申告された origin が、ここに行を持っていない
  *   5. 目録で `valuesOversize` と申告された origin が、ここに行を持っていない
+ *   6. 隠すシークレットのある package がファイルを持たない (WACZ Profile 1.22.0)。ファイルは各 area の値を
+ *      そのまま持ち、ページは behavior が渡した値を保存できる。隠すシークレットは `settings.secrets` のうち
+ *      `settings.secretArchive` が名指さない物で、`secretArchive` が読めなければ、どれも名指されていないと見る
  *
  * 4 が要るのは、両方に書くと「読めなかった」と「読んで値が在った」を同時に
  * 主張することになるため。5 は矛盾の中身が違う —— 「読めたが大きすぎるので
  * 運ばないと決めた」と「ここに在る」の同居で、producer が**上限の判定と行を
  * 書く判定を別々に書いた**ときに出る。直す先が違うので、報告も分ける。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/#storage-directory
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#storage-directory
  */
 import { ok } from "../../result.js";
 import {
   EXPECTED_STORAGE_STAGE,
   isRecord,
+  profileAtLeast,
   readCapture,
   readStorageValues,
   STORAGE_ENTRY,
@@ -66,6 +70,19 @@ const withheldOrigins = (
   return { unreadable, oversize };
 };
 
+/**
+ * 隠すシークレットの名前 (WACZ Profile 1.22.0)。`settings.secrets` のうち `settings.secretArchive` が名指さない物。
+ * 1.22.0 より前を名乗る archive と、`settings.secrets` が読めない archive では空。
+ */
+const hiddenSecrets = (capture: Record<string, unknown>): string[] => {
+  const settings = capture["settings"];
+  if (!profileAtLeast(capture["conformsTo"], 1, 22) || !isRecord(settings)) return [];
+  const secrets = settings["secrets"];
+  const archive = settings["secretArchive"];
+  const kept = new Set(isRecord(archive) ? Object.keys(archive) : []);
+  return Array.isArray(secrets) ? secrets.filter((name): name is string => typeof name === "string" && !kept.has(name)) : [];
+};
+
 export const browserhiveStorageShapeRule: ValidationRule = {
   // docs-site/src/lib/extract.ts がソースを正規表現で読むので、
   // ここは定数ではなくリテラルで書く。
@@ -76,8 +93,8 @@ export const browserhiveStorageShapeRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §storage directory",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/#storage-directory",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/ja/#storage-directory",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#storage-directory",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/ja/#storage-directory",
       },
     },
   ],
@@ -99,6 +116,12 @@ export const browserhiveStorageShapeRule: ValidationRule = {
     const declared = isRecord(storage) ? storage["valuesRecorded"] === true : false;
     const lines = await readStorageValues(wacz);
     const present = lines !== null;
+
+    // 6. 隠すシークレットのある package は、値のファイルを持たない。
+    const hidden = hiddenSecrets(capture);
+    if (present && hidden.length > 0) {
+      push(`${RULE}.hidden-secret`, { entry: STORAGE_ENTRY, names: hidden.join(", ") });
+    }
 
     // **両方向。** 「言ったのに無い」も「あるのに言っていない」も、読み手の判別を
     // 嘘にする。片方だけ見る形にすると、その片方は必ず見落とされる。

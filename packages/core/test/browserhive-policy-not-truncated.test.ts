@@ -235,6 +235,61 @@ describe("browserhive/policy-not-truncated", () => {
     expect(issues.map((i) => i.messageKey)).toEqual([`${RULE}.url-policy`]);
   });
 
+  describe("値を置き換えた URL（WACZ Profile 1.22.0 の urlPolicies）", () => {
+    const REPLACED = "https://site.test/big/***.mp4";
+    const PLAIN = "https://site.test/big/plain.mp4";
+    const secretsOf = (over: { secrets?: string[] }): Record<string, unknown> => ({ secrets: over.secrets ?? ["api_token"], secretArchive: {} });
+    /**
+     * 置き換えで 2 つの URL が 1 つになった形。上限で落とした画像と、content-type の方針で省いた動画が同じ URL になり、
+     * 索引の MIME はどちらの物か分からない。
+     */
+    const collapsed = (url: string, over: { conformsTo?: string; secrets?: string[] } = {}): FixtureOptions => ({
+      conformsTo: over.conformsTo ?? "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/",
+      warcResponses: [
+        { uri: url, mime: "image/jpeg", body: "" },
+        { uri: url, mime: "video/mp4", body: "" },
+      ],
+      settings: { ...settingsWith({ contentTypePolicies: [{ prefix: "video/", action: "no-body" }] }), ...secretsOf(over) },
+      completeness: truncatedAs(url),
+    });
+    const byType = (url: string): Issue => ({
+      rule: RULE,
+      severity: "error",
+      messageKey: `${RULE}.content-type`,
+      params: { url, prefix: "video/" },
+      location: { entry: "datapackage.json" },
+    });
+
+    it("シークレットを名乗る 1.22.0 の package では、*** を持つ URL に content-type の方針を照らさない", async () => {
+      expect(await run(collapsed(REPLACED))).toEqual([]);
+    });
+
+    it("対照: 同じ archive でも、*** の無い URL は今までどおり落とす", async () => {
+      expect(await run(collapsed(PLAIN))).toEqual([byType(PLAIN)]);
+    });
+
+    it("1.21.0 を名乗る archive では、*** を持つ URL にも今までどおり照らす", async () => {
+      expect(await run(collapsed(REPLACED, { conformsTo: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/" }))).toEqual([byType(REPLACED)]);
+    });
+
+    it("シークレットを名乗らない package では、*** を持つ URL にも照らす", async () => {
+      expect(await run(collapsed(REPLACED, { secrets: [] }))).toEqual([byType(REPLACED)]);
+    });
+
+    it("URL の方針も、*** を持つ URL には照らさない。*** の無い URL は今までどおり落とす", async () => {
+      const options = (url: string): FixtureOptions => ({
+        conformsTo: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/",
+        warcResponses: [{ uri: url, mime: "video/mp4", body: "" }],
+        settings: { ...settingsWith({ urlPolicies: [{ pattern: "https://site.test/big/*", action: "no-body" }] }), ...secretsOf({}) },
+        completeness: truncatedAs(url),
+      });
+      expect(await run(options(REPLACED))).toEqual([]);
+      expect((await run(options(PLAIN))).map((i) => [i.messageKey, i.params])).toEqual([
+        [`${RULE}.url-policy`, { url: PLAIN, pattern: "https://site.test/big/*" }],
+      ]);
+    });
+  });
+
   it("spec / lenient profile では走らない", async () => {
     for (const profile of ["spec", "lenient"] as const) {
       const issues = await run(

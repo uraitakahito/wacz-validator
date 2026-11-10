@@ -621,7 +621,7 @@ describe("browserhive/redacted-records", () => {
         profile,
       );
 
-    it.each(["https:***?b=c", "https://***/x", "https://x/?a=***", "data:text/plain;base64,***"])(
+    it.each(["https:***?b=c", "https:***", "https://***/x", "https://x/?a=***", "data:text/plain;base64,***"])(
       "%s は URI のままで、どの rule も誤りと言わない",
       async (uri) => {
         const report = await reportOf(uri);
@@ -767,7 +767,8 @@ describe("browserhive/redacted-records", () => {
 
     it.each<[string, Partial<FixtureOptions>, string]>([
       ["mainPageURL", { mainPageUrlOverride: PLAIN }, "warning cdxj/pages-mainpage.no-cdxj-record"],
-      ["document.url", { document: { url: PLAIN } }, "warning browserhive/document-withheld.not-in-archive"],
+      // 写しの document-uri は *** を持つので、身元の warning（not-in-archive）は出ない（WACZ Profile 1.22.0）。ツリーとは突き合わせる。
+      ["document.url", { document: { url: PLAIN } }, "error browserhive/document-withheld.tree-url"],
       ["ツリーの url", { axtree: treeOf(PLAIN) }, "error browserhive/document-withheld.tree-url"],
       [
         "uninterceptedUrls",
