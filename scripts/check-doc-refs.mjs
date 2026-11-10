@@ -11,9 +11,10 @@
  *      to English for a missing page, so a half-translated site builds green
  *      and nobody notices until a reader lands on the wrong language.
  *   2. Broken `#region` snippets. Do not assume the build covers these: a
- *      missing region logs "Failed to parse Markdown file" and `astro build`
- *      still reports every page built and exits 0 (measured, twice, on a cold
- *      cache). Left to the build, a doc would ship an empty code fence.
+ *      missing region logs "Failed to parse Markdown file", and whether
+ *      `astro build` then fails depends on the Starlight version and on the
+ *      content cache (a warm cache exited 0, a cold one exited 1). Left to the
+ *      build, a doc could ship an empty code fence.
  *   3. Broken rule references. Docs name rules constantly
  *      (`wacz/required-files`), and a rename breaks neither the build nor the
  *      type checker.
@@ -83,10 +84,10 @@ for (const file of walk(DOCS).filter((f) => isPage(f))) {
 
   // ```ts file="src/…#region" — the injected snippets.
   //
-  // These are checked here rather than left to the build because `astro build`
-  // does NOT fail on them: a missing region logs "Failed to parse Markdown
-  // file" and the build still reports every page built and exits 0. Relying on
-  // the build would mean a doc that silently ships an empty code fence.
+  // These are checked here rather than left to the build because whether
+  // `astro build` fails on them depends on the Starlight version and on the
+  // content cache (a missing region logs "Failed to parse Markdown file"; a warm
+  // cache exited 0). Relying on the build could ship an empty code fence.
   for (const [, path, region] of text.matchAll(/file="([^"#]+)#([^"]+)"/g)) {
     const abs = resolve(ROOT, path);
     if (!existsSync(abs)) {

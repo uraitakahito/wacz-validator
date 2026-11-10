@@ -9,10 +9,10 @@ Everything routine is behind one command:
 pnpm check
 ```
 
-It runs two repository checks (`check:store-name`, `check:test-hosts`), the root scripts'
-own tests, and then, package by package,
-`typecheck → lint → build → test`. Seven packages, in dependency order, so a break
-surfaces in the package that caused it rather than three packages downstream.
+What it runs, and in what order, is the `check` script in the root `package.json`: the
+repository checks, the root scripts' own tests, and then the packages one by one in
+dependency order, so a break surfaces in the package that caused it rather than three
+packages downstream. Each package's own `check` decides which stages it has.
 
 **Nothing here needs a network, a container, or a WACZ file on disk.** The one
 suite that does is skipped unless you ask for it — see below.
@@ -21,7 +21,7 @@ suite that does is skipped unless you ask for it — see below.
 
 | Command | Scope |
 | --- | --- |
-| `pnpm check` | the root scripts' tests + all seven packages. **What CI runs.** |
+| `pnpm check` | the repository checks, the root scripts' tests and every package. See `check` in `package.json`. **What CI runs.** |
 | `pnpm run audit` | known advisories in both lockfiles (`pnpm-lock.yaml`, `docs-site/package-lock.json`); not part of `pnpm check` |
 | `pnpm test` | tests only, all packages, then the root scripts' |
 | `pnpm test:scripts` | the root scripts' own tests (`node --test`) |

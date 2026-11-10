@@ -9,9 +9,9 @@ description: pnpm check が見る範囲、意図的に skip される corpus テ
 pnpm check
 ```
 
-repo の検査 2 つ（`check:store-name`・`check:test-hosts`）と root の scripts の試験を走らせたあと、パッケージごとに
-`typecheck → lint → build → test` を回します。7 パッケージを依存順に処理するので、壊れたときは**原因のパッケージ**で
-止まります ― 3 つ下流で気づくことにはなりません。
+何をどの順で走らせるかは root の `package.json` の `check` script が決めています。repo の検査と root の scripts の試験を走らせたあと、
+パッケージを依存順に 1 つずつ処理するので、壊れたときは**原因のパッケージ**で止まります ― 3 つ下流で気づくことにはなりません。
+各パッケージにどの段があるかは、そのパッケージの `check` が決めます。
 
 **ここまでにネットワークもコンテナも、ディスク上の WACZ も必要ありません。**
 それを必要とする唯一のスイートは、明示的に指定しない限り skip されます（後述）。
@@ -20,7 +20,7 @@ repo の検査 2 つ（`check:store-name`・`check:test-hosts`）と root の sc
 
 | コマンド | 範囲 |
 | --- | --- |
-| `pnpm check` | root の scripts の試験 + 7 パッケージ全部。**CI が回すもの。** |
+| `pnpm check` | repo の検査・root の scripts の試験・全パッケージ。中身は `package.json` の `check`。**CI が回すもの。** |
 | `pnpm run audit` | 2 つの lockfile（`pnpm-lock.yaml`・`docs-site/package-lock.json`）の既知の勧告。`pnpm check` には入っていない |
 | `pnpm test` | テストのみ、全パッケージのあとに root の scripts |
 | `pnpm test:scripts` | root の scripts 自身の試験（`node --test`） |

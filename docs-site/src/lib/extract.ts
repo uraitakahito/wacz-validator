@@ -179,7 +179,8 @@ function parseDocs(source: string): RuleLink[] {
 
 /**
  * `// #region <name>` … `// #endregion` で囲まれた実ソース片を返す。
- * region が見つからなければ throw = astro build が落ちる。
+ * region が見つからなければ throw。これで build が落ちるかは頁の拡張子・Starlight の版・content cache 次第
+ * (cold で 1、cache が温かいと 0 を測った)。build に守りを預けず scripts/check-doc-refs.mjs を通す。
  *
  * 名前は行末まで一致させる。`\b` だと `-` を単語境界とみなすので、
  * `#region report` が `#region report-summary` を掴んでしまい、
