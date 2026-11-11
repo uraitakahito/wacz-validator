@@ -1,6 +1,6 @@
 // @module-tag engine
 /**
- * `datapackage.json` の読み口。
+ * `datapackage.json` を読む関数。
  *
  * かつては 8 つの rule と 3 つの helper がそれぞれ読んでいた。この 2 件が守るのは
  * その統合が本当に効いているかで、どちらも **緑のまま完全に誤る** 形の失敗を捕まえる:

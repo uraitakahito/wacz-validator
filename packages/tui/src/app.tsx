@@ -5,7 +5,7 @@
  * {@link WireReport} を受け取るので、ここでは core の i18n も lookup も呼ばず
  * 解決済みフィールドをそのまま描く(`@wacz-validator/core` を import しない)。
  *
- * Layout ビューでファイルを選んで `enter` を押すと、`bridge`(daemon の窓の口への
+ * Layout ビューでファイルを選んで `enter` を押すと、`bridge`(daemon の窓のエンドポイントへの
  * 薄いブリッジ)でそのファイルの中身を取り、全幅で表示する —— 行の窓 (`readLines`)、
  * 1 行を丸ごと (`readLine`、fields は daemon が割る)、WARC ならレコードの一覧
  * (`readRecords`) と 1 レコード (`readRecord`)。窓の続きは末尾に着いたときに頼む。
@@ -47,7 +47,7 @@ export interface BuildPair {
   gitSha: string;
 }
 
-/** daemon の窓の口への橋。cli.ts が WS の request で組み、App はこれしか知らない。 */
+/** daemon の窓のエンドポイントへの橋。cli.ts が WS の request で組み、App はこれしか知らない。 */
 export interface ContentBridge {
   lines: (path: string, from: number, count: number) => Promise<ReadLinesResult>;
   line: (path: string, n: number) => Promise<ReadLineResult>;

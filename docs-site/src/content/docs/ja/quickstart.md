@@ -115,7 +115,7 @@ wacz-validator --server ws://127.0.0.1:7333 samples/wikipedia.wacz
 は存在しません。
 :::
 
-同じ daemon は素の HTTP でも答えます —— 同じハンドラに口が 1 つずつ: `POST /validate` と、
+同じ daemon は素の HTTP でも答えます —— 同じハンドラにエンドポイント（HTTP の method と path の組）が 1 つずつ: `POST /validate` と、
 archive の中身への窓（`POST /lines`・`/line`・`/records`・`/record`、raster の画像の
 実体を bytes で返す `/record/body`）。どの要求も archive の URI を運ぶので、daemon は
 呼び出しの間に何も持ちません。TUI では `tab` で配置へ、`enter` でファイル（行）か

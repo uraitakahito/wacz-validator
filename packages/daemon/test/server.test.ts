@@ -1,6 +1,6 @@
 // @module-tag daemon
 /**
- * daemon の HTTP/WS サーバ(dispatch + 相関 id 枠 + REST の口)のテスト。
+ * daemon の HTTP/WS サーバ(dispatch + 相関 id 枠 + REST のエンドポイント)のテスト。
  *
  * createDaemon() を in-process で listen(port 0)し、ws クライアントと fetch で叩く。
  * 未知メソッド・不正 URI のエラー枠は hermetic に常時走る。happy path は実 WACZ を
@@ -136,7 +136,7 @@ describe("daemon server (REST)", () => {
     expect(body.status).toBe("ok");
   });
 
-  it("窓の口は WS と同じ答え(開けない URI は 400 の openFailed)", async () => {
+  it("窓のエンドポイントは WS と同じ答え(開けない URI は 400 の openFailed)", async () => {
     for (const [path, params] of [
       ["/validate", { source: missing, locale: "en" }],
       ["/lines", { source: missing, path: "datapackage.json", from: 0, count: 1 }],
@@ -152,7 +152,7 @@ describe("daemon server (REST)", () => {
     }
   });
 
-  it("無い口と GET は 404", async () => {
+  it("無いエンドポイントと GET は 404", async () => {
     expect((await post("/entry", {})).status).toBe(404);
     expect((await fetch(`http://127.0.0.1:${String(port)}/lines`)).status).toBe(404);
   });
