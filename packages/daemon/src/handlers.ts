@@ -125,7 +125,7 @@ const openFromSource = async (
   }
 };
 
-/** source を開いて f を走らせ、必ず閉じる。窓の口はどれもこの形。 */
+/** source を開いて f を走らせ、必ず閉じる。窓のエンドポイントはどれもこの形。 */
 const withReader = async <T>(uri: string, f: (reader: WaczReader) => Promise<T>): Promise<T> => {
   const reader = await openFromSource(parseSourceUri(uri), false);
   try {

@@ -213,7 +213,7 @@ export class WaczReader {
 
   /**
    * STORE の entry から範囲を切る。WARC の 1 メンバ (索引の offset / length) を
-   * 1 往復で読むための口。DEFLATE の entry は先頭から展開しないと位置が決まらない
+   * 1 往復で読むための関数。DEFLATE の entry は先頭から展開しないと位置が決まらない
    * ので、名指しで断る。
    */
   async member(name: string, offset: number, length: number): Promise<Buffer> {

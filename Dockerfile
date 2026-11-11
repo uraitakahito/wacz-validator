@@ -100,7 +100,7 @@ COPY --from=builder /build/packages/daemon/dist packages/daemon/dist
 
 USER node
 ENV NODE_ENV=production
-# コンテナの中では外向きに待つ。host に出す口は、呼ぶ側が publish で決める
+# コンテナの中では外向きに待つ。host に出すポートは、呼ぶ側が publish で決める
 # (例: -p 127.0.0.1:7180:7180)。
 ENV WACZ_VALIDATOR_DAEMON_HOST=0.0.0.0 WACZ_VALIDATOR_DAEMON_PORT=7180
 EXPOSE 7180

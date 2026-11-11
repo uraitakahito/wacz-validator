@@ -47,7 +47,7 @@ s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
 ```
 
 dev スタックは TLS で話すので、curl にはスタックの開発用 CA を渡します。宛先は
-dev スタックが host の loopback に出している口です。`POST /captures` は取り込みが
+dev スタックが host の loopback に出しているポートです。`POST /captures` は取り込みが
 終わってから答え(このページなら数秒)、応答が WACZ の置き場所を持っています。**鍵は自分で組み立てず、応答から取ってください** ―
 名前には知っていないと組めない枠があります(correlation id が空なので、
 `_` が 2 つ続きます)。次の段で `$WACZ` を読むので、同じ shell のまま進みます。
@@ -66,7 +66,7 @@ AWS_ACCESS_KEY_ID=browserhive AWS_SECRET_ACCESS_KEY=browserhive \
   aws --endpoint-url http://127.0.0.1:8333 s3 cp "$WACZ" ./demo.wacz
 ```
 
-host から読むので、共有 store が host の loopback に出している口を使います。
+host から読むので、共有 store が host の loopback に出しているポートを使います。
 
 ## 3. 基準を取る
 

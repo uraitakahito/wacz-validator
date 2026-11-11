@@ -121,7 +121,7 @@ export interface FixtureOptions {
   /**
    * `WARC-Type: response` のレコード (HTTP の状態行・見出し・本文つき) を warcinfo の
    * 後ろに足す。CDXJ にも offset / length つきの行が並ぶので、索引から 1 メンバを
-   * 切り出す読み (`WaczReader.member`) や、レコードの中身を返す口の試験に使う。
+   * 切り出す読み (`WaczReader.member`) や、レコードの中身を返すエンドポイントの試験に使う。
    * 既定の標本には無い —— 応答レコードを持つ標本が無かったので足した。
    */
   warcResponses?: WarcResponseSpec[];
@@ -474,7 +474,7 @@ export interface ExtraWarcSpec {
 
 /**
  * 記録 1 つの見出しの書き換え。組み立てた記録のバイト列に後から当てるので、どの builder が作った
- * 記録にも同じ口で効く。
+ * 記録にも同じ形で効く。
  */
 export interface WarcRecordPatch {
   /** 積んだ順の位置（0 始まり）。 */
@@ -783,7 +783,7 @@ const buildSegmentedBytes = (spec: WarcSegmentedSpec, seriesIdx: number): Buffer
 
 /**
  * 組み立てた記録（`\r\n\r\n` で閉じた見出し・block・終端）の見出しを書き換える。どの builder が
- * 作った記録にも同じ口で当てるため、バイト列を見出しの行に戻してから組み直す。
+ * 作った記録にも同じ形で当てるため、バイト列を見出しの行に戻してから組み直す。
  */
 const patchRecord = (raw: Buffer, patch: Omit<WarcRecordPatch, "index">): Buffer => {
   const sep = raw.indexOf("\r\n\r\n");

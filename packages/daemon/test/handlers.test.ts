@@ -26,7 +26,7 @@ const fixtureUri = (rel: string): string => pathToFileURL(resolve(corpusDir ?? "
 const missing = { kind: "uri" as const, uri: "file:///wacz-validator/no-such-file.wacz" };
 
 describe("daemon handlers", () => {
-  it("開けない URI は、どの口でも openFailed の DaemonError", async () => {
+  it("開けない URI は、どのエンドポイントでも openFailed の DaemonError", async () => {
     const calls = [
       validate({ source: missing, locale: "en" }),
       readLines({ source: missing, path: "datapackage.json", from: 0, count: 10 }),

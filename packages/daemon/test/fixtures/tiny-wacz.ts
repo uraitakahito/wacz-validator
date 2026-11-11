@@ -2,7 +2,7 @@
  * daemon の試験用の、手で組む小さな WACZ。
  *
  * core の generator は core の test にしか無く、corpus の標本は応答レコードを持たない。
- * 窓の口を hermetic に試すには「切れる長さの行」「binary の行」「画像の応答」
+ * 窓のエンドポイントを hermetic に試すには「切れる長さの行」「binary の行」「画像の応答」
  * 「索引が指す/指さないレコード」が要るので、STORE だけの ZIP をここで書く
  * (ローカル見出し・中央ディレクトリ・EOCD。ZIP64 無し)。
  */

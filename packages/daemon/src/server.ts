@@ -2,10 +2,10 @@
  * stateless な HTTP/WS サーバ。
  *
  * WS は相関 id つきの request/response(セッション/購読は持たない)。
- * REST は WS と**同じハンドラ**を指す —— 口が 2 つでも、答えを作るのは 1 か所。
+ * REST は WS と**同じハンドラ**を指す —— エンドポイントが 2 つでも、答えを作るのは 1 か所。
  * どのリクエストもハンドラが open→処理→close するだけで、サーバは可変状態を持たない。
  *
- * REST の口:
+ * REST のエンドポイント:
  *   GET  /healthz       生存
  *   POST /validate      検証の報告
  *   POST /lines         行の窓          POST /line     1 行 (fields つき)
@@ -66,7 +66,7 @@ const dispatch = async (method: string, params: unknown): Promise<RpcResult> => 
   }
 };
 
-/** REST の JSON の口。path → WS と同じハンドラ。 */
+/** REST の JSON のエンドポイント。path → WS と同じハンドラ。 */
 const JSON_ROUTES: Record<string, (params: never) => Promise<RpcResult>> = {
   "/validate": validate,
   "/lines": readLines,

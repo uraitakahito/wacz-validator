@@ -5,7 +5,7 @@
  * validation は自前で行わず、stateless な `@wacz-validator/daemon` を spawn
  * (or `--server URL` に接続)し、WS で `wacz-validator/validate` を呼ぶ。daemon が
  * core を所有し、`renderJson(report, locale)` で解決済みの `WireReport` を返す
- * ので、tui はそれを interactive に render する。Layout で enter すると窓の口
+ * ので、tui はそれを interactive に render する。Layout で enter すると窓のエンドポイント
  * (`wacz-validator/readLines` / `readLine` / `readRecords` / `readRecord`)でファイルの
  * 中身を取り、全幅で表示する。wacz-validator は対話 TUI
  * 専用で、stdout / stdin が TTY でない(パイプ / CI 等)場合は描画できないので、
@@ -67,7 +67,7 @@ interface CliOptions {
 }
 
 /**
- * 窓の口への橋。どれも同じ source を運ぶ (daemon は状態を持たないので、毎回言う)。
+ * 窓のエンドポイントへの橋。どれも同じ source を運ぶ (daemon は状態を持たないので、毎回言う)。
  */
 const bridgeFor = (client: DaemonClient, uri: string): ContentBridge => {
   const source = { kind: "uri" as const, uri };
