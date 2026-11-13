@@ -37,21 +37,13 @@ import {
   LOGS_ENTRY,
   readLogLines,
   REQUIRED_LOG_MEMBERS,
+  RFC3339_DATE_TIME,
 } from "../browserhive-logs.js";
 import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import type { Issue, IssueLocation, ValidationRule } from "../domain.js";
 import type { MsgParams } from "../../i18n/translate.js";
 
 const RULE = "browserhive/logs-shape";
-
-/**
- * RFC 3339 の date-time（§5.6）。`T` と `Z` は小文字でもよい（同じ節の NOTE）。
- *
- * 時差つき（`+09:00`）も通す。WACZ Profile の Conformance の節は、timestamp を持つ member の値を
- * 「RFC 3339 date-time in UTC」と定めるが、UTC かどうかはここでは見ていない。
- */
-const RFC3339_DATE_TIME =
-  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[Tt]([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)(\.\d+)?([Zz]|[+-]([01]\d|2[0-3]):[0-5]\d)$/;
 
 /** JSON の値を文字で。無い値は `undefined`。文字は引用符つきになり、数と取り違えない。 */
 const json = (v: unknown): string => (v === undefined ? "undefined" : JSON.stringify(v));

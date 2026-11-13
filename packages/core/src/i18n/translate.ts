@@ -57,6 +57,9 @@ export const t = (id: string, params: MsgParams, locale: Locale): string => {
   return String(mf.format(params));
 };
 
+/** `id` がカタログに在るか。rule ごとの文が在ればそれを、無ければ共通の文を使う、という選び方に使う。 */
+export const hasMessage = (id: string): boolean => Object.hasOwn(catalogs.en, id);
+
 /**
  * 表示ロケールを決める。
  */

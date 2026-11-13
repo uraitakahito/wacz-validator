@@ -9,7 +9,7 @@
  * issue を出力し、`--lang` を固定すれば message も決定的なので、snapshot は
  * バイト単位で再現可能。
  */
-import { t, type Locale } from "../i18n/translate.js";
+import { hasMessage, t, type Locale } from "../i18n/translate.js";
 import { conformanceForRule, docsForRule } from "../validate/rules/index.js";
 import { specUrl } from "../validate/spec-sections.js";
 import type { Report } from "../validate/domain.js";
@@ -27,12 +27,14 @@ export const renderJson = (report: Report, locale: Locale): string => {
       url: d.url[locale] ?? d.url.en,
     }));
     // 同じ本の同じ指摘を丸めた issue（`WarcIssueBucket`）は、出さなかった件数を `params.more` に持つ。
-    // message の文はどの rule でも同じなので、rule ごとの文ではなくここで 1 度だけ付ける。
+    // message の後ろに付ける文は共通（`report.more`）で、ここで 1 度だけ付ける。WARC の本でない物を指す rule は、
+    // 自分の文（`<rule>.more`）を持てる —— 「同じ本に」は trace の行の指摘に合わない。
     const more = issue.params?.["more"];
     const message = t(issue.messageKey, issue.params ?? {}, locale);
+    const moreKey = hasMessage(`${issue.rule}.more`) ? `${issue.rule}.more` : "report.more";
     return {
       ...issue,
-      message: typeof more === "number" && more > 0 ? t("report.more", { message, more }, locale) : message,
+      message: typeof more === "number" && more > 0 ? t(moreKey, { message, more }, locale) : message,
       // params.section が表で解決できたときだけ spec への直リンクを同梱。
       ...(url !== undefined && { specUrl: url }),
       ...(docs !== undefined && { docs }),

@@ -112,6 +112,9 @@ node packages/devtools/dist/break-wacz.js --list
   axtree-unknown-property  accessibility/axtree.jsonl   → browserhive/axtree-shape.unknown-property
   axtree-keep-generic      accessibility/axtree.jsonl   → browserhive/axtree-shape.collapsed-role
   axtree-wrong-profile     accessibility/axtree.jsonl   → browserhive/axtree-shape.unknown-profile
+  trace-drop-line          trace/events.jsonl           → browserhive/trace-shape.line-count
+  trace-rewrite-record     trace/events.jsonl           → browserhive/trace-shape.record-unknown
+  trace-drop-entry         trace/events.jsonl           → browserhive/trace-shape.missing
 ```
 
 ```sh

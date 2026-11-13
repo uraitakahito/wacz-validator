@@ -5,7 +5,8 @@
  * あれば 1 万件を出す。読む人にも JSON を受け取る側にも多すぎるので、WARC 1.1 の rule は
  * **同じ本（entry）・同じ messageKey** の issue を {@link ISSUES_PER_MESSAGE} 件まで出し、最後の 1 件の
  * `params.more` に、出さなかった残りの件数を載せる。JSON の renderer が、`more` を持つ issue の
- * message の後ろに「同じ本にほか N 件」を付ける（`report.more`）。
+ * message の後ろに「同じ本にほか N 件」を付ける（`report.more`）。WARC の本でないエントリを指す rule
+ * （`browserhive/trace-shape` の行の指摘）も同じ丸め方を使い、付ける文だけを自分で持つ（`<rule>.more`）。
  *
  * messageKey と severity は変えないので、profile ごとの severity の上書き（messageKey 単位）は
  * そのまま効く。`summary` の件数は、出した issue の数になる。

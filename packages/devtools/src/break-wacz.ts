@@ -118,9 +118,10 @@ const main = async (): Promise<void> => {
   }
 
   const { data, what } = mutation.apply(raw.data);
-  entries.set(mutation.target, { data, stored: raw.stored });
+  if (data === null) entries.delete(mutation.target);
+  else entries.set(mutation.target, { data, stored: raw.stored });
 
-  // 壊した先が resources に載っているなら、hash と bytes を書き直す。
+  // 壊した先が resources に載っているなら、hash と bytes を書き直す。エントリごと抜いたなら、行も落とす。
   //
   // 直さないと `datapackage/resource-hashes` が一緒に鳴る —— 壊した覚えのない
   // 指摘が並ぶと、どちらが目当ての反応なのか読み手に分からなくなる。この道具が
@@ -131,8 +132,12 @@ const main = async (): Promise<void> => {
       const dp = JSON.parse(dpEntry.data.toString("utf8")) as Datapackage;
       const declared = dp.resources?.find((r) => r.path === mutation.target);
       if (declared !== undefined) {
-        declared.hash = `sha256:${createHash("sha256").update(data).digest("hex")}`;
-        declared.bytes = data.byteLength;
+        if (data === null) {
+          dp.resources = (dp.resources ?? []).filter((r) => r !== declared);
+        } else {
+          declared.hash = `sha256:${createHash("sha256").update(data).digest("hex")}`;
+          declared.bytes = data.byteLength;
+        }
         entries.set(DATAPACKAGE, {
           data: Buffer.from(`${JSON.stringify(dp, null, 2)}\n`, "utf8"),
           stored: dpEntry.stored,

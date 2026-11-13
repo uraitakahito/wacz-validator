@@ -24,6 +24,15 @@ export const LOG_SOURCES: ReadonlySet<string> = new Set(["script", "page", "brow
 /** 行の重さ。 */
 export const LOG_LEVELS: ReadonlySet<string> = new Set(["debug", "info", "warn", "error"]);
 
+/**
+ * RFC 3339 の date-time（§5.6）。`T` と `Z` は小文字でもよい（同じ節の NOTE）。
+ *
+ * 時差つき（`+09:00`）も通す。WACZ Profile の Conformance の節は、timestamp を持つ member の値を
+ * 「RFC 3339 date-time in UTC」と定めるが、UTC かどうかはここでは見ていない。
+ */
+export const RFC3339_DATE_TIME =
+  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[Tt]([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)(\.\d+)?([Zz]|[+-]([01]\d|2[0-3]):[0-5]\d)$/;
+
 export interface LogLine {
   lineNumber: number;
   /** JSON のオブジェクトとして読めなかった行は null。 */
@@ -31,11 +40,12 @@ export interface LogLine {
 }
 
 /**
- * `logs/capture.jsonl` を行に分けて返す。エントリが無ければ `null` —— 在ることを求めるかは、archive が
+ * JSON Lines のエントリを行に分けて返す。エントリが無ければ `null` —— 在ることを求めるかは、archive が
  * 名乗る版で決まるので、呼び出し側に残す。空の行は飛ばす（ほかの JSON Lines の読み方と同じ）。
+ * 取り込みの trace `trace/events.jsonl`（`browserhive-trace.ts`）も、同じ読み方をする。
  */
-export const readLogLines = async (wacz: WaczReader): Promise<readonly LogLine[] | null> => {
-  const raw = await wacz.readEntry(LOGS_ENTRY);
+export const readJsonLines = async (wacz: WaczReader, entry: string): Promise<readonly LogLine[] | null> => {
+  const raw = await wacz.readEntry(entry);
   if (raw === undefined) return null;
 
   return raw
@@ -52,3 +62,6 @@ export const readLogLines = async (wacz: WaczReader): Promise<readonly LogLine[]
       }
     });
 };
+
+/** `logs/capture.jsonl` を行に分けて返す。エントリが無ければ `null`。 */
+export const readLogLines = (wacz: WaczReader): Promise<readonly LogLine[] | null> => readJsonLines(wacz, LOGS_ENTRY);
