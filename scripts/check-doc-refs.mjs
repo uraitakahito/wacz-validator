@@ -17,7 +17,8 @@
  *      build, a doc could ship an empty code fence.
  *   3. Broken rule references. Docs name rules constantly
  *      (`wacz/required-files`), and a rename breaks neither the build nor the
- *      type checker.
+ *      type checker. Only the areas the pattern in section 3 lists are looked
+ *      at — a `browserhive/…` name is not checked.
  *   4. Dead source paths — a `packages/….ts` written in a code span that has
  *      since been renamed or deleted.
  *   5. Stale calls into BrowserHive. The breaking tutorial drives BrowserHive,
@@ -120,6 +121,9 @@ for (const file of walk(DOCS).filter((f) => isPage(f))) {
 // Docs cross-reference rules constantly ("absence is covered by
 // `wacz/required-files`"). Renaming a rule does not break the build or the type
 // checker, so those references rot silently — check them against the real set.
+//
+// Only a name whose area is in the pattern below is looked at. `browserhive` is
+// not among them, so a `browserhive/…` rule named in prose is not checked.
 const RULES_DIR = resolve(ROOT, "packages/core/src/validate/rules");
 const knownRules = new Set(
   readdirSync(RULES_DIR)

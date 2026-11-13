@@ -9,10 +9,10 @@ name: site
 #     fails outright if a rule file is not registered in rules/index.ts (an
 #     unregistered rule never runs, and nothing else catches that).
 #   - check-doc-refs.mjs catches what the build does not: a page that exists in
-#     only one language, a `src/….ts` path that was renamed, and a missing
-#     `#region` marker, and a rule name in prose that no longer exists —
-#     `astro build` logs the region one but still exits 0, so it cannot be
-#     relied on as a gate.
+#     only one language, a `packages/….ts` path that was renamed, a missing
+#     `#region` marker, and a rule name in prose that no longer exists
+#     (`browserhive/…` names are not looked at) — `astro build` logs the
+#     region one but still exits 0, so it cannot be relied on as a gate.
 #
 #
 # Security: read-only check. It never deploys and references no secrets, so

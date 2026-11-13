@@ -83,13 +83,13 @@ WARC 1.1 の記録を見る `warc/*` の rule は、本の全部の記録で同�
 `severity` は違反に対して wacz-validator がどうするか、`conformance` は仕様が何を
 要求しているかです。**片方で絞っても、もう片方の代わりにはなりません。**
 
-corpus の 30 標本での実測:
+corpus（タグ `v0.3.0`）の全標本を、wacz-validator v0.46.2 の `spec` profile で検証して数えた issue の数:
 
 | conformance | error | warning | info |
 | --- | ---: | ---: | ---: |
-| `MUST` | 20 | **10** | 0 |
-| `SHOULD` | **1** | 8 | 0 |
-| `MAY` / `MUST NOT` | 0 | 4 | 1 |
+| `MUST` | 23 | **15** | 0 |
+| `SHOULD` | **1** | 8 | 1 |
+| `MAY` / `MUST NOT` | 0 | 6 | 0 |
 
 太字の 2 つが、片方から他方を予想できないことを示しています。
 `datapackage/resources-complete` は `MUST` ですが `warning` —— ZIP に未宣言の

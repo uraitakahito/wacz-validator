@@ -9,13 +9,18 @@
  * (CDXJ index の offset は *uncompressed* な ZIP entry を指していて、
  * ここでの "uncompressed" は STORE 格納を意味する)。
  *
- * Spec / 慣習: WACZ は厳密には STORE を mandate しないが、フォーマット
- *       の存在理由である random-access 設計が STORE に依存しており、
+ * Spec / 慣習: WACZ 1.1.1 の「Zip Compression」の節が定める。節の頭は
+ *       「Already compressed files MUST NOT be compressed again to allow
+ *       for random access」で、gzip 済みの `.warc.gz` はこれに当たる。
+ *       続く箇条は「All `archive/` files should be stored in ZIP with
+ *       'STORE' mode」（小文字の should）。下の `conformance` は SHOULD、
+ *       `docs` の URL は「archive」の節で、どちらも「Zip Compression」の
+ *       MUST NOT を指してはいない。
  *       参考実装 (browserhive、pywb、wacz-creator) はすべて WARC
  *       entry を STORE で出す。
- * Reference producer: browserhive/src/storage/wacz/packager.ts:152-169
- *       は `archive/` の WARC だけを STORE entry にして、それ以外は
- *       DEFLATE。
+ * Reference producer: browserhive/src/storage/wacz/packager.ts の
+ *       「zip を書く」の段は `archive/` の WARC だけを STORE entry にして、
+ *       それ以外は DEFLATE。
  *
  * Severity は `error` ではなく `warning`: DEFLATE で格納された
  * warc.gz でも標準的な ZIP reader で問題なく解凍できるので、entry

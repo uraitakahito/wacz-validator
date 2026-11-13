@@ -31,10 +31,10 @@ wacz-validator-validate s3://BUCKET/KEY.wacz
 wacz-validator-validate SOURCE --profile PROFILE
 ```
 
-rule 別の失敗例や profile 差を試したい場合は、30 標本を揃えた
+rule 別の失敗例や profile 差を試したい場合は、標本を揃えた
 [wacz-validator-corpus](https://github.com/uraitakahito/wacz-validator-corpus) を使う —
 入手方法とカタログは
-[事例カタログ](https://uraitakahito.github.io/wacz-validator/ja/corpus/)。
+[wacz-validator-corpus の docs](https://uraitakahito.github.io/wacz-validator-corpus/ja/)。
 
 ## Exit codes
 
@@ -50,7 +50,8 @@ warning / info レベルの issue が exit code を反転させることは無�
 
 stdout には `Report` が出力される。full schema は
 [JSON レポート](https://uraitakahito.github.io/wacz-validator/ja/json-report/)
-を参照。短い例:
+を参照。短い例（`validatorVersion` と `summary` の数は形を示すための値で、いまの版の出力ではない。
+`passed` は走った rule の数で、版と profile で変わる）:
 
 ```json
 {

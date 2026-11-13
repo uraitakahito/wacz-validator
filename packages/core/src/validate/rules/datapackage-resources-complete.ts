@@ -10,7 +10,9 @@
  * マニフェスト自身(`datapackage.json` / `datapackage-digest.json`)は
  * resources に自己列挙しないため対象外。ZIP のディレクトリエントリも除外。
  *
- * Spec: https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files
+ * Spec: https://specs.webrecorder.net/wacz/1.1.1/ の「Other files and directories」の節
+ *   （「Directories and Files」の節の外に在る）。下の `docs` の URL が指す `datapackage.json` の
+ *   節も、`resources` を WACZ の中のすべてのファイルの一覧と定める。
  */
 import { ok } from "../../result.js";
 import { datapackageOf } from "../datapackage-source.js";

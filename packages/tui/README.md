@@ -58,10 +58,10 @@ curl -sL \
 wacz-validator /tmp/wacz-validator-demo/wikipedia.wacz
 ```
 
-rule ごとの失敗例や profile 差を試せる WACZ 標本(20 本)は
+rule ごとの失敗例や profile 差を試せる WACZ 標本は
 [wacz-validator-corpus](https://github.com/uraitakahito/wacz-validator-corpus) にある。入手方法と
 全標本のカタログは
-[事例カタログ](https://uraitakahito.github.io/wacz-validator/ja/corpus/)
+[wacz-validator-corpus の docs](https://uraitakahito.github.io/wacz-validator-corpus/ja/)
 を参照。
 
 ## License

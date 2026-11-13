@@ -42,8 +42,9 @@ interface RunResult {
 /**
  * ビルド済み CLI を実行する。`dist/wacz-validator-validate.js` は `node` 経由で起動して
  * いるので、この test の session で chmod が走っているかどうかに
- * 依存しない (test スイートが test 走行前に `pnpm build` 自体を
- * 駆動する)。
+ * 依存しない。`test`（`vitest run`）自身は build しない —— `dist/` は、この
+ * package の `check` が test の前に走らせる `pnpm build` が作る。`pnpm test` だけを
+ * 走らせるなら、先に `pnpm build` が要る。
  */
 const runCli = async (args: string[]): Promise<RunResult> => {
   // snapshot を locale 非依存にするため、メッセージ言語を en に固定する
