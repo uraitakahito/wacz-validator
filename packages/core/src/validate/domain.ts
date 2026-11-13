@@ -6,9 +6,10 @@
  * しか消費しないので、新しい rule を加える際は `ValidationRule` を
  * export して registry に追加するだけでよく、他の層に変更は要らない。
  *
- * wire format (`Report`) は `--json` が出力するもので、`docs/json-schema.md`
- * が公開 schema として pin している (0.x line 中安定)。future-proofing
- * のための note:
+ * wire format (`Report`) は `wacz-validator-validate` が stdout に出す JSON で、
+ * その形と安定性の約束 (同一 major version の中で既存フィールドの意味と型は
+ * 変わらない) は `docs-site/src/content/docs/json-report.md` が説明している。
+ * future-proofing のための note:
  *   - `validatorVersion` によって downstream consumer が schema の drift
  *     を検出できる。
  *   - `summary.durationMs` を最初から入れることで、CI dashboard が
@@ -37,8 +38,9 @@ export type Conformance = "MUST" | "MUST NOT" | "SHOULD" | "SHOULD NOT" | "MAY";
  * spec が要求する check を silent にすることはない。デフォルトは
  * `spec`。
  *
- * - `spec` — WACZ spec + wabac.js loader 互換。デフォルトで、
- *   ほとんどの consumer が望む形。
+ * - `spec` — 仕様 (WACZ 1.1.1・Data Package・WARC 1.1・wacz-auth 0.1.0)
+ *   が求めること + wabac.js loader 互換。デフォルトで、ほとんどの
+ *   consumer が望む形。
  * - `browserhive` — `spec` の上に BrowserHive の producer 慣習を
  *   重ねる (例: plain な `indexes/index.cdxj` を要求、`.idx` と
  *   ペアでも `index.cdxj.gz` は許さない、など)。

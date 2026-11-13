@@ -66,11 +66,11 @@ stdout には `Report` が出力される。full schema は
 
 ## プロファイル
 
-| Profile             | こういうときに使う                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------- |
-| `spec` (デフォルト) | WACZ-spec + wabac.js 互換を求めたい。ほとんどの consumer はこれ。                   |
-| `browserhive`       | BrowserHive capture を検証する。producer-strict な check を有効化。                 |
-| `lenient`           | legacy archive をトリアージしたい。"replay が壊れる" 系の hard error だけが欲しい。 |
+| Profile             | こういうときに使う                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `spec` (デフォルト) | 仕様 (WACZ 1.1.1・Data Package・WARC 1.1・wacz-auth 0.1.0) + wabac.js 互換を求めたい。ほとんどの consumer はこれ。 |
+| `browserhive`       | BrowserHive capture を検証する。producer-strict な check を有効化。                                                |
+| `lenient`           | legacy archive をトリアージしたい。"replay が壊れる" 系の hard error だけが欲しい。                                |
 
 rule 単位の profile 別 severity matrix は
 [Rules](https://uraitakahito.github.io/wacz-validator/ja/rules/)

@@ -10,7 +10,7 @@
  * 後がレコードを表す JSON object (url / mime / status / digest /
  * length / offset / filename)。
  *
- * Spec / 慣習: pywb の CDXJ format ドキュメント。WACZ 1.1 spec は
+ * Spec / 慣習: pywb の CDXJ format ドキュメント。WACZ 1.1.1 spec は
  *       index format を差し替え可能にしているが、`index.cdxj` が
  *       新しい producer の事実上の選択肢。Reference producer:
  *       browserhive の `src/storage/wacz/cdxj.ts`。
