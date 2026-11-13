@@ -336,6 +336,23 @@ export interface FixtureOptions {
    */
   logs?: Record<string, unknown>[] | string;
   /**
+   * `trace/events.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、文字列ならそのまま書く
+   * (JSON として読めない行や、空のファイルを作るため)。resources にも載る。undefined ならエントリごと
+   * 作らない —— WACZ Profile 1.23.0 で必須になったが、それより前の archive には無い。
+   *
+   * 要約 (`browserhive:capture.trace`) はここからは作らない。`traceSummary` で渡す —— 行の数と食い違う要約も、
+   * 要約だけが在る形も作れるように。
+   */
+  trace?: Record<string, unknown>[] | string;
+  /**
+   * `browserhive:capture.trace` をそのまま書き込む。undefined なら member ごと書かない —— WACZ Profile 1.23.0 で
+   * 必須になったが、それより前の archive には無い。
+   *
+   * 中身は検査しない。行の数と合わない `lines` も、オブジェクトでない値も、そのまま通す —— それを問題と
+   * 呼ぶかは rule が決める。
+   */
+  traceSummary?: unknown;
+  /**
    * `storage/origins.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、
    * 文字列ならそのまま書く (JSON として読めない行を作るため)。
    */
@@ -398,6 +415,8 @@ export interface WarcResponseSpec {
   status?: number;
   /** `WARC-Truncated` の値。省けば見出しを書かない。 */
   truncated?: string;
+  /** `WARC-Date`。省けば `2026-05-13T00:00:00Z`。 */
+  date?: string;
 }
 
 /** `warcResponses` の `idx` 番目の応答の `WARC-Record-ID`。metadata の `refersTo` に渡す。 */
@@ -415,6 +434,8 @@ export interface WarcRequestSpec {
   concurrentTo?: string;
   /** HTTP の見出しに足す行（`host` の後ろ）。名前の綴りはそのまま書く。 */
   httpHeaders?: readonly (readonly [string, string])[];
+  /** `WARC-Date`。省けば `2026-05-13T00:00:00Z`。 */
+  date?: string;
 }
 
 /** `warcResources` の 1 件。block は内容そのもの（HTTP の包みを持たない）。 */
@@ -648,7 +669,7 @@ const buildResponseBytes = (idx: number, spec: WarcResponseSpec, badDigest = fal
     "WARC/1.1",
     "WARC-Type: response",
     `WARC-Record-ID: ${spec.recordId ?? responseRecordId(idx)}`,
-    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Date: ${spec.date ?? "2026-05-13T00:00:00Z"}`,
     `WARC-Target-URI: ${spec.uri}`,
     `WARC-Payload-Digest: ${badDigest ? BAD_PAYLOAD_DIGEST : sha256Base32(body)}`,
     ...(spec.truncated === undefined ? [] : [`WARC-Truncated: ${spec.truncated}`]),
@@ -680,7 +701,7 @@ const buildRequestBytes = (idx: number, spec: WarcRequestSpec): Buffer => {
     "WARC/1.1",
     "WARC-Type: request",
     `WARC-Record-ID: ${spec.recordId ?? `<urn:uuid:00000000-0000-0000-0000-${String(idx + 800).padStart(12, "0")}>`}`,
-    "WARC-Date: 2026-05-13T00:00:00Z",
+    `WARC-Date: ${spec.date ?? "2026-05-13T00:00:00Z"}`,
     `WARC-Target-URI: ${spec.uri}`,
     ...(spec.concurrentTo === undefined ? [] : [`WARC-Concurrent-To: ${spec.concurrentTo}`]),
     "Content-Type: application/http;msgtype=request",
@@ -1210,6 +1231,16 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
           "utf-8",
         );
 
+  const traceBytes =
+    options.trace === undefined
+      ? undefined
+      : Buffer.from(
+          typeof options.trace === "string"
+            ? options.trace
+            : options.trace.map((line) => `${JSON.stringify(line)}\n`).join(""),
+          "utf-8",
+        );
+
   const storageBytes =
     options.storageValues === undefined
       ? undefined
@@ -1291,6 +1322,16 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
             bytes: logsBytes.byteLength,
           },
         ]),
+    ...(traceBytes === undefined
+      ? []
+      : [
+          {
+            name: "events.jsonl",
+            path: "trace/events.jsonl",
+            hash: sha256Hex(traceBytes),
+            bytes: traceBytes.byteLength,
+          },
+        ]),
   ];
 
   // omit 指定された MUST ファイルは resources 宣言からも落とす(実体と宣言を一致)。
@@ -1363,6 +1404,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     capture["snapshots"] = options.snapshots;
     datapackage["browserhive:capture"] = capture;
   }
+  if (options.traceSummary !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["trace"] = options.traceSummary;
+    datapackage["browserhive:capture"] = capture;
+  }
   const datapackageBytes = Buffer.from(`${JSON.stringify(datapackage, null, 2)}\n`, "utf-8");
 
   // `archiver` を Buffer-collecting な Writable に pipe してメモリ上
@@ -1421,6 +1467,9 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   }
   if (logsBytes !== undefined) {
     zip.append(logsBytes, { name: "logs/capture.jsonl", date: entryDate });
+  }
+  if (traceBytes !== undefined) {
+    zip.append(traceBytes, { name: "trace/events.jsonl", date: entryDate });
   }
   if (axtreeBytes !== undefined) {
     zip.append(axtreeBytes, { name: "accessibility/axtree.jsonl", date: entryDate });

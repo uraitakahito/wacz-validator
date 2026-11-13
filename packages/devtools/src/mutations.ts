@@ -25,17 +25,20 @@ export interface Mutation {
    */
   readonly target: string;
   /**
-   * エントリのバイト列を書き換え、新しいバイト列と「何をしたか」を返す。
+   * エントリのバイト列を書き換え、新しいバイト列と「何をしたか」を返す。`data` が `null` なら、
+   * エントリごと抜く —— break-wacz は resources の行も一緒に落とす（残すと、抜いた覚えのない
+   * `datapackage/resource-hashes` が一緒に鳴る）。
    *
    * **壊せない入力では throw する。** 黙って何もせずに終わると、検証が緑のままで
    * 「rule が検出できていない」と読まれる —— 実際には壊れていないだけなのに。
    * 壊し方の嘘は rule の欠陥に化けるので、ここは失敗を隠さない。
    */
-  readonly apply: (data: Buffer) => { readonly data: Buffer; readonly what: string };
+  readonly apply: (data: Buffer) => { readonly data: Buffer | null; readonly what: string };
 }
 
 export const DATAPACKAGE = "datapackage.json";
 export const AXTREE = "accessibility/axtree.jsonl";
+export const TRACE = "trace/events.jsonl";
 
 interface Datapackage {
   "browserhive:capture"?: { tls?: TlsMember };
@@ -79,6 +82,32 @@ const onAxtree = (
     const what = mutate(snapshot);
     lines[0] = JSON.stringify(snapshot);
     return { data: Buffer.from(`${lines.join("\n")}\n`, "utf8"), what };
+  },
+});
+
+/**
+ * `trace/events.jsonl` の行を書き換える壊し方を包む。`mutate` は行の配列をその場で変える。
+ *
+ * 相手は WACZ Profile 1.23.0 以上を名乗る WACZ —— それより前を名乗る WACZ は trace を持たず、
+ * break-wacz が「エントリがありません」で止める。
+ */
+const onTraceLines = (
+  name: string,
+  expects: string,
+  mutate: (lines: Record<string, unknown>[]) => string,
+): Mutation => ({
+  name,
+  expects,
+  target: TRACE,
+  apply: (data) => {
+    const lines = data
+      .toString("utf8")
+      .split("\n")
+      .filter((l) => l.trim() !== "")
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    if (lines.length === 0) throw new Error("trace/events.jsonl に行がありません。この壊し方は使えません");
+    const what = mutate(lines);
+    return { data: Buffer.from(lines.map((l) => `${JSON.stringify(l)}\n`).join(""), "utf8"), what };
   },
 });
 
@@ -179,4 +208,30 @@ export const MUTATIONS: readonly Mutation[] = [
     snapshot["profile"] = "browserhive:axtree/99";
     return "profile を browserhive:axtree/99 に書き換えた";
   }),
+
+  onTraceLines("trace-drop-line", "browserhive/trace-shape.line-count", (lines) => {
+    // 要約 (browserhive:capture.trace.lines) はそのまま。response を名指さない行が在ればそれを抜く ——
+    // 名指す行を抜くと、名指されなくなった response の指摘 (response-unnamed) も一緒に出る。
+    const loose = lines.findIndex((l) => l["record"] === undefined);
+    const at = loose === -1 ? lines.length - 1 : loose;
+    lines.splice(at, 1);
+    return loose === -1
+      ? `${String(at + 1)} 行目を抜いた(response を名指す行なので、response-unnamed も出る)`
+      : `${String(at + 1)} 行目を抜いた(response を名指さない行)`;
+  }),
+  onTraceLines("trace-rewrite-record", "browserhive/trace-shape.record-unknown", (lines) => {
+    const at = lines.findIndex((l) => typeof l["record"] === "string");
+    const line = lines[at];
+    if (line === undefined) throw new Error("record を持つ行がありません。この壊し方は使えません");
+    // どの本にも無い ID。元の response は名指されなくなるので、response-unnamed も出る。
+    line["record"] = "urn:uuid:00000000-0000-0000-0000-000000000000";
+    return `${String(at + 1)} 行目の record を、どの本にも無い ID に書き換えた(元の response は名指されなくなる)`;
+  }),
+  {
+    name: "trace-drop-entry",
+    expects: "browserhive/trace-shape.missing",
+    target: TRACE,
+    // 要約はそのまま。エントリと resources の行だけが消える。
+    apply: () => ({ data: null, what: "trace/events.jsonl をエントリごと抜いた(resources の行も)" }),
+  },
 ];
