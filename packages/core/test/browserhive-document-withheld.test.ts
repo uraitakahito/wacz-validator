@@ -603,6 +603,11 @@ describe("browserhive/document-withheld", () => {
         expect(await run(pushed([snapshotMetadata("after-behaviors", `${DOC}#top`)]))).toEqual([]);
       });
 
+      it("スクリーンショットの metadata の document-uri が document.url でも、何も言わない（写しを撮れず、絵だけが残った時点）", async () => {
+        const fields = { screenshot: "after-behaviors", "document-uri": `${DOC}#top`, viewport: "1280x800", "device-pixel-ratio": "1", "image-size": "1280x800" };
+        expect(await run(pushed([{ uri: `urn:browserhive:screenshot:after-behaviors:${DOC}`, fields }]))).toEqual([]);
+      });
+
       it("document-uri が別の URL なら、warning を出す", async () => {
         expect(summary(await run(pushed([snapshotMetadata("after-behaviors", `${DOC}/more`)])))).toEqual([notInArchive]);
       });

@@ -28,7 +28,9 @@
  * 加えて、`document.url` が索引にも `no-archive`・`deny` の記録にも写しの `document-uri` にも無ければ
  * warning にする。身元が archive の中を指していない —— 読んだ文書の記録が無い。頁の中で URL だけが替わった
  * 文書 (pushState) には、その URL の要求も応答も無いので、写しが身元を記録する。伏せた文書には写しが無いので、
- * 伏せる URL へ pushState した文書には warning が残る —— その URL の記録は本当に無い。
+ * 伏せる URL へ pushState した文書には warning が残る —— その URL の記録は本当に無い。スクリーンショットの metadata
+ * (WARC Profile 1.3.0) も同じ `document-uri` を持つので、写しと同じに数える —— 写しを撮れず絵だけが残った時点の文書の
+ * 身元は、絵の metadata が記録している。
  *
  * **`deny` の扱いは、archive が名乗る profile の版 (`conformsTo`) で分ける。** 1.11.0 から、
  * `deny` の当たった文書は要求されず、`withheld: "deny"` で伏せる。1.10.0 には `deny` の理由が無く、
@@ -132,8 +134,8 @@ const expectedFor = (
  *
  * - `recorded`: `actions` のどれかを名乗る記録の `WARC-Target-URI`。BrowserHive は記録しなかった要求 (`no-archive`) と
  *   送らなかった要求 (`deny`) をこの形で残す
- * - `snapshots`: 写しの metadata（`snapshot` の欄を持つ）の `document-uri` から断片を除いたもの。`document-uri` は
- *   `location.href` なので断片を含み、`document.url` は含まない
+ * - `snapshots`: 写しの metadata（`snapshot` の欄を持つ）とスクリーンショットの metadata（`screenshot` の欄を持つ）の
+ *   `document-uri` から断片を除いたもの。`document-uri` は `location.href` なので断片を含み、`document.url` は含まない
  */
 const documentUrlsInMetadata = async (
   wacz: WaczReader,
@@ -150,7 +152,7 @@ const documentUrlsInMetadata = async (
       const { fields } = parseWarcFieldsBody(record.body);
       const target = getHeader(record, "WARC-Target-URI");
       if (target !== undefined && fieldValues(fields, "action").some((action) => actions.has(action))) recorded.add(target);
-      if (fieldValues(fields, "snapshot").length > 0) {
+      if (fieldValues(fields, "snapshot").length > 0 || fieldValues(fields, "screenshot").length > 0) {
         for (const uri of fieldValues(fields, "document-uri")) snapshots.add(uri.split("#", 1)[0] ?? uri);
       }
     }

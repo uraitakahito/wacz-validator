@@ -15,10 +15,11 @@
  * 定めていないので、1 本の `data.warc.gz` を持つ古い archive に当てては誤り。呼び手が版を名乗らない
  * 実行 (`--profile browserhive`) でも、古い archive を一斉に落とさないため。
  *
- * 出典は WACZ Profile 1.17.0 の Archive files を指す。同じ節の写しの索引の決まりを `browserhive/snapshots` が見るので、
- * 同じ節は同じ版で指す (`rule-docs.test.ts`)。この rule の見る 4 つは 1.14.0 から変わっていない。
+ * 出典は WACZ Profile 1.24.0 の Archive files を指す。同じ節の写しの索引の決まりを `browserhive/snapshots` が、
+ * スクリーンショットの索引の決まり (1.24.0 から) を `browserhive/screenshots` が見るので、同じ節は同じ版で指す
+ * (`rule-docs.test.ts`)。この rule の見る 4 つは 1.14.0 から変わっていない。
  *
- * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#archive-files
+ * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#archive-files
  */
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
@@ -42,8 +43,8 @@ export const browserhiveWarcFilesRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §Archive files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#archive-files",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/ja/#archive-files",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#archive-files",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/ja/#archive-files",
       },
     },
   ],
