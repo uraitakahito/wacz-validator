@@ -8,7 +8,7 @@
  * 他がすべて正しくても "Archived Page Not Found" という分かりにくい
  * エラーになる。
  *
- * Spec: WACZ 1.1 §datapackage.json (`profile` literal は Frictionless
+ * Spec: WACZ 1.1.1 §datapackage.json (`profile` literal は Frictionless
  *       Data marker として必須と定められている)。
  *       https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json
  * Reference producer: browserhive/src/storage/wacz/datapackage.ts:42-49

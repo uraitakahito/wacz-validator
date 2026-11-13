@@ -1,6 +1,6 @@
 # @wacz-validator/core
 
-WACZ validation engine。WACZ を読んで rule を走らせ、machine-readable な `Report` を返す library。rule は WACZ spec と [wabac.js](https://github.com/webrecorder/wabac.js) replay engine の実際の loader 挙動から導出されており、既知 producer に対するより厳しい check 用に producer 固有 profile も任意で選べる。
+WACZ validation engine。WACZ を読んで rule を走らせ、machine-readable な `Report` を返す library。rule は仕様 (WACZ 1.1.1・Data Package・WARC 1.1・wacz-auth 0.1.0) と [wabac.js](https://github.com/webrecorder/wabac.js) replay engine の実際の loader 挙動から導出されており、既知 producer に対するより厳しい check 用に producer 固有 profile も任意で選べる。
 
 この engine の上で動く interactive な terminal UI が必要なら
 [`@wacz-validator/tui`](https://github.com/uraitakahito/wacz-validator/tree/main/packages/tui)

@@ -14,7 +14,12 @@ profile が組み替えるのは **severity だけです。spec が要求する 
 
 ### `spec`(既定)
 
-WACZ spec + wabac.js loader 互換。この profile で exit 0 になる archive は、
+仕様が求めること + wabac.js loader 互換。見る仕様は
+[WACZ 1.1.1](https://uraitakahito.github.io/specs/wacz/1.1.1/)、`datapackage.json` が従う
+[Data Package](https://uraitakahito.github.io/datapackage/ja/)、WARC の中の記録についての
+[WARC 1.1](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/)、
+署名についての [wacz-auth 0.1.0](https://uraitakahito.github.io/specs/wacz-auth/0.1.0/) です。
+この profile で exit 0 になる archive は、
 [ReplayWeb.page](https://replayweb.page/) で正しく replay できることが
 期待されます(wabac.js 自体のバグを除く)。
 

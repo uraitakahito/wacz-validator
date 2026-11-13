@@ -14,7 +14,14 @@ requires** — a `MUST` violation is still reported under every profile, even if
 
 ### `spec` (default)
 
-WACZ spec plus wabac.js loader compatibility. An archive that exits 0 here is
+What the specifications ask, plus wabac.js loader compatibility. The
+specifications are [WACZ 1.1.1](https://specs.webrecorder.net/wacz/1.1.1/), the
+[Data Package](https://uraitakahito.github.io/datapackage/) specification that
+`datapackage.json` follows,
+[WARC 1.1](https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/)
+for the records inside the WARC files, and
+[wacz-auth 0.1.0](https://specs.webrecorder.net/wacz-auth/0.1.0/) for the
+signature. An archive that exits 0 here is
 expected to replay correctly in [ReplayWeb.page](https://replayweb.page/), bugs
 in wabac.js itself aside.
 

@@ -11,7 +11,7 @@
  * `mainPageURL`、`software` などや producer 固有の key を
  * 普通に emit するため。
  *
- * Spec: WACZ 1.1 §datapackage.json (Frictionless Data Package
+ * Spec: WACZ 1.1.1 §datapackage.json (Frictionless Data Package
  *       descriptor の上に作られている)。
  * Reference producer: browserhive の `src/storage/wacz/datapackage.ts`。
  */

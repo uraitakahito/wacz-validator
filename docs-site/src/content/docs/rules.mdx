@@ -107,7 +107,11 @@ Rules fall into groups by the layer they inspect:
     records. These run under every profile; how each finding is graded is on
     [Profiles](/wacz-validator/profiles/#how-the-warc-11-rules-are-graded).
   - how the WARC is stored and recorded: independently-decodable gzip members,
-    payload digests, and whether the recording is complete.
+    payload digests, and whether the recording is complete. The last of these,
+    [`warc/recording-complete`](#warc-recording-complete), is the one `warc/*`
+    rule that runs only under `--profile browserhive`: it counts the `metadata`
+    records BrowserHive writes for fetches that failed or were cut short, a
+    convention of BrowserHive's own rather than part of WARC or WACZ.
 - **`pages/*`** — `pages/pages.jsonl` against its schema.
 - **`wacz-auth/*`** — the signature in `datapackage-digest.json`.
 - **`browserhive/*`** — BrowserHive's own conventions, from the BrowserHive WACZ

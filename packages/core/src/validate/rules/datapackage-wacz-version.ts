@@ -7,7 +7,7 @@
  * (field は認識されているが replay 挙動は未検証); 欠落の場合は
  * `error`。
  *
- * Spec: WACZ 1.1 §datapackage.json (`wacz_version` は producer が
+ * Spec: WACZ 1.1.1 §datapackage.json (`wacz_version` は producer が
  *       どの feature set を emit したかを宣言する spec-rev タグ)。
  * Reference producer: browserhive は "1.1.1" を出力する。
  */
