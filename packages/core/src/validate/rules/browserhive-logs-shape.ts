@@ -7,7 +7,8 @@
  *   - エントリが在る（行が無ければ空のファイル）
  *   - 各行が JSON のオブジェクトで、`profile` が `browserhive:log/1`。違う版を名乗る行は、その先を見ない
  *   - `profile`・`at`・`ms`・`source`・`level`・`msg` が在る
- *   - `at` が RFC 3339 の時刻、`ms` が 0 以上の整数で前の行の `ms` より小さくない、`msg` が文字列
+ *   - `at` が RFC 3339 の時刻（時差つきも通す。UTC かどうかは見ない）、`ms` が 0 以上の整数で前の行の `ms` より
+ *     小さくない、`msg` が文字列
  *   - `source` が `script`・`page`・`browserhive` のどれか、`level` が `debug`・`info`・`warn`・`error` のどれか
  *   - `script` は `source` が `script` の行にだけ在り、`settings.behaviors` のどれかの項目の `id`
  *   - `dpr` が在れば `settings.devicePixelRatios` のどれか、`truncated` が在れば boolean
@@ -43,7 +44,12 @@ import type { MsgParams } from "../../i18n/translate.js";
 
 const RULE = "browserhive/logs-shape";
 
-/** RFC 3339 の date-time（§5.6）。`T` と `Z` は小文字でもよい（同じ節の NOTE）。 */
+/**
+ * RFC 3339 の date-time（§5.6）。`T` と `Z` は小文字でもよい（同じ節の NOTE）。
+ *
+ * 時差つき（`+09:00`）も通す。WACZ Profile の Conformance の節は、timestamp を持つ member の値を
+ * 「RFC 3339 date-time in UTC」と定めるが、UTC かどうかはここでは見ていない。
+ */
 const RFC3339_DATE_TIME =
   /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[Tt]([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)(\.\d+)?([Zz]|[+-]([01]\d|2[0-3]):[0-5]\d)$/;
 

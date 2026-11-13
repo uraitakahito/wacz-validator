@@ -88,13 +88,14 @@ in the report, not every occurrence.
 `severity` is what wacz-validator does about a violation; `conformance` is what the
 specification asks for. **Filtering on one is not a substitute for the other.**
 
-Across the 30 corpus specimens:
+Issues counted across every specimen of the corpus at tag `v0.3.0`, validated
+with wacz-validator v0.46.2 under the `spec` profile:
 
 | conformance | error | warning | info |
 | --- | ---: | ---: | ---: |
-| `MUST` | 20 | **10** | 0 |
-| `SHOULD` | **1** | 8 | 0 |
-| `MAY` / `MUST NOT` | 0 | 4 | 1 |
+| `MUST` | 23 | **15** | 0 |
+| `SHOULD` | **1** | 8 | 1 |
+| `MAY` / `MUST NOT` | 0 | 6 | 0 |
 
 The two bold cells are why neither column predicts the other.
 `datapackage/resources-complete` is a `MUST` reported as a `warning` — an

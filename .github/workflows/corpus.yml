@@ -48,7 +48,8 @@ jobs:
       - name: Run corpus-driven regression
         run: CORPUS_DIR="$(cd ../wacz-validator-corpus && pwd)" pnpm --filter @wacz-validator/core test:corpus
 
-      # daemon の validate / readEntry を実 WACZ(file:// URI)で end-to-end に
-      # 検証する。CORPUS_DIR 未設定の `pnpm check` 側では skip される gated test。
+      # daemon の validate と、中身を窓で読むハンドラ（readLines・readRecord ほか）を
+      # 実 WACZ(file:// URI)で end-to-end に検証する。CORPUS_DIR 未設定の
+      # `pnpm check` 側では skip される gated test。
       - name: Run daemon handler/server tests against fixtures
         run: CORPUS_DIR="$(cd ../wacz-validator-corpus && pwd)" pnpm --filter @wacz-validator/daemon test

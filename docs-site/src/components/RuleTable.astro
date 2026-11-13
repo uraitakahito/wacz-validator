@@ -44,11 +44,15 @@ const head =
 
 const all = rules();
 
+/** 上書きが複数の message に掛かるときに添える数。表の言語で書く。 */
+const countOf = (count: number): string =>
+  lang === "ja" ? ` (${String(count)} 件)` : ` (${String(count)} messages)`;
+
 /** profile 別の上書き。severity の再割り当てと、適用バージョン範囲の両方。 */
 const overridesOf = (rule: (typeof all)[number]): string[] => [
   ...Object.entries(rule.severityByProfile).map(
     ([profile, { levels, count }]) =>
-      `${profile}: ${levels.join(" / ")}${count > 1 ? ` (${String(count)} 件)` : ""}`,
+      `${profile}: ${levels.join(" / ")}${count > 1 ? countOf(count) : ""}`,
   ),
   ...Object.entries(rule.profileVersions).map(([profile, range]) => `${profile}: ${range}`),
 ];
