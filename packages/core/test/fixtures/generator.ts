@@ -307,6 +307,14 @@ export interface FixtureOptions {
    */
   snapshots?: unknown;
   /**
+   * `browserhive:capture.screenshots` をそのまま書き込む。undefined なら member ごと書かない ——
+   * profile 1.24.0 で必須になったが、それより前の archive には無い。
+   *
+   * 中身は検査しない。`snapshots` と同じ。スクリーンショットのレコードは `warcResources`（`contentType` を
+   * `image/webp` に、`body` を画像のバイト列に）と `warcMetadata` で積む。
+   */
+  screenshots?: unknown;
+  /**
    * `browserhive:capture.dismissal` をそのまま書き込む。undefined なら member ごと
    * 書かない —— **除去は任意**で、不在は「配信されたままのページを保存した」という
    * 意味になるので、tls と同じく不在も正しい形。
@@ -1402,6 +1410,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.snapshots !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["snapshots"] = options.snapshots;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.screenshots !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["screenshots"] = options.screenshots;
     datapackage["browserhive:capture"] = capture;
   }
   if (options.traceSummary !== undefined) {

@@ -23,6 +23,10 @@
  * 禁じる（MUST NOT）。`truncated`・`action`・`reason` のどれも持たないので、飛ばさなければ「未完了」に落ちる。
  * window と同じく、内訳にもサンプルにも入れない。写しの辻褄は `browserhive/snapshots` が見る。
  *
+ * **スクリーンショットの metadata（`screenshot` の欄。BrowserHive WARC Profile 1.3.0）も数えない。** 写しの metadata と
+ * 同じ形の、絵の `resource` が何かを言うレコードで、WARC Profile は同じことを読み手に禁じる（MUST NOT）。辻褄は
+ * `browserhive/screenshots` が見る。
+ *
  * 規格との関係: この metadata 慣習は WARC/WACZ の規格そのものではなく
  * browserhive 固有。よって `applicability.excludeProfiles` で
  * `spec` / `lenient` を除外し、`--profile browserhive` のときだけ走る。
@@ -116,9 +120,9 @@ export const warcRecordingCompleteRule: ValidationRule = {
       }
       if (type !== "metadata") continue;
       const fields = fieldRecord(parseWarcFieldsBody(record.body).fields);
-      // 開かせなかったウィンドウの記録（profile 1.12.0）と DOM の写しの metadata（WARC Profile 1.1.0）は、取得の記録
-      // ではない。未完了にも、方針の省略にも数えない。
-      if (fields["window"] !== undefined || fields["snapshot"] !== undefined) continue;
+      // 開かせなかったウィンドウの記録（profile 1.12.0）、DOM の写しの metadata（WARC Profile 1.1.0）、スクリーンショットの
+      // metadata（WARC Profile 1.3.0）は、取得の記録ではない。未完了にも、方針の省略にも数えない。
+      if (fields["window"] !== undefined || fields["snapshot"] !== undefined || fields["screenshot"] !== undefined) continue;
       const reason = classify(fields);
       byReason[reason] += 1;
       const rt = fields["resourceType"];

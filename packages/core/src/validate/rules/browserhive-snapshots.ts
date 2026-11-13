@@ -36,7 +36,8 @@
  * archive と、名乗りが無いか読めない archive には当てない。
  *
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#snapshots
- *   （ページ一覧は同じ版の #pages、索引は #archive-files）と
+ *   （ページ一覧は同じ版の #pages、索引は #archive-files。#archive-files の出典は 1.24.0 を指す ——
+ *   同じ節のスクリーンショットの決まりを `browserhive/screenshots` が見るので、同じ節は同じ版で指す）と
  *   https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots
  */
 import { ok } from "../../result.js";
@@ -184,8 +185,8 @@ export const browserhiveSnapshotsRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §Archive files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#archive-files",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/ja/#archive-files",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#archive-files",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/ja/#archive-files",
       },
     },
   ],
