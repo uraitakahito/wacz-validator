@@ -48,6 +48,7 @@ import {
   type DaemonClient,
 } from "./daemon-client.js";
 import { BUILD_INFO } from "./generated/build-info.js";
+import { requestedLocale } from "./requested-locale.js";
 import { ServerEndpoint } from "./server-url.js";
 import type { BuildPair, ContentBridge } from "./app.js";
 
@@ -180,7 +181,7 @@ async function validateOnce(
     const report = await client.request<WireReport>("wacz-validator/validate", {
       source: { kind: "uri", uri },
       profile: formatProfileSelector(opts.profile),
-      locale: opts.lang ?? "",
+      locale: requestedLocale(opts.lang, process.env),
       ...(opts.s3ForcePathStyle && { s3ForcePathStyle: true }),
     });
     // `error` が 1 件も無ければ valid。派生値を report に持たせると summary と

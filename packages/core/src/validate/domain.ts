@@ -111,7 +111,7 @@ export interface Issue {
   rule: string;
   severity: Severity;
   /**
-   * メッセージの i18n キー(`<rule>/<short>`)。renderer が locale 別の
+   * メッセージの i18n キー(`<rule>.<short>`。例 `datapackage/resources-complete.orphan`)。renderer が locale 別の
    * ICU カタログで解決する。human-readable な prose は core に持たない。
    */
   messageKey: string;
@@ -155,7 +155,7 @@ export interface ResolvedDocLink {
 export interface ValidationRule {
   /** `Issue.rule` に入るのと同じ値。 */
   name: string;
-  /** rationale の i18n キー(`<rule>/desc`)。locale 別カタログで解決。 */
+  /** rationale の i18n キー(`<rule>.desc`)。locale 別カタログで解決。 */
   descriptionKey: string;
   /**
    * spec の規範レベル(RFC 2119)。severity と独立で profile に依存しない —
