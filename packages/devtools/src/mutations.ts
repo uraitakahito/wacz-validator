@@ -58,7 +58,7 @@ const onTls = (
     const dp = JSON.parse(data.toString("utf8")) as Datapackage;
     const tls = dp["browserhive:capture"]?.tls;
     if (tls === undefined) {
-      throw new Error("browserhive:capture.tls がありません (browserhive の WACZ ですか)");
+      throw new Error("browserhive:capture.tls がありません (BrowserHive WACZ ですか)");
     }
     const what = mutate(tls);
     return { data: Buffer.from(`${JSON.stringify(dp, null, 2)}\n`, "utf8"), what };
@@ -88,7 +88,7 @@ const onAxtree = (
 /**
  * `trace/events.jsonl` の行を書き換える壊し方を包む。`mutate` は行の配列をその場で変える。
  *
- * 相手は WACZ Profile 1.23.0 以上を名乗る WACZ —— それより前を名乗る WACZ は trace を持たず、
+ * 相手は BrowserHive WACZ Profile 1.23.0 以上を名乗る WACZ —— それより前を名乗る WACZ は trace を持たず、
  * break-wacz が「エントリがありません」で止める。
  */
 const onTraceLines = (
@@ -192,10 +192,10 @@ export const MUTATIONS: readonly Mutation[] = [
     return "スナップショットから tree を落とした";
   }),
   onAxtree("axtree-unknown-property", "browserhive/axtree-shape.unknown-property", (snapshot) => {
-    // profile が許していない property を 1 つ足す。producer が刈り込み規則を
+    // WACZ Profile が許していない property を 1 つ足す。producer が刈り込み規則を
     // 変えたのに版を上げなかった、という形をなぞる。
     firstNode(snapshot)["focusable"] = true;
-    return "最初のノードに focusable を足した(この profile には無い property)";
+    return "最初のノードに focusable を足した(WACZ Profile が許していない property)";
   }),
   onAxtree("axtree-keep-generic", "browserhive/axtree-shape.collapsed-role", (snapshot) => {
     const tree = snapshot["tree"];

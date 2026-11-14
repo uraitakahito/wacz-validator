@@ -6,7 +6,7 @@
  * 整合が取れているか (`browserhive/storage-shape`)。読み取りをここに集め、
  * rule 側は「何を問題とするか」だけを持つ。
  *
- * `tls` と違い、目録は profile 1.1.0 の **MUST**。したがって不在は違反であって、
+ * `tls` と違い、目録は BrowserHive WACZ Profile 1.1.0 の **MUST**。したがって不在は違反であって、
  * 「何も言うことがない」ではない —— `readStorage` が `null` を返す意味も、
  * あちらとは逆になる。
  *
@@ -23,7 +23,7 @@ export const STORAGE_ENTRY = "storage/origins.jsonl";
  *
  * 2 つ在るのは `/2` が `/1` の上位互換ではないため —— `valuesRecorded` の意味が
  * 動いており (`/1` は「値を運んでいる」、`/2` は「値を**求められた**」)、
- * producer は profile 1.6.0 の MUST に従って版を上げる。検証器が新しい方しか
+ * producer は WACZ Profile 1.6.0 の MUST に従って版を上げる。検証器が新しい方しか
  * 読めなければ、適合していた古いアーカイブを一斉に落とすことになる。
  */
 export const KNOWN_STORAGE_PROFILES = [
@@ -81,11 +81,11 @@ export interface StorageInventory {
 export const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
-/** `conformsTo` の URL から読む profile の版。`/wacz-profile/1.14.0/` の形。 */
+/** `conformsTo` の URL から読む WACZ Profile の版。`/wacz-profile/1.14.0/` の形。 */
 const CONFORMS_TO_VERSION = /\/wacz-profile\/(\d+)\.(\d+)\.(\d+)\//;
 
 /**
- * archive が名乗る profile (`conformsTo`) が `major.minor` 以上か。名乗りが無いか読めなければ
+ * archive が名乗る WACZ Profile の版 (`conformsTo`) が `major.minor` 以上か。名乗りが無いか読めなければ
  * `false` —— その版で初めて決まった MUST を、何に対して書かれたか分からない archive に当てない。
  */
 export const profileAtLeast = (conformsTo: unknown, major: number, minor: number): boolean => {
@@ -96,14 +96,14 @@ export const profileAtLeast = (conformsTo: unknown, major: number, minor: number
   return found > major || (found === major && foundMinor >= minor);
 };
 
-/** `sha256:` + 小文字 16 進 64 桁。profile が定める形。 */
+/** `sha256:` + 小文字 16 進 64 桁。WACZ Profile が定める形。 */
 export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 
 /**
  * `datapackage.json` から `browserhive:capture` を取り出す。
  *
- * `undefined` は「browserhive のアーカイブではない / datapackage が読めない」。
- * その場合、この profile の MUST を当てる相手がそもそも居ない。
+ * `undefined` は「BrowserHive WACZ ではない / datapackage が読めない」。
+ * その場合、WACZ Profile の MUST を当てる相手がそもそも居ない。
  */
 export const readCapture = async (
   wacz: WaczReader,

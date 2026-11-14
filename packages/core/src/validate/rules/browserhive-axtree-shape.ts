@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/axtree-shape(browserhive profile 限定 · >=3.8.0)
  *
- * `accessibility/axtree.jsonl` の中身が、profile の定める形に従っているか。
+ * `accessibility/axtree.jsonl` の中身が、BrowserHive WACZ Profile の定める形に従っているか。
  *
  * 「在るか」と「壊れていないか」はここでは見ない —— それぞれ
  * `datapackage/resources-complete`(ZIP の実体がすべて宣言されているか)と

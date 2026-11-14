@@ -22,7 +22,7 @@ these docs, so that a word means one thing here and the same thing in the spec.
 
 ## Terms the spec uses but does not define
 
-Everything above is defined in WACZ §Terminology. The spec also leans on words it
+Everything above is defined in WACZ 1.1.1 §Terminology. The spec also leans on words it
 never defines there, and this is the one that carries real weight.
 
 | Term | What it means here |

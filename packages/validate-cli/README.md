@@ -69,7 +69,7 @@ stdout には `Report` が出力される。full schema は
 | Profile             | こういうときに使う                                                                                                 |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `spec` (デフォルト) | 仕様 (WACZ 1.1.1・Data Package・WARC 1.1・wacz-auth 0.1.0) + wabac.js 互換を求めたい。ほとんどの consumer はこれ。 |
-| `browserhive`       | BrowserHive capture を検証する。producer-strict な check を有効化。                                                |
+| `browserhive`       | BrowserHive WACZ を検証する。producer-strict な check を有効化。                                                   |
 | `lenient`           | legacy archive をトリアージしたい。"replay が壊れる" 系の hard error だけが欲しい。                                |
 
 rule 単位の profile 別 severity matrix は
@@ -85,8 +85,10 @@ rule 単位の profile 別 severity matrix は
 | `WACZ_VALIDATOR_S3_FORCE_PATH_STYLE`                                | `"true"` のときだけ `forcePathStyle: true` を立てる。SeaweedFS / MinIO 等の path-style addressing 用。 |
 | `WACZ_VALIDATOR_LANG`                                                | メッセージの言語。`--lang` フラグが優先、無ければこれ、無ければ `LANG` / `en`。                    |
 
-bundled SeaweedFS の compose stack は repo root の `compose.{dev,prod}.yaml`
-を参照。
+この repo は stack のファイルを持たない。S3 を話す SeaweedFS は Web Capture の repo で共有する 1 つの
+store で、submodule の [seaweedfs](https://github.com/uraitakahito/seaweedfs) から起こす
+(`sh seaweedfs/scripts/stack.sh up`)。手順は
+[Apple Container stack](https://uraitakahito.github.io/wacz-validator/ja/container/) を参照。
 
 ## library として使いたい場合
 

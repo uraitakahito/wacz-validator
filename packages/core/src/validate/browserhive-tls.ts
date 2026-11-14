@@ -32,7 +32,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 /**
  * `datapackage.json` から `browserhive:capture.tls` を取り出す。
  *
- * 形が合わなければ `undefined`。tls はプロファイルの**任意 member** なので、不在は
+ * 形が合わなければ `undefined`。tls は BrowserHive WACZ Profile の**任意 member** なので、不在は
  * 違反ではない —— 呼び出し側は `undefined` を「何も言うことがない」として扱う。
  *
  * `null` ではなく `undefined` なのは、隣の `readCapture` と揃えるため。

@@ -44,8 +44,8 @@ pnpm check
 
 ```bash
 pnpm exec vitest --listTags                        # 語彙の一覧
-pnpm exec vitest run --tagsFilter frictionless     # 13 件
-pnpm exec vitest run --tagsFilter 'docs && i18n'   # 2 件
+pnpm exec vitest run --tagsFilter frictionless     # 1 つのタグ
+pnpm exec vitest run --tagsFilter 'docs && i18n'   # 両方を持つテスト
 pnpm exec vitest run --tagsFilter '!corpus'
 pnpm test:ui --tagsFilter frictionless             # UI を絞って開く
 ```
@@ -67,7 +67,7 @@ UI を開いたあとは、検索欄に `tag:frictionless` と打っても同じ
 | `daemon` / `tui` | それぞれのパッケージ |
 
 :::caution[速さのためではありません]
-全 203 件が 3.5 秒で終わります。**絞る目的は「引けること」だけ**で、
+どのみち `pnpm check` は毎回全部を走らせます。**絞る目的は「引けること」だけ**で、
 実行時間ではありません。Vitest の tags にはタグ側で `timeout` や `retry` を
 指定する用途もありますが、**この repo では使っていません** ――
 実行方針を分けたいテストの種類が無いからです。

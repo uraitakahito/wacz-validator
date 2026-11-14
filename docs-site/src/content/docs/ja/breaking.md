@@ -1,6 +1,6 @@
 ---
 title: 壊して確かめる
-description: BrowserHive で撮った WACZ をわざと壊し、rule が赤くなるところまでを通す
+description: BrowserHive WACZ をわざと壊し、rule が赤くなるところまでを通す
 ---
 
 validator の「緑」は 2 通りの意味を持ちます ― 検査して問題が無かったのか、
@@ -43,7 +43,7 @@ echo "$WACZ"
 ```
 
 ```
-s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
+s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.browserhive.wacz
 ```
 
 dev スタックは TLS で話すので、curl にはスタックの開発用 CA を渡します。宛先は

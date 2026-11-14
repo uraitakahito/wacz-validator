@@ -61,8 +61,8 @@ producer バグが上の方に上がります。
 - `severity` — profile による組み替え後の値。つまり「その実行が実際にどう判断したか」です。
 - `messageKey` + `params` — メッセージは**事前にレンダリングされた prose では
   ありません**。core は i18n キーとランタイム値だけを持ち、renderer が locale
-  カタログで解決します。TUI と将来の browser frontend が同じ report を別の言語で
-  提示できるのはこのためです。
+  カタログで解決します。TUI と capture-workbench（browser のクライアント）が同じ report を
+  別の言語で提示できるのはこのためです。
 - `location` — rule が言える場合の、archive 内の位置。
 - `details` — rule 固有の付加情報（hash の差分、hex dump など）。意図的に型を
   持たせておらず、renderer が rule ごとに整形します。
@@ -105,13 +105,13 @@ issue から自分で読み取ってください。
 
 ```sh
 # wacz-validator が「壊れている」と判断したもの
-wacz-validator archive.wacz | jq '[.issues[] | select(.severity == "error")]'
+wacz-validator-validate archive.wacz | jq '[.issues[] | select(.severity == "error")]'
 
 # 仕様が要求しているもの
-wacz-validator archive.wacz | jq '[.issues[] | select(.conformance == "MUST" or .conformance == "MUST NOT")]'
+wacz-validator-validate archive.wacz | jq '[.issues[] | select(.conformance == "MUST" or .conformance == "MUST NOT")]'
 
 # 両者が食い違っている箇所 —— たいていここがいちばん情報量があります
-wacz-validator archive.wacz | jq '[.issues[]
+wacz-validator-validate archive.wacz | jq '[.issues[]
   | select((.conformance == "MUST" and .severity != "error")
         or (.conformance != "MUST" and .severity == "error"))]'
 ```
@@ -215,14 +215,15 @@ WARC の本は、ふつう `warcinfo` の記録で始まります。誰が、ど
 ```json
 "warcinfo": [
   {
-    "entry": "archive/data-000.warc.gz",
+    "entry": "archive/data-000.browserhive.warc.gz",
     "index": 1,
     "offset": 0,
-    "filename": "data-000.warc.gz",
+    "filename": "data-000.browserhive.warc.gz",
     "contentType": "application/warc-fields",
     "fields": [
-      { "name": "software", "value": "browserhive/22.1.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 の warcinfo の欄" },
+      { "name": "software", "value": "browserhive/31.0.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 の warcinfo の欄" },
       { "name": "format", "value": "WARC File Format 1.1", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/format", "label": "Dublin Core の語" },
+      { "name": "conformsTo", "value": "https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/conformsTo", "label": "Dublin Core の語" },
       { "name": "robots-policy", "value": "ignore", "vocabulary": null }
     ]
   }

@@ -528,9 +528,9 @@ describe("browserhive/trace-shape", () => {
         (JSON.parse(renderJson(report, locale)) as { issues: { rule: string; message: string }[] }).issues
           .filter((i) => i.rule === RULE)
           .map((i) => i.message);
-      expect(messages("ja")[3]).toBe("trace/events.jsonl の 4 行目に method が無い（WACZ Profile 1.23.0 の必須）（同じファイルにほか 2 件）");
-      expect(messages("ja")[2]).toBe("trace/events.jsonl の 3 行目に method が無い（WACZ Profile 1.23.0 の必須）");
-      expect(messages("en")[3]).toBe("trace/events.jsonl line 4 lacks method (required by WACZ Profile 1.23.0) (and 2 more like this in the same file)");
+      expect(messages("ja")[3]).toBe("trace/events.jsonl の 4 行目に method が無い（BrowserHive WACZ Profile 1.23.0 の必須）（同じファイルにほか 2 件）");
+      expect(messages("ja")[2]).toBe("trace/events.jsonl の 3 行目に method が無い（BrowserHive WACZ Profile 1.23.0 の必須）");
+      expect(messages("en")[3]).toBe("trace/events.jsonl line 4 lacks method (required by BrowserHive WACZ Profile 1.23.0) (and 2 more like this in the same file)");
     });
   });
 

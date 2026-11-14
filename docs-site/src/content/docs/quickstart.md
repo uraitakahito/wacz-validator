@@ -138,8 +138,10 @@ wacz-validator-validate --profile browserhive@2.1.0  samples/wikipedia.wacz   # 
 wacz-validator-validate --profile lenient     samples/wikipedia.wacz   # triage mode
 ```
 
-Profiles only re-grade producer-specific and stylistic rules; they never
-suppress a check the spec requires. See [Profiles](/wacz-validator/profiles/).
+A profile re-grades severities and decides which rules run: the `browserhive/*`
+rules and `warc/recording-complete` run only under `browserhive`, and `lenient`
+does not run the two Data Package rules (one of them a `MUST`). Every other rule
+runs under every profile. See [Profiles](/wacz-validator/profiles/).
 
 ## Machine-readable output
 

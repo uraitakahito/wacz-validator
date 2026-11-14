@@ -10,7 +10,7 @@
 import { readJsonLines, type LogLine } from "./browserhive-logs.js";
 import type { WaczReader } from "../wacz/reader.js";
 
-/** 取り込みの trace のエントリ。WACZ Profile 1.23.0 から、どの package も持つ（行が無ければ空のファイル）。 */
+/** 取り込みの trace のエントリ。BrowserHive WACZ Profile 1.23.0 から、どの package も持つ（行が無ければ空のファイル）。 */
 export const TRACE_ENTRY = "trace/events.jsonl";
 
 /** 各行が名乗る版。 */

@@ -20,6 +20,6 @@ Frictionless **v1** のプロファイル識別子。v2(datapackage.org)は `$sc
 
 - このスキーマは `additionalProperties: false` を持たないため、`wacz_version` /
   `mainPageURL` などの **WACZ 拡張プロパティは弾かれない**(意図どおり)。
-- 一方、リソース `name` は `^([-a-z0-9._/])+$`(小文字限定)など **WACZ より厳しい**
+- 一方、リソース `name` は `^([-a-z0-9._/])+$`(小文字限定)など **WACZ 1.1.1 より厳しい**
   箇所がある。そのため補助ルールは `error` ではなく **`warning`**、`lenient` profile
   では除外している。

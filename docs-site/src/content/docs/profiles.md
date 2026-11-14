@@ -8,7 +8,8 @@ are graded. The default is `spec`.
 
 A profile does two things. It **re-grades severities**, and it **decides which
 rules run**: a rule can name profiles it does not run under. The rules for
-BrowserHive's own conventions (`browserhive/*`) run only under `browserhive`,
+BrowserHive's own conventions (`browserhive/*`, and `warc/recording-complete`,
+which reads the metadata records BrowserHive adds) run only under `browserhive`,
 and the two Data Package rules (`datapackage/frictionless-structure`, a `MUST`,
 and `datapackage/frictionless-schema`, a `SHOULD`) do not run under `lenient`.
 Every other rule runs under every profile, so any other `MUST` violation is
@@ -39,12 +40,12 @@ BrowserHive — for example that
 paired with a `.idx`.
 
 Use it when the archive is known to come from BrowserHive and you want its house
-rules enforced too. On any other producer's output it will report conventions
-that archive never agreed to follow.
+rules enforced too. On a WACZ that is not a BrowserHive WACZ it will report
+conventions that archive never agreed to follow.
 
 #### Pinning the producer version
 
-BrowserHive's output changes between versions. Append `@<x.y.z>` and only the
+A BrowserHive WACZ changes between BrowserHive versions. Append `@<x.y.z>` and only the
 rules known to be correct for that version run.
 
 ```sh
@@ -79,7 +80,7 @@ field naming the producer and its version, but wacz-validator does not read it y
 
 Some `browserhive/*` rules check what a later version of the BrowserHive WACZ
 Profile introduced. Whether that applies is decided by the archive itself — by
-the profile version its `browserhive:capture.conformsTo` names — and not by
+the WACZ Profile version its `browserhive:capture.conformsTo` names — and not by
 `--profile`, so it holds with or without `@<x.y.z>`. An archive that names an
 earlier version, or none, gets nothing from such a rule: the rule runs, finds
 nothing to apply, and counts as passed.
@@ -126,7 +127,7 @@ the kind of finding:
 A broken shape is an `error` everywhere because a reader loses the boundaries
 between records, and with them the index and replay. A field that breaks a
 *shall* rarely stops wabac.js from replaying, so `spec` reports it as a
-`warning`. BrowserHive declares its WARC files to be WARC 1.1 files, so
+`warning`. BrowserHive declares a BrowserHive WARC file to be a WARC 1.1 file, so
 `browserhive` makes the same finding an `error`.
 
 ## Exit codes

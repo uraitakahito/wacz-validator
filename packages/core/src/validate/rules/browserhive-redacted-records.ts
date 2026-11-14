@@ -48,7 +48,7 @@ const REDACTED_FIELD = "BrowserHive-Redacted";
 /** 置き換えた値の印。 */
 const MARK = "***";
 
-/** 部分の名。仕様の表の順で、欄の中もこの順に並ぶ。 */
+/** 部分の名。WARC Profile の表の順で、欄の中もこの順に並ぶ。 */
 const PART_NAMES: readonly string[] = ["target-uri", "headers", "payload"];
 
 const PART = /^([a-z-]+)=([1-9]\d*)$/;

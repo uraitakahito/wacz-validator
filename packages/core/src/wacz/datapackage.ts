@@ -40,7 +40,7 @@ export const DatapackageResourceSchema = z
 export const DatapackageSchema = z
   .object({
     profile: z.unknown().optional(),
-    // WACZ spec で要求される snake_case 名。この preset では lint の
+    // WACZ 1.1.1 で要求される snake_case 名。この preset では lint の
     // naming-convention rule が有効化されていないので、eslint-disable
     // は不要。
     wacz_version: z.unknown().optional(),

@@ -21,6 +21,7 @@ import { browserhiveUninterceptedListedRule } from "./browserhive-unintercepted-
 import { browserhiveCrashedTargetsListedRule } from "./browserhive-crashed-targets-listed.js";
 import { browserhivePayloadCharsetRule } from "./browserhive-payload-charset.js";
 import { browserhiveWarcFilesRule } from "./browserhive-warc-files.js";
+import { browserhiveWaczNameRule } from "./browserhive-wacz-name.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
@@ -52,6 +53,7 @@ import { datapackageResourcesCompleteRule } from "./datapackage-resources-comple
 import { datapackageWaczVersionRule } from "./datapackage-wacz-version.js";
 import { pagesPageSchemaRule } from "./pages-page-schema.js";
 import { waczAuthSignatureRule } from "./wacz-auth-signature.js";
+import { waczFileExtensionRule } from "./wacz-file-extension.js";
 import { waczRequiredFilesRule } from "./wacz-required-files.js";
 import { waczReservedDirsCleanRule } from "./wacz-reserved-dirs-clean.js";
 import { warcContentTypeRule } from "./warc-content-type.js";
@@ -83,6 +85,8 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   waczRequiredFilesRule,
   // 予約ディレクトリ(archive/indexes/pages)に異物が無いか(MUST NOT)。
   waczReservedDirsCleanRule,
+  // WACZ のファイルの名前が .wacz で終わるか (Zip Format File Extension の MUST)。名前は ZIP の外の事柄なので warning。
+  waczFileExtensionRule,
   datapackageProfileRule,
   datapackageWaczVersionRule,
   datapackageHashesRule,
@@ -121,7 +125,7 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   cdxjWarcOffsetsRule,
   cdxjPagesMainpageRule,
   warcPayloadDigestRule,
-  // browserhive profile 限定: WARC の metadata レコード(未完了/失敗)の比率を
+  // browserhive profile 限定: BrowserHive WARC の metadata レコード(未完了/失敗)の比率を
   // 可視化する。spec/lenient では excludeProfiles で除外される。
   warcRecordingCompleteRule,
   // browserhive profile 限定: tls member の証明書チェーンを、パッケージの中だけで
@@ -135,24 +139,26 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveSettleShapeRule,
   browserhiveSettleDeadlineRule,
   browserhiveUrlPoliciesRule,
-  // 方針で省いた本文が、上限で落とした本文として完全性に載っていないか (profile 1.9.0 の MUST NOT)。
+  // 方針で省いた本文が、上限で落とした本文として完全性に載っていないか (BrowserHive WACZ Profile 1.9.0 の MUST NOT)。
   browserhivePolicyNotTruncatedRule,
-  // ページの文字・題・ツリーを、読んだ文書の扱いで決めているか (profile 1.10.0 の document、
+  // ページの文字・題・ツリーを、読んだ文書の扱いで決めているか (WACZ Profile 1.10.0 の document、
   // 1.11.0 から deny も)。
   browserhiveDocumentWithheldRule,
-  // deny の当たった URL に、送った要求や届いた応答の記録が無いか (profile 1.11.0 の policies)。
+  // deny の当たった URL に、送った要求や届いた応答の記録が無いか (WACZ Profile 1.11.0 の policies)。
   browserhiveDenyEnforcedRule,
-  // 開かせなかったウィンドウの記録の形 (profile 1.12.0 の windows)。
+  // 開かせなかったウィンドウの記録の形 (WACZ Profile 1.12.0 の windows)。
   browserhiveWindowShapeRule,
   // 取り込めなかった本文の記録が完全性の一覧と一致し、response が WARC-Truncated: unspecified を持つか
-  // (profile 1.13.0 の payloads)。
+  // (WACZ Profile 1.13.0 の payloads)。
   browserhiveUninterceptedListedRule,
   // completeness.crashedTargets の形・complete との食い違い・整列・伏せる URL (WACZ Profile 1.21.0)。
   browserhiveCrashedTargetsListedRule,
-  // 文字の本文が、書き手が文字符号を変えた物に見えないか (profile 1.13.0 の payloads。推測なので warning)。
+  // 文字の本文が、書き手が文字符号を変えた物に見えないか (WACZ Profile 1.13.0 の payloads。推測なので warning)。
   browserhivePayloadCharsetRule,
-  // archive/ の WARC の名前・連番・先頭の warcinfo・最後以外の本の大きさ (profile 1.14.0 の Archive files)。
+  // archive/ の WARC の名前・連番・先頭の warcinfo・最後以外の本の大きさ (WACZ Profile 1.14.0 の Archive files)。
   browserhiveWarcFilesRule,
+  // WACZ の名前が .browserhive.wacz で終わるか (WACZ Profile 1.25.0 の Package name。SHOULD なので warning)。
+  browserhiveWaczNameRule,
   // 1 つの交信 (response・request・metadata) が同じ本に在るか (同じく 1.14.0)。
   browserhiveExchangeInOneFileRule,
   // 各本の warcinfo が BrowserHive WARC Profile の版を 1 つだけ名乗り、全部の本で同じか (WACZ Profile 1.16.0)。
@@ -223,6 +229,7 @@ export {
   datapackageWaczVersionRule,
   pagesPageSchemaRule,
   waczAuthSignatureRule,
+  waczFileExtensionRule,
   waczRequiredFilesRule,
   waczReservedDirsCleanRule,
   warcContentTypeRule,

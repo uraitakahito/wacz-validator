@@ -3,7 +3,7 @@
  *
  * 方針で省いた本文が、上限で落とした本文として `completeness.truncatedUrls` に載っていないか。
  *
- * profile 1.9.0 の MUST NOT: 要求者が設定した方針 (`urlPolicies` の `no-body`、または
+ * BrowserHive WACZ Profile 1.9.0 の MUST NOT: 要求者が設定した方針 (`urlPolicies` の `no-body`、または
  * `contentTypePolicies` の項目) で省いた本文は、**大きさに関係なく** `truncatedUrls` に載せては
  * ならない。取り込みはその本文をそもそも取りに行っていないので、上限で落とされたはずがない。
  * content-type の方針の分は 1.8.0 から MUST NOT だった。
@@ -16,7 +16,7 @@
  * 照らし方: `truncatedUrls` の各 URL を、`settings` に記録された方針に照らす。URL の方針は
  * 最初に当たったものだけが効き、それが `no-body` のときだけ本文を省く。content-type の方針は
  * CDXJ の `mime` (Chrome が報せた型で、recorder が照らしたのと同じもの) の前方一致で、大文字と
- * 小文字を区別する。照合の規則は profile ではなく BrowserHive の model が定める (glob の
+ * 小文字を区別する。照合の規則は WACZ Profile ではなく BrowserHive の model が定める (glob の
  * ワイルドカードは `*` だけ)。
  *
  * **値を置き換えた URL には照らさない (WACZ Profile 1.22.0 の urlPolicies)。** 取り込みは置き換える前の URL に方針を

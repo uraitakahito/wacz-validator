@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/user-agent-recorded (error · browserhive profile 限定)
  *
- * `settings.userAgent` が、主文書の要求で実際に送った字と同じか。WACZ Profile 1.20.0 は、`WARC-Target-URI` が
+ * `settings.userAgent` が、主文書の要求で実際に送った字と同じか。BrowserHive WACZ Profile 1.20.0 は、`WARC-Target-URI` が
  * `mainPageURL` である `request` レコードは、どれも `settings.userAgent` を `User-Agent` ヘッダに持つと定める。
  *
  * **見るのは主文書の要求だけ。** 部品の要求まで比べると、頁のスクリプトが自分で別の字を送ったときに誤って落ちる

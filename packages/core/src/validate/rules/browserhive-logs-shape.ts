@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/logs-shape (error · browserhive profile 限定)
  *
- * 取り込みのログ `logs/capture.jsonl` が、WACZ Profile 1.19.0 の logs-directory と logs-lines の定めどおりか。
+ * 取り込みのログ `logs/capture.jsonl` が、BrowserHive WACZ Profile 1.19.0 の logs-directory と logs-lines の定めどおりか。
  * 見るのは:
  *
  *   - エントリが在る（行が無ければ空のファイル）

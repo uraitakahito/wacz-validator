@@ -17,7 +17,7 @@ site:
 
 ## Related Projects
 
-- [BrowserHive](https://github.com/uraitakahito/browserhive) — a web-capture server whose WACZ output wacz-validator checks.
+- [BrowserHive](https://github.com/uraitakahito/browserhive) — a web-capture server whose BrowserHive WACZ files wacz-validator checks.
 - [WACZ 1.1.1](https://specs.webrecorder.net/wacz/1.1.1/) — the specification ([日本語訳](https://uraitakahito.github.io/specs/wacz/1.1.1/)).
 
 ## License

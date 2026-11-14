@@ -5,7 +5,7 @@
  * `.ts` をすべて rule と見なし、`name` と `conformance` を読めないファイルが
  * あると落ちる。
  *
- * 照合の規則は profile ではなく BrowserHive の model が定める。URL の方針は glob で、
+ * 照合の規則は BrowserHive WACZ Profile ではなく BrowserHive の model が定める。URL の方針は glob で、
  * ワイルドカードは `*` だけ、URL 全体に当て、上から見て最初に当たったものだけが効く。
  * content-type の方針は MIME の前方一致で、大文字と小文字を区別する。照らす MIME は CDXJ の
  * `mime` —— Chrome が報せた型で、recorder が照らしたのと同じもの。

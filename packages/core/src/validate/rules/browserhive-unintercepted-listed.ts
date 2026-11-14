@@ -4,7 +4,7 @@
  * 取り込めなかった本文の記録 (`truncated: not-intercepted`) と、`completeness.uninterceptedUrls` が
  * 食い違わないか。
  *
- * profile 1.13.0 は、本文が wire を渡ったのにバイト列として得られなかった応答を、文字から組み直さずに本文なしで
+ * BrowserHive WACZ Profile 1.13.0 は、本文が wire を渡ったのにバイト列として得られなかった応答を、文字から組み直さずに本文なしで
  * 記録し、body not kept の metadata (`truncated: not-intercepted`) を書き、URL を `completeness.uninterceptedUrls`
  * に載せ、その response のレコードに `WARC-Truncated: unspecified` を付けると定める。見るのは 3 つ:
  *

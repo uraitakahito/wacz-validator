@@ -133,9 +133,9 @@ wacz-validator-validate --profile browserhive@2.1.0  samples/wikipedia.wacz   # 
 wacz-validator-validate --profile lenient     samples/wikipedia.wacz   # トリアージ用
 ```
 
-profile が組み替えるのは producer 固有 / 様式的な rule の severity だけで、
-**spec が要求する check を抑止することはありません**。
-[プロファイル](/wacz-validator/ja/profiles/)を参照。
+profile は severity を組み替え、どの rule を走らせるかを決めます。`browserhive/*` の rule と
+`warc/recording-complete` は `browserhive` でだけ走り、`lenient` は Data Package の 2 つの rule（1 つは `MUST`）を走らせません。
+ほかの rule はどの profile でも走ります。[プロファイル](/wacz-validator/ja/profiles/)を参照。
 
 ## 機械可読な出力
 

@@ -82,7 +82,8 @@ spec がそう書いている、という事実だからです。
 ## rule が見ている層
 
 - **`wacz/*`** — `ZIP file` の構造そのもの。存在しなければならないファイル /
-  ディレクトリと、予約ディレクトリに異物が無いか。
+  ディレクトリと、予約ディレクトリに異物が無いか。それと、ファイル自身の名前が
+  `.wacz` で終わるか。
 - **`datapackage/*`** — `datapackage.json`。Frictionless の構造、宣言された
   `profile`、WACZ version、そして hash が実体と一致するか。
 - **`cdxj/*`** — index。wabac.js がロードできるか、offset が実在の WARC record
@@ -93,10 +94,10 @@ spec がそう書いている、という事実だからです。
     どの profile でも走り、指摘の等級の決め方は[プロファイル](/wacz-validator/ja/profiles/#warc-11-の-rule-の等級)にあります。
   - WARC の置き方と記録のされ方。gzip member が独立して展開できるか、payload digest、recording が完結しているか。
     このうち [`warc/recording-complete`](#warc-recording-complete) は、`warc/*` の中でただ 1 つ、`--profile browserhive` のときだけ走ります。
-    失敗した取得や途中で打ち切った取得を `metadata` の記録として残すのは BrowserHive の慣習で、WARC や WACZ の規格が決めたことではないからです。
+    失敗した取得や途中で打ち切った取得を `metadata` の記録として残すのは BrowserHive の慣習で、WARC 1.1 や WACZ 1.1.1 が決めたことではないからです。
 - **`pages/*`** — `pages/pages.jsonl` の schema 適合。
 - **`wacz-auth/*`** — `datapackage-digest.json` の署名。
-- **`browserhive/*`** — BrowserHive の WACZ と WARC の profile が定める、BrowserHive 自身の決まり。
+- **`browserhive/*`** — BrowserHive WACZ Profile と BrowserHive WARC Profile が定める、BrowserHive 自身の決まり。
   `--profile browserhive` のときだけ走ります。
 
 ## 同じファイルを 2 つの rule が見る理由

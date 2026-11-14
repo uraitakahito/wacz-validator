@@ -1,7 +1,7 @@
 /**
  * WARC.gz 用の independent-gzip-member iterator。
  *
- * WARC spec に従って生成された `.warc.gz` は *independent* な gzip
+ * WARC 1.1 に従って生成された `.warc.gz` は *independent* な gzip
  * member の連結である (record 1 つにつき 1 member)。これにより CDXJ
  * index の offset/length ペアを使って、ファイルの残りを parse せず
  * 単一 record まで seek して展開できる。(WARC 1.1 §A.1。参考実装

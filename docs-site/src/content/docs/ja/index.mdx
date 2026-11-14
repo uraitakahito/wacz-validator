@@ -21,7 +21,7 @@ hero:
 archive を渡すと、rule 単位で「何が適合し、何が適合しないか」を報告します。
 
 producer 非依存とは、**どのツールが書いたかを前提にしない**という意味です。
-spec が定める通りに `ZIP file` を読むので、どの recorder が生成した WACZ でも
+WACZ 1.1.1 が定める通りに `ZIP file` を読むので、どの recorder が生成した WACZ でも
 同じ基準で判定します。
 
 ## 2 つの「やらないこと」
@@ -29,14 +29,14 @@ spec が定める通りに `ZIP file` を読むので、どの recorder が生�
 archive を **replay しません** — それは [ReplayWeb.page](https://replayweb.page/)
 の仕事です。archive を **生成もしません**。このサイトに
 BrowserHive が出てくる場合、
-それは wacz-validator が検証する対象を生成する別プロジェクトを指します。
+それは wacz-validator が検証する BrowserHive WACZ を生成する別プロジェクトを指します。
 
 ## 構成
 
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui (bin: wacz-validator)"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser(["browser (将来)"]) -.->|"WS"| daemon
+    browser["capture-workbench (browser のクライアント)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli (bin: wacz-validator-validate)"] -->|"検証に使う"| core["@wacz-validator/core"]
     daemon -->|"検証に使う"| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -46,13 +46,12 @@ flowchart LR
     protocol -->|import| shared
 
     classDef shared fill:#fff3cd,stroke:#d4a72c,color:#5c4500;
-    classDef future fill:#eeeeee,stroke:#999999,color:#666666;
     class shared,protocol shared;
-    class browser future;
 ```
 
-daemon が **stateless** であることが、将来の browser frontend が terminal UI と
-同じ protocol で繋げる理由です。[アーキテクチャ](/wacz-validator/ja/architecture/)を参照。
+daemon が **stateless** であるから、browser のクライアント
+（[capture-workbench](https://github.com/uraitakahito/capture-workbench)）が、terminal UI と同じ handler を
+WebSocket でなく HTTP で呼べます。[アーキテクチャ](/wacz-validator/ja/architecture/)を参照。
 
 ## 目的別の入口
 

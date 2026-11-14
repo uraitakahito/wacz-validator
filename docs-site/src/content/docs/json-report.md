@@ -64,8 +64,8 @@ by rule without parsing prose:
   decided rather than the rule's default.
 - `messageKey` + `params` — the message is **not** pre-rendered prose. core
   keeps an i18n key and the runtime values; the renderer resolves them against a
-  locale catalogue. That is what lets the TUI and a future browser frontend
-  present the same report in different languages.
+  locale catalogue. That is what lets the TUI and capture-workbench (a browser
+  client) present the same report in different languages.
 - `location` — where in the archive, when the rule can say.
 - `details` — rule-specific extras: a hash diff, a hex dump. Deliberately
   untyped; a renderer formats it per rule.
@@ -111,13 +111,13 @@ need the conformance view, read it off the issues:
 
 ```sh
 # What wacz-validator judges to be broken
-wacz-validator archive.wacz | jq '[.issues[] | select(.severity == "error")]'
+wacz-validator-validate archive.wacz | jq '[.issues[] | select(.severity == "error")]'
 
 # What the specification requires
-wacz-validator archive.wacz | jq '[.issues[] | select(.conformance == "MUST" or .conformance == "MUST NOT")]'
+wacz-validator-validate archive.wacz | jq '[.issues[] | select(.conformance == "MUST" or .conformance == "MUST NOT")]'
 
 # Where the two disagree — usually the most informative list
-wacz-validator archive.wacz | jq '[.issues[]
+wacz-validator-validate archive.wacz | jq '[.issues[]
   | select((.conformance == "MUST" and .severity != "error")
         or (.conformance != "MUST" and .severity == "error"))]'
 ```
@@ -227,14 +227,15 @@ lines:
 ```json
 "warcinfo": [
   {
-    "entry": "archive/data-000.warc.gz",
+    "entry": "archive/data-000.browserhive.warc.gz",
     "index": 1,
     "offset": 0,
-    "filename": "data-000.warc.gz",
+    "filename": "data-000.browserhive.warc.gz",
     "contentType": "application/warc-fields",
     "fields": [
-      { "name": "software", "value": "browserhive/22.1.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 warcinfo field" },
+      { "name": "software", "value": "browserhive/31.0.0", "vocabulary": "warc", "ref": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo", "label": "WARC 1.1 warcinfo field" },
       { "name": "format", "value": "WARC File Format 1.1", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/format", "label": "Dublin Core term" },
+      { "name": "conformsTo", "value": "https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/", "vocabulary": "dcterms", "ref": "http://purl.org/dc/terms/conformsTo", "label": "Dublin Core term" },
       { "name": "robots-policy", "value": "ignore", "vocabulary": null }
     ]
   }
