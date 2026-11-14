@@ -71,8 +71,6 @@
  *   （要約は同じ版の #trace、行は #trace-lines）
  */
 import { ok } from "../../result.js";
-import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
-import { iterateWarcMembers } from "../../wacz/warc-iter.js";
 import { RFC3339_DATE_TIME } from "../browserhive-logs.js";
 import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import {
@@ -88,10 +86,10 @@ import {
 } from "../browserhive-trace.js";
 import { DATAPACKAGE_ENTRY, datapackageOf } from "../datapackage-source.js";
 import type { IssueLocation, ValidationRule } from "../domain.js";
+import { readResponses } from "../response-records.js";
 import { shown } from "../warc11-scan.js";
 import { WarcIssueBucket } from "../warc-issue-bucket.js";
 import type { MsgParams } from "../../i18n/translate.js";
-import type { WaczReader } from "../../wacz/reader.js";
 
 const RULE = "browserhive/trace-shape";
 
@@ -100,40 +98,6 @@ const json = (v: unknown): string => (v === undefined ? "undefined" : JSON.strin
 
 /** 0 以上の整数か。 */
 const isCount = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
-
-/** `archive/` の `response` の記録 1 つ。 */
-interface ResponseRecord {
-  readonly entry: string;
-  readonly offset: number;
-  readonly url: string;
-  /** `WARC-Date` の字そのまま。無ければ `undefined`。 */
-  readonly date: string | undefined;
-}
-
-/**
- * `archive/` の全部の本から、`response` の記録を集める。鍵は `WARC-Record-ID` の URI（山括弧なし —— 行の
- * `record` と同じ形）。同じ ID の記録が 2 つ在れば、先の物を残す。
- */
-const readResponses = async (wacz: WaczReader): Promise<Map<string, ResponseRecord>> => {
-  const responses = new Map<string, ResponseRecord>();
-  for (const entry of wacz.warcEntries()) {
-    const buf = await wacz.readEntry(entry);
-    if (buf === undefined) continue;
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null || getHeader(record, "WARC-Type")?.toLowerCase() !== "response") continue;
-      const id = getHeader(record, "WARC-Record-ID")?.replace(/^<(.*)>$/, "$1");
-      if (id === undefined || responses.has(id)) continue;
-      responses.set(id, {
-        entry,
-        offset: member.offset,
-        url: getHeader(record, "WARC-Target-URI") ?? "?",
-        date: getHeader(record, "WARC-Date"),
-      });
-    }
-  }
-  return responses;
-};
 
 export const browserhiveTraceShapeRule: ValidationRule = {
   name: "browserhive/trace-shape",

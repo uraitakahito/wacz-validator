@@ -39,9 +39,11 @@ export interface Mutation {
 export const DATAPACKAGE = "datapackage.json";
 export const AXTREE = "accessibility/axtree.jsonl";
 export const TRACE = "trace/events.jsonl";
+export const RANDOM = "random/values.jsonl";
 
 interface Datapackage {
   "browserhive:capture"?: { tls?: TlsMember };
+  resources?: { path?: unknown }[];
   [key: string]: unknown;
 }
 
@@ -85,31 +87,45 @@ const onAxtree = (
   },
 });
 
-/**
- * `trace/events.jsonl` の行を書き換える壊し方を包む。`mutate` は行の配列をその場で変える。
- *
- * 相手は BrowserHive WACZ Profile 1.23.0 以上を名乗る WACZ —— それより前を名乗る WACZ は trace を持たず、
- * break-wacz が「エントリがありません」で止める。
- */
-const onTraceLines = (
+/** JSON Lines のエントリ `target` の行を書き換える壊し方を包む。`mutate` は行の配列をその場で変える。 */
+const onJsonLines = (
+  target: string,
   name: string,
   expects: string,
   mutate: (lines: Record<string, unknown>[]) => string,
 ): Mutation => ({
   name,
   expects,
-  target: TRACE,
+  target,
   apply: (data) => {
     const lines = data
       .toString("utf8")
       .split("\n")
       .filter((l) => l.trim() !== "")
       .map((l) => JSON.parse(l) as Record<string, unknown>);
-    if (lines.length === 0) throw new Error("trace/events.jsonl に行がありません。この壊し方は使えません");
+    if (lines.length === 0) throw new Error(`${target} に行がありません。この壊し方は使えません`);
     const what = mutate(lines);
     return { data: Buffer.from(lines.map((l) => `${JSON.stringify(l)}\n`).join(""), "utf8"), what };
   },
 });
+
+/**
+ * `trace/events.jsonl` の行を書き換える壊し方を包む。
+ *
+ * 相手は BrowserHive WACZ Profile 1.23.0 以上を名乗る WACZ —— それより前を名乗る WACZ は trace を持たず、
+ * break-wacz が「エントリがありません」で止める。
+ */
+const onTraceLines = (name: string, expects: string, mutate: (lines: Record<string, unknown>[]) => string): Mutation =>
+  onJsonLines(TRACE, name, expects, mutate);
+
+/**
+ * `random/values.jsonl` の行を書き換える壊し方を包む。
+ *
+ * 相手は BrowserHive WACZ Profile 1.26.0 以上を名乗り、乱数を控えた（`browserhive:capture.random.recorded` が
+ * true の）WACZ —— ほかの WACZ はこのエントリを持たず、break-wacz が「エントリがありません」で止める。
+ */
+const onRandomLines = (name: string, expects: string, mutate: (lines: Record<string, unknown>[]) => string): Mutation =>
+  onJsonLines(RANDOM, name, expects, mutate);
 
 /** 木の最初のノードを返す(壊す相手として)。 */
 const firstNode = (snapshot: Record<string, unknown>): Record<string, unknown> => {
@@ -233,5 +249,29 @@ export const MUTATIONS: readonly Mutation[] = [
     target: TRACE,
     // 要約はそのまま。エントリと resources の行だけが消える。
     apply: () => ({ data: null, what: "trace/events.jsonl をエントリごと抜いた(resources の行も)" }),
+  },
+
+  onRandomLines("random-drop-draw", "browserhive/random-shape.count", (lines) => {
+    // 要約 (browserhive:capture.random.draws) はそのまま。最後の値の行を抜く —— その文書の最後の値の行なので、
+    // 残った行の seq は 0 から 1 つずつのまま（途中の行を抜くと seq-order も一緒に出る）。
+    const at = lines.findLastIndex((l) => l["kind"] === "draw");
+    if (at === -1) throw new Error("random/values.jsonl に値の行がありません。この壊し方は使えません");
+    lines.splice(at, 1);
+    return `${String(at + 1)} 行目（最後の値の行）を抜いた`;
+  }),
+  {
+    name: "random-drop-resource",
+    expects: "browserhive/random-shape.not-in-resources",
+    target: DATAPACKAGE,
+    apply: (data) => {
+      // エントリはそのまま。datapackage.json の resources から、その行だけを落とす。
+      const dp = JSON.parse(data.toString("utf8")) as Datapackage;
+      const resources = dp.resources ?? [];
+      if (!resources.some((r) => r.path === RANDOM)) {
+        throw new Error("resources に random/values.jsonl がありません。この壊し方は使えません");
+      }
+      dp.resources = resources.filter((r) => r.path !== RANDOM);
+      return { data: Buffer.from(`${JSON.stringify(dp, null, 2)}\n`, "utf8"), what: "resources から random/values.jsonl の行を落とした(エントリは残す)" };
+    },
   },
 ];

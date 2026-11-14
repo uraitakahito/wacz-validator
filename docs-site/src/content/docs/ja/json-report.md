@@ -76,7 +76,7 @@ producer バグが上の方に上がります。
 WARC 1.1 の記録を見る `warc/*` の rule は、本の全部の記録で同じものを見つけることがあります。`browserhive/redacted-records` も同じです。
 そのときは同じ本・同じ message の issue を 4 件まで出し、4 件目の `params.more` に、出さなかった残りの件数を入れます。
 その issue の `message` の末尾には「（同じ本にほか N 件）」が付きます。
-`browserhive/trace-shape` は、`trace/events.jsonl` の全部の行で同じものを見つけることがあり、同じまとめ方をします。
+`browserhive/trace-shape` は `trace/events.jsonl` の、`browserhive/random-shape` は `random/values.jsonl` の全部の行で同じものを見つけることがあり、同じまとめ方をします。
 こちらの `message` の末尾は「（同じファイルにほか N 件）」です。
 `summary` が数えるのは report に出した issue で、見つけた回数ではありません。
 
