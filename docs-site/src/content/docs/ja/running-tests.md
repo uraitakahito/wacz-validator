@@ -85,7 +85,7 @@ UI を開いたあとは、検索欄に `tag:frictionless` と打っても同じ
 語彙が `vitest.config.ts` ではなく独立したファイルにあるのは、**走らせ方が 2 通りある**
 ためです ―― `pnpm test:ui` はルートの config を通りますが、`pnpm test`（＝ `pnpm -r test`）と
 `pnpm check` は**各パッケージの config しか読みません**。`test-tags.ts` を
-ルートと 3 パッケージの config が読むことで、どちらの経路でも同じ語彙が見えます。
+ルートの config と各パッケージの config が読むことで、どちらの経路でも同じ語彙が見えます。
 
 ファイル全体ではなく 1 件だけに付けたいときは、テスト側の options を使います ――
 `it("…", { tags: ["frictionless"] }, () => {…})`。
@@ -112,13 +112,13 @@ pnpm test:ui --tagsFilter 'docs && i18n'
 （`tag:` の後ろは `--tagsFilter` と同じ式が書けます）。
 どのタグがあるかは [観点で絞る](#観点で絞る) の表か `pnpm exec vitest --listTags` で。
 
-`core`・`daemon`・`tui` を**1 つの画面**に集めます。ルートの `vitest.config.ts` が
+テストを持つパッケージすべてを**1 つの画面**に集めます。ルートの `vitest.config.ts` が
 `projects` で各パッケージの config を指しているだけなので、`include` や
 `environment` の定義はパッケージ側の 1 か所のままです ―― UI 用に設定が
 二重化することはありません。
 
 `pnpm test` は変わらず `pnpm -r test` を通ります。**両者が走らせる集合は同じ**で、
-それは合計が一致することで確かめてあります（190 passed / 10 skipped）。
+それは passed と skipped の合計が一致することで確かめてあります。
 
 `pnpm test:report` は `.vitest/` に静的レポートを出します。
 **`file://` では開けません** ―― `npx vite preview --outDir .vitest` のように配信してください。
@@ -142,13 +142,8 @@ pnpm test:ui --tagsFilter 'docs && i18n'
 [wacz-validator-corpus](https://uraitakahito.github.io/wacz-validator-corpus/ja/) リポジトリの**実物の WACZ** を検証するものです。
 アーカイブ本体が要るので `CORPUS_DIR` を読み、**未設定なら skip します**。
 
-```
-Test Files  20 passed | 2 skipped (22)
-      Tests  113 passed | 4 skipped (117)
-```
-
-通常の `pnpm check` はこう見えます。この skip があるおかげで、日常のコマンドは
-外部に依存しないままでいられます。
+通常の `pnpm check` では、通ったテストの隣に `skipped` として集計に並びます。この skip が
+あるおかげで、日常のコマンドは外部に依存しないままでいられます。
 
 走らせるには、corpus を**固定してあるバージョンで**このリポジトリの隣に
 クローンし、

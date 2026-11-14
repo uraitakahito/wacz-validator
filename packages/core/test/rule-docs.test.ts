@@ -77,10 +77,13 @@ describe("rule docs", () => {
   });
 
   it("WACZ を指すリンクは和訳の URL も持つ", () => {
-    // 和訳があるのは WACZ だけ(17 本)で、WARC 3 / data-package 3 /
-    // data-resource 2 は本家しか無い。アンカーは本家と同じなので ja を足す
-    // のは URL の前半を差し替えるだけ — 逆に言えば書き忘れても何も壊れず、
-    // 日本語の読者だけが黙って英語の spec に飛ばされる。
+    // 見るのは、本家の WACZ (`/wacz/`) を指すリンクが和訳の URL も持つこと。アンカーは
+    // 本家と同じなので ja を足すのは URL の前半を差し替えるだけ — 逆に言えば書き忘れても
+    // 何も壊れず、日本語の読者だけが黙って英語の spec に飛ばされる。
+    //
+    // BrowserHive の 2 つの仕様 (WACZ Profile・WARC Profile) と WACZ Auth を指すリンクも ja を
+    // 持つが、ここでは見ない。WARC 1.1 と Data Package (data-package・data-resource) は和訳が
+    // 無く、en だけを持つ。
     for (const { rule, doc } of allLinks) {
       if (!doc.url.en.includes("/wacz/")) continue;
       expect(doc.url.ja, `${rule}: ${doc.label}`).toBeDefined();

@@ -12,13 +12,17 @@
  * インすると assertion が opaque になる ("ファイルが変わったので
  * test が壊れた")。generator なら diff が review 可能。
  *
- * レイアウトは browserhive の `src/storage/wacz/packager.ts` に従う:
+ * 既定のレイアウトは、この generator が決めた最小の形:
  *
  *   archive/data.warc.gz       STORE
  *   pages/pages.jsonl          DEFLATE
  *   indexes/index.cdxj         DEFLATE
  *   fuzzy.json                 DEFLATE
  *   datapackage.json           DEFLATE
+ *
+ * いまの BrowserHive の packager (`src/storage/wacz/packager.ts`) が書く形とは違う。
+ * BrowserHive は `archive/data-000.browserhive.warc.gz` を書き、`fuzzy.json` を持たない。
+ * `archive/` の名前は `warcName` で BrowserHive の形に寄せられる。
  */
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";

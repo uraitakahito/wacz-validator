@@ -16,7 +16,7 @@ name: site
 #
 #
 # Security: read-only check. It never deploys and references no secrets, so
-# running on pull_request (including from forks) is safe — unlike docs.yaml.
+# running on pull_request (including from forks) is safe — unlike docs.yml.
 
 on:
   push:
