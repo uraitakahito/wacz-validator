@@ -88,8 +88,8 @@ test executes.
 The vocabulary sits in its own file rather than in `vitest.config.ts` because
 there are **two ways to run these tests**: `pnpm test:ui` goes through the root
 config, while `pnpm test` (`pnpm -r test`) and `pnpm check` read only the
-per-package configs. `test-tags.ts` is imported by the root and all three
-package configs, so both paths see the same vocabulary.
+per-package configs. `test-tags.ts` is imported by the root config and every
+package config, so both paths see the same vocabulary.
 
 To tag one test rather than a whole file, use the test's own options:
 `it("…", { tags: ["frictionless"] }, () => {…})`. `rule-docs.test.ts` is the
@@ -117,14 +117,14 @@ box — anything after `tag:` is the same expression `--tagsFilter` takes. For
 what tags exist, see the table under [Filtering by concern](#filtering-by-concern)
 or run `pnpm exec vitest --listTags`.
 
-Shows `core`, `daemon` and `tui` **in one screen**. The root `vitest.config.ts`
+Shows every package that has tests **in one screen**. The root `vitest.config.ts`
 does nothing but point `projects` at the per-package configs, so `include` and
 `environment` stay defined in one place each — the UI does not fork the
 configuration.
 
 `pnpm test` is unchanged and still goes through `pnpm -r test`. **Both run the
-same set**, which was checked by comparing the totals (190 passed / 10 skipped
-either way).
+same set**, which was checked by comparing the totals of passed and skipped
+tests.
 
 `pnpm test:report` writes a static report into `.vitest/`. It **cannot be opened
 over `file://`** — serve it, e.g. `npx vite preview --outDir .vitest`.
@@ -147,15 +147,10 @@ longer — cheap gates first.
 
 `@wacz-validator/core` carries a second kind of test: it validates **real WACZ archives**
 from the [wacz-validator-corpus](https://uraitakahito.github.io/wacz-validator-corpus/) repository rather than fixtures built inline.
-Those need the archives, so they read `CORPUS_DIR` and **skip when it is unset**:
+Those need the archives, so they read `CORPUS_DIR` and **skip when it is unset**.
 
-```
-Test Files  20 passed | 2 skipped (22)
-      Tests  113 passed | 4 skipped (117)
-```
-
-That is what a normal `pnpm check` looks like. The skip is why the routine
-command stays hermetic.
+In a normal `pnpm check` they show up as `skipped` in the summary, beside the
+tests that passed. The skip is why the routine command stays hermetic.
 
 To run them, clone the corpus beside this repository **at the pinned version**,
 then point at it with an **absolute** path:

@@ -12,19 +12,20 @@ import type { TestTagDefinition } from "vitest/config";
  * path (`pnpm --filter @wacz-validator/core check`).
  *
  * No `timeout` or `retry` on any of these, which is half of what Vitest's tags
- * are for. The whole suite is ~200 tests in 3.5s, so no class of test here
- * wants a different execution policy. What these buy is being able to ask
+ * are for: no class of test here wants a different execution policy.
+ * What these buy is being able to ask
  * "which tests cover this concern?" — a question neither file names nor
  * directories answer, because concerns overlap and the file naming does not
  * agree with itself (`frictionless-schema.test.ts` sits beside
  * `datapackage-frictionless-structure.test.ts`).
  *
- * Deliberately not one tag per rule. Only a handful of rules have a test file
- * named after them; the rest are covered inside `validate.test.ts` and the
- * corpus suite, so a rule-level vocabulary would be mostly names with nothing
- * behind them. (Counts used to be written here and rotted — 22 rules became
- * 31 while the sentence stood still — so this comment now states the shape,
- * not the numbers.)
+ * Deliberately not one tag per rule. Not every rule has a test file named
+ * after it: some share one with their neighbours
+ * (`browserhive-settle.test.ts`), and the rest are covered inside broader
+ * files (`validate.test.ts`) and the corpus suite, so a rule-level vocabulary
+ * would carry names with no file of their own behind them. (Counts used to be
+ * written here and rotted — 22 rules became 31 while the sentence stood
+ * still — so this comment now states the shape, not the numbers.)
  */
 export const TEST_TAGS: TestTagDefinition[] = [
   { name: "frictionless", description: "The Data Package base WACZ is built on" },
