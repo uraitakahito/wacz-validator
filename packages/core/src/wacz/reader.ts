@@ -66,13 +66,13 @@ export class WaczReader {
 
   /**
    * transport から `ZipFile` をもらって `WaczReader` を組み立てる薄い
-   * factory。「どう開くか」(file / s3 / 将来の transport) は
+   * factory。「どう開くか」(file / http / s3 / 将来の transport) は
    * `WaczTransport` 実装が持ち、ここは transport-agnostic。reader の
    * identity (`source`) も `transport.source` から取る。
    *
    * raw な string (CLI argv 等) から開きたい場合は `parseReportSource`
-   * で `ReportSource` を得て `fileTransport` / `s3Transport` を選ぶ
-   * (cli.ts の `openWacz` 参照)。
+   * で `ReportSource` を得て `fileTransport` / `httpTransport` /
+   * `s3Transport` を選ぶ (@wacz-validator/validate-cli の `openWacz` 参照)。
    */
   static async open(transport: WaczTransport): Promise<WaczReader> {
     const zip = await transport.openZip();
@@ -81,7 +81,7 @@ export class WaczReader {
 
   /**
    * 開いた `ZipFile` から entries map を作って `WaczReader` を組み立てる
-   * 共通処理。file / s3 の 2 path どちらでも、 ZIP handle 取得まで終われば
+   * 共通処理。どの transport でも、 ZIP handle 取得まで終われば
    * あとは同じ手順 (ZIP の async iterator を 1 回 drain して filename →
    * Entry の Map にする) になるので、ここに集約する。
    */

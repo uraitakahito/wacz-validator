@@ -2,7 +2,7 @@
  * WaczTransport
  *
  * 「WACZ の `ZipFile` をどう得るか」を表す値。 transport ごとに名前付き
- * factory (`fileTransport` / `s3Transport`) で生成する。
+ * factory (`fileTransport` / `httpTransport` / `s3Transport`) で生成する。
  * `WaczReader.open(transport)` はこの `openZip()` を呼ぶだけで、
  * transport の種別を知らない — 多態は transport 値が担う。
  *
@@ -35,7 +35,8 @@ export interface WaczTransport {
  * identity ({@link S3Source}) に接続設定 `forcePathStyle` を足した、open
  * に使う「解決済み」 source。 runtime 専用で、 wire format (`Report.source`)
  * には出さない (`s3Transport` が identity に剥がす)。 forcePathStyle の
- * env / CLI flag 解決は cli.ts の責務で、 ここには resolved な boolean が届く。
+ * env / CLI flag 解決は CLI の入口 (validate-cli と tui) の責務で、 ここには
+ * resolved な boolean が届く。
  */
 export interface ResolvedS3Source extends S3Source {
   /** path-style addressing を強制するか (bundled SeaweedFS / MinIO 等)。 */

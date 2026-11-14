@@ -8,7 +8,7 @@
  *
  * 呼び出し元は `s3Transport` (wacz/transport.ts) で、 `ResolvedS3Source`
  * が運んできた `forcePathStyle` を渡す。 env (`WACZ_VALIDATOR_S3_FORCE_PATH_STYLE`)
- * と CLI flag (`--s3-force-path-style`) の解決は cli.ts が行う
+ * と CLI flag (`--s3-force-path-style`) の解決は CLI の入口 (validate-cli と tui) が行う
  * (`process.env[...] === "true"` を commander の `.option` default にして、
  * flag が立てば上書き)。 `buildS3Client` 自身は env を知らない pure な
  * wrapper として保たれる。

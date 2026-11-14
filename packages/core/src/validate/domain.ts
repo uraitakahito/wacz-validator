@@ -242,20 +242,21 @@ export interface ReportStats {
  * 検証対象 WACZ の identity。`Report.source` および `WaczReader.source`
  * の wire format。
  *
- * `kind: "file"` は絶対パス、`kind: "s3"` は `s3://bucket/key` URI を
- * 表す。Brand 型 `AbsolutePath` / `S3Uri` を経由しないと構築できない
- * ので、relative path や malformed URI を Report に embed することは
- * compile / runtime のどちらでも防げる。
+ * `kind: "file"` は絶対パス、`kind: "s3"` は `s3://bucket/key` URI、
+ * `kind: "http"` は query を落とした `http(s)://` の URL を表す
+ * (union は下の {@link ReportSource})。Brand 型 `AbsolutePath` / `S3Uri` /
+ * `HttpUrl` を経由しないと構築できないので、relative path や malformed
+ * URI を Report に embed することは compile / runtime のどちらでも防げる。
  */
 declare const AbsolutePathBrand: unique symbol;
 export type AbsolutePath = string & { readonly [AbsolutePathBrand]: true };
 
 /**
- * parseReportSource / parseAbsolutePath / parseS3Uri が err variant
- * として返す失敗の集合。 caller (cli.ts) は kind で switch して
- * 種別ごとに message を組み立てる。 新しい transport (例: HTTP) を
- * 加えるときは ここに variant を 1 つ追加し、 formatParseSourceError
- * の switch が網羅性 chk で未対応に倒れる仕組みを利用する。
+ * parseReportSource / parseAbsolutePath / parseS3Uri / parseHttpUrl が
+ * err variant として返す失敗の集合。 message は formatParseSourceError が
+ * kind で switch して組み立てる。 新しい transport を加えるときは
+ * ここに variant を 1 つ追加し、 formatParseSourceError の switch が
+ * 網羅性 chk で未対応に倒れる仕組みを利用する。
  */
 export type ParseSourceError =
   | { kind: "invalid-s3-uri"; raw: string }
@@ -379,8 +380,9 @@ export const parseReportSource = (
 };
 
 /**
- * `ParseSourceError` を 1 行 message に変換する。 cli.ts (core / tui
- * 両方) が `CliOutcome.openFailed` の cause 用に呼ぶ。 switch が
+ * `ParseSourceError` を 1 行 message に変換する。
+ * @wacz-validator/validate-cli が `CliOutcome.openFailed` の cause 用に呼ぶ
+ * (daemon は message にせず `kind` をそのまま wire に載せる)。 switch が
  * exhaustive chk を発火するので、 `ParseSourceError` union に variant
  * を加えると ここで compile error が出て対応漏れを catch できる。
  */

@@ -44,7 +44,8 @@ flowchart LR
 The daemon holding no state is what makes that cheap: a second frontend is a new
 client, not a new copy of the engine. The second frontend exists — [Web Capture](https://uraitakahito.github.io/capture-ledger/#web-capture)'s
 [capture-workbench](https://github.com/uraitakahito/capture-workbench) talks to the same handlers over
-plain HTTP (`POST /validate`, `/lines`, `/line`, `/records`, `/record`, `/record/body`)
+plain HTTP (`POST /validate`, `/lines`, `/line`, `/records`, `/record`), plus
+`/record/body`, which exists over HTTP only,
 and never imports core. Where the TUI walks an archive's contents over the
 WebSocket, the workbench walks them over REST; both draw the tree from the same
 report and the same fields the daemon split.

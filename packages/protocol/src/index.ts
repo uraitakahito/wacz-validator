@@ -49,7 +49,11 @@ export type {
   WarcRecordSummary,
 } from "@wacz-validator/core";
 
-/** WACZ の在り処。案1 では URI のみ(`file://` / `s3://` / `https://`)。 */
+/**
+ * WACZ の在り処。案1 では URI のみ(`file://` / `s3://` / `http://` / `https://`)。
+ * daemon は scheme の無い文字列もパスとして受ける(`parseSourceUri` →
+ * core の `parseReportSource`)。
+ */
 export interface SourceRef {
   kind: "uri";
   uri: string;
