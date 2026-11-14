@@ -6,9 +6,13 @@ description: What --profile changes, and what it never changes.
 `--profile <name>` picks how strictly producer-specific and stylistic findings
 are graded. The default is `spec`.
 
-A profile **re-grades severities. It never suppresses a check the spec
-requires** — a `MUST` violation is still reported under every profile, even if
-`lenient` prints it as `info`.
+A profile does two things. It **re-grades severities**, and it **decides which
+rules run**: a rule can name profiles it does not run under. The rules for
+BrowserHive's own conventions (`browserhive/*`) run only under `browserhive`,
+and the two Data Package rules (`datapackage/frictionless-structure`, a `MUST`,
+and `datapackage/frictionless-schema`, a `SHOULD`) do not run under `lenient`.
+Every other rule runs under every profile, so any other `MUST` violation is
+still reported, even where `lenient` prints it as `info`.
 
 ## The three profiles
 
@@ -90,7 +94,8 @@ the version it names.
 ### `lenient`
 
 Demotes every producer-specific and stylistic finding to `info`, leaving only
-the hard errors that break replay.
+the hard errors that break replay. The two Data Package rules do not run at all
+under it.
 
 Use it to triage legacy archives, where the question is not "is this correct?"
 but "is this salvageable?"

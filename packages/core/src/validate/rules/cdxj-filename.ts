@@ -16,9 +16,9 @@
  * Replay engine: wabac.js の WACZ file resolver (`wacz/multiwacz.ts`
  *       の loadFileFromNamedWACZ 参照) は、ZIP から fetch する前に
  *       CDXJ の filename に `archive/` を付ける。
- * Reference producer: browserhive/src/storage/wacz/packager.ts:36-44
- *       で定数名が `WARC_FILENAME_FOR_CDX` で、コメントに同じ落とし
- *       穴が説明されている。
+ * Reference producer: browserhive は CDXJ の filename に WARC の本の
+ *       名前だけを書く (browserhive/src/storage/wacz/cdxj.ts の
+ *       注記「`filename` の意味」。値は `RecordedResponse.filename`)。
  *
  * 何を報告するか:
  *   - `filename` が `archive/` で始まる CDXJ entry → error
