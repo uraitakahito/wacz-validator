@@ -19,10 +19,23 @@ const tls = (): TlsMember => ({
   chains: { aaa: ["leaf-a", "inter-a"], bbb: ["leaf-b", "inter-b"] },
 });
 
-/** tls と、乱数の控えを載せた resources。どの datapackage.json の壊し方も適用できる。 */
-const datapackageBytes = (member: TlsMember = tls()): Buffer =>
+/** 書いた子 2 つ（2 は 1 の下）と、書かなかった子 1 つを持つ写しの項目。 */
+const snapshots = (): Record<string, unknown>[] => [
+  {
+    stage: "after-load",
+    record: "urn:uuid:00000000-0000-0000-0000-000000000300",
+    frames: [
+      { frame: 1, parent: 0, url: "urn:browserhive:frame-snapshot:after-load:1:https://site.test/a", record: "urn:uuid:00000000-0000-0000-0000-000000000301" },
+      { frame: 2, parent: 1, url: "urn:browserhive:frame-snapshot:after-load:2:https://site.test/b", record: "urn:uuid:00000000-0000-0000-0000-000000000302" },
+      { frame: 3, parent: 0, skipped: "withheld" },
+    ],
+  },
+];
+
+/** tls・写しの項目と、乱数の控えを載せた resources。どの datapackage.json の壊し方も適用できる。 */
+const datapackageBytes = (member: TlsMember = tls(), items: unknown = snapshots()): Buffer =>
   Buffer.from(
-    `${JSON.stringify({ resources: [{ path: "random/values.jsonl" }, { path: "random/recorder.js" }], "browserhive:capture": { tls: member } }, null, 2)}\n`,
+    `${JSON.stringify({ resources: [{ path: "random/values.jsonl" }, { path: "random/recorder.js" }], "browserhive:capture": { tls: member, snapshots: items } }, null, 2)}\n`,
     "utf8",
   );
 
@@ -74,7 +87,7 @@ describe("MUTATIONS", () => {
 
   it("すべてが messageKey を名乗る", () => {
     for (const m of MUTATIONS) {
-      expect(m.expects).toMatch(/^browserhive\/(tls-(chain|san)|axtree-shape|trace-shape|random-shape)\./);
+      expect(m.expects).toMatch(/^browserhive\/(tls-(chain|san)|axtree-shape|trace-shape|random-shape|frame-snapshots)\./);
     }
   });
 
@@ -211,6 +224,25 @@ describe("random の壊し方", () => {
     const { data } = MUTATIONS.find((m) => m.name === "random-drop-resource")?.apply(datapackageBytes()) ?? { data: null };
     const after = JSON.parse(data?.toString("utf8") ?? "{}") as { resources?: unknown; "browserhive:capture"?: unknown };
     expect(after.resources).toEqual([{ path: "random/recorder.js" }]);
-    expect(after["browserhive:capture"]).toEqual({ tls: tls() });
+    expect(after["browserhive:capture"]).toEqual({ tls: tls(), snapshots: snapshots() });
+  });
+});
+
+describe("子フレームの写しの壊し方", () => {
+  it("frame-skip-written は、最後に書いた子だけを書かなかった子(failed)にする", () => {
+    const { data } = MUTATIONS.find((m) => m.name === "frame-skip-written")?.apply(datapackageBytes()) ?? { data: null };
+    const after = JSON.parse(data?.toString("utf8") ?? "{}") as { "browserhive:capture"?: { snapshots?: unknown } };
+    const [item] = snapshots();
+    const frames = (item?.["frames"] ?? []) as Record<string, unknown>[];
+    expect(after["browserhive:capture"]?.snapshots).toEqual([
+      { ...item, frames: [frames[0], { frame: 2, parent: 1, skipped: "failed" }, frames[2]] },
+    ]);
+  });
+
+  it("書いた子がどこにも無ければ frame-skip-written は throw する", () => {
+    const skip = MUTATIONS.find((m) => m.name === "frame-skip-written");
+    expect(skip).toBeDefined();
+    expect(() => skip?.apply(datapackageBytes(tls(), [{ stage: "after-load", frames: [{ frame: 1, parent: 0, skipped: "withheld" }] }]))).toThrow();
+    expect(() => skip?.apply(datapackageBytes(tls(), null))).toThrow();
   });
 });

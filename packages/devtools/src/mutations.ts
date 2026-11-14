@@ -42,7 +42,7 @@ export const TRACE = "trace/events.jsonl";
 export const RANDOM = "random/values.jsonl";
 
 interface Datapackage {
-  "browserhive:capture"?: { tls?: TlsMember };
+  "browserhive:capture"?: { tls?: TlsMember; snapshots?: unknown };
   resources?: { path?: unknown }[];
   [key: string]: unknown;
 }
@@ -272,6 +272,37 @@ export const MUTATIONS: readonly Mutation[] = [
       }
       dp.resources = resources.filter((r) => r.path !== RANDOM);
       return { data: Buffer.from(`${JSON.stringify(dp, null, 2)}\n`, "utf8"), what: "resources から random/values.jsonl の行を落とした(エントリは残す)" };
+    },
+  },
+  {
+    name: "frame-skip-written",
+    expects: "browserhive/frame-snapshots.unlisted",
+    target: DATAPACKAGE,
+    apply: (data) => {
+      // 子の写しの resource はそのまま。datapackage の frames で、最後に書いた子を「書かなかった子」(failed) に
+      // 書き換える —— その resource はどの項目にも名指されなくなる。最後に書いた子を選ぶのは、前順の並びで
+      // その後ろに書いた子孫が無いから(親を書かなかった子、の指摘が一緒に出ない)。親の写しの属性は残るので、
+      // attribute-stray も一緒に出る。
+      const dp = JSON.parse(data.toString("utf8")) as Datapackage;
+      const snapshots = dp["browserhive:capture"]?.snapshots;
+      const items = Array.isArray(snapshots) ? (snapshots as unknown[]) : [];
+      for (const item of items) {
+        if (typeof item !== "object" || item === null) continue;
+        const frames = (item as Record<string, unknown>)["frames"];
+        if (!Array.isArray(frames)) continue;
+        const at = frames.findLastIndex(
+          (f: unknown) => typeof f === "object" && f !== null && (f as Record<string, unknown>)["skipped"] === undefined,
+        );
+        if (at === -1) continue;
+        const entry = frames[at] as Record<string, unknown>;
+        frames[at] = { frame: entry["frame"], parent: entry["parent"], skipped: "failed" };
+        const stage = String((item as Record<string, unknown>)["stage"]);
+        return {
+          data: Buffer.from(`${JSON.stringify(dp, null, 2)}\n`, "utf8"),
+          what: `${stage} の frames で、最後に書いた子 ${String(entry["frame"])} を書かなかった子(failed)にした(resource は残す)`,
+        };
+      }
+      throw new Error("snapshots の frames に書いた子がありません。この壊し方は使えません");
     },
   },
 ];

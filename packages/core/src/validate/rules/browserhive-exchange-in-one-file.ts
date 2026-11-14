@@ -15,7 +15,8 @@
  *
  * **DOM の写しの組も同じ本に在る** (WARC Profile 1.1.0 の Records and files)。写しの `metadata` は `resource` を
  * `WARC-Refers-To` で指すので、交信の metadata と同じ道で見つかる。組の metadata がどの本にも無いことは
- * `browserhive/snapshots` が言う。
+ * `browserhive/snapshots` が言う。子フレームの写しの組（WARC Profile 1.5.0）も同じ形で、同じ道で見つかる。組の
+ * metadata がどの本にも無いことは `browserhive/frame-snapshots` が言う。
  *
  * **スクリーンショットの組も同じ本に在る** (WARC Profile 1.3.0 の Records and files)。写しと同じ形 —— `metadata` が
  * `resource` を `WARC-Refers-To` で指す —— なので、同じ道で見つかる。組の metadata がどの本にも無いことは

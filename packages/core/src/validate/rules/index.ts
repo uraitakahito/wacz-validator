@@ -25,6 +25,7 @@ import { browserhiveWaczNameRule } from "./browserhive-wacz-name.js";
 import { browserhiveExchangeInOneFileRule } from "./browserhive-exchange-in-one-file.js";
 import { browserhiveWarcinfoDeclaresProfileRule } from "./browserhive-warcinfo-declares-profile.js";
 import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
+import { browserhiveFrameSnapshotsRule } from "./browserhive-frame-snapshots.js";
 import { browserhiveScreenshotsRule } from "./browserhive-screenshots.js";
 import { browserhiveRedactedRecordsRule } from "./browserhive-redacted-records.js";
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
@@ -167,6 +168,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // DOM の写しが、snapshots・WARC の resource と metadata の組・ページ一覧・索引で辻褄が合い、script を持たないか
   // (WACZ Profile 1.17.0・WARC Profile 1.1.0)。
   browserhiveSnapshotsRule,
+  // 子フレームの写しが、snapshots の frames・WARC の resource と metadata の組・親の写しの属性・索引で辻褄が合い、
+  // ページ一覧に載らず、script を持たないか (WACZ Profile 1.27.0・WARC Profile 1.5.0)。
+  browserhiveFrameSnapshotsRule,
   // 時点ごとのスクリーンショットが、screenshots・WARC の resource と metadata の組・索引で辻褄が合い、絵を持っては
   // ならない package が絵を持たず、block が WebP の静止画か (WACZ Profile 1.24.0・WARC Profile 1.3.0)。
   browserhiveScreenshotsRule,

@@ -28,6 +28,10 @@
  * **組の metadata が resource と別の本に在ることは、ここでは言わない。** それは `browserhive/exchange-in-one-file`
  * が言う（WARC Profile 1.1.0 の Records and files）。ここで言うのは、どの本にも無いときだけ。
  *
+ * **子フレームの写しは見ない。** WACZ Profile 1.27.0 の子フレームの写し（`urn:browserhive:frame-snapshot:`）と、
+ * 項目の `frames`・`frameCounts` は `browserhive/frame-snapshots` が見る。頭が違うので、ここの「名指さない写し」にも
+ * 入らない。
+ *
  * **読めない物には照らさない。** `settings.behaviors` が読めなければ時点の並びを、ページ一覧に JSON として読めない
  * 行が在ればページ一覧を見ない。それぞれ `browserhive/settings-shape` と `pages/page-schema` が言う。索引や
  * ページ一覧の不在は `wacz/required-files` が言う。
@@ -42,15 +46,20 @@
  *   https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots
  */
 import { ok } from "../../result.js";
-import { parseCdxj, type CdxjEntry } from "../../wacz/cdxj-parser.js";
 import { fieldRecord, parseWarcFieldsBody } from "../../wacz/named-fields.js";
-import type { WaczReader } from "../../wacz/reader.js";
-import { getHeader, parseWarcRecord, type ParsedWarcRecord } from "../../wacz/warc-header.js";
-import { iterateWarcMembers } from "../../wacz/warc-iter.js";
+import { getHeader } from "../../wacz/warc-header.js";
 import { hasScriptElement } from "../browserhive-snapshot-html.js";
 import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import { datapackageOf } from "../datapackage-source.js";
 import type { Issue, IssueLocation, ValidationRule } from "../domain.js";
+import {
+  indexLinesOf,
+  metadataOf,
+  readIndexLines,
+  readPageLines,
+  readSnapshotRecords,
+  type Located,
+} from "../snapshot-records.js";
 
 const RULE = "browserhive/snapshots";
 const DATAPACKAGE = "datapackage.json";
@@ -61,13 +70,6 @@ const CDXJ_ENTRY = "indexes/index.cdxj";
 const SNAPSHOT_URI = "urn:browserhive:snapshot:";
 /** 撮らなかった理由（WACZ Profile 1.17.0）。 */
 const SKIPPED_REASONS: ReadonlySet<string> = new Set(["withheld", "too-large", "task-budget", "failed"]);
-
-/** 本の中の記録 1 つ。落ちたときに名指す本と位置を持つ。 */
-interface Located {
-  readonly entry: string;
-  readonly offset: number;
-  readonly record: ParsedWarcRecord;
-}
 
 /** 撮った項目と、その `record` の名指す resource（無ければ `undefined`）。ページ一覧と索引はこれに照らす。 */
 interface Taken {
@@ -86,76 +88,6 @@ const shownNumber = (v: unknown): string => (typeof v === "number" ? String(v) :
 
 /** 型の名。落ちたときに何が在ったかを言うため。 */
 const typeName = (v: unknown): string => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
-
-/**
- * archive の全部の本を 1 度読み、resource を `WARC-Record-ID` で、metadata を `WARC-Refers-To` で引けるようにする。
- * 写しの resource（`WARC-Target-URI` が urn の物）は、どれかの項目が名指しているかを見るために別にも並べる。
- */
-const readRecords = async (
-  wacz: WaczReader,
-): Promise<{
-  resources: Map<string, Located>;
-  snapshotResources: Located[];
-  metadataByTarget: Map<string, Located[]>;
-}> => {
-  const resources = new Map<string, Located>();
-  const snapshotResources: Located[] = [];
-  const metadataByTarget = new Map<string, Located[]>();
-  for (const entry of wacz.warcEntries()) {
-    const buf = await wacz.readEntry(entry);
-    if (buf === undefined) continue;
-    for (const member of iterateWarcMembers(buf, { loose: true })) {
-      const record = parseWarcRecord(member.raw);
-      if (record === null) continue;
-      const located: Located = { entry, offset: member.offset, record };
-      const type = (getHeader(record, "WARC-Type") ?? "").toLowerCase();
-      if (type === "resource") {
-        const id = getHeader(record, "WARC-Record-ID");
-        if (id !== undefined && !resources.has(id)) resources.set(id, located);
-        if ((getHeader(record, "WARC-Target-URI") ?? "").startsWith(SNAPSHOT_URI)) snapshotResources.push(located);
-      } else if (type === "metadata") {
-        const target = getHeader(record, "WARC-Refers-To");
-        if (target === undefined) continue;
-        const list = metadataByTarget.get(target);
-        if (list === undefined) metadataByTarget.set(target, [located]);
-        else list.push(located);
-      }
-    }
-  }
-  return { resources, snapshotResources, metadataByTarget };
-};
-
-/**
- * ページ一覧のページの行（header の次から）と、その行番号。JSON のオブジェクトとして読めない行が 1 つでも在れば
- * `null` —— 行の並びを照らせない（読めない行は `pages/page-schema` が言う）。
- */
-const readPageLines = (text: string): { line: number; page: Record<string, unknown> }[] | null => {
-  const pages: { line: number; page: Record<string, unknown> }[] = [];
-  let header = true;
-  for (const [i, raw] of text.split("\n").entries()) {
-    if (raw.trim() === "") continue;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-    if (header) {
-      header = false;
-      continue;
-    }
-    if (!isRecord(parsed)) return null;
-    pages.push({ line: i + 1, page: parsed });
-  }
-  return pages;
-};
-
-/** 索引の行と、その行番号。読めない行は飛ばす（`cdxj/index-valid-data` が言う）。 */
-const readIndexLines = (text: string): { line: number; entry: CdxjEntry }[] =>
-  text.split("\n").flatMap((raw, i) => {
-    const [entry] = parseCdxj(raw).entries;
-    return entry === undefined ? [] : [{ line: i + 1, entry }];
-  });
 
 export const browserhiveSnapshotsRule: ValidationRule = {
   name: "browserhive/snapshots",
@@ -236,7 +168,12 @@ export const browserhiveSnapshotsRule: ValidationRule = {
       }
     }
 
-    const { resources, snapshotResources, metadataByTarget } = await readRecords(wacz);
+    const records = await readSnapshotRecords(wacz);
+    const { resources } = records;
+    // 子フレームの写し（urn:browserhive:frame-snapshot:）は頭が違うので、ここには入らない。browserhive/frame-snapshots が見る。
+    const snapshotResources = records.resourceList.filter((r) =>
+      (getHeader(r.record, "WARC-Target-URI") ?? "").startsWith(SNAPSHOT_URI),
+    );
     const taken: Taken[] = [];
     const named = new Set<Located>();
     for (const item of items) {
@@ -276,8 +213,7 @@ export const browserhiveSnapshotsRule: ValidationRule = {
       }
 
       // 組の metadata。同じ本の物を先に見る。別の本にしか無ければ、それは browserhive/exchange-in-one-file が言う。
-      const candidates = metadataByTarget.get(getHeader(resource.record, "WARC-Record-ID") ?? "") ?? [];
-      const metadata = candidates.find((m) => m.entry === resource.entry) ?? candidates[0];
+      const metadata = metadataOf(records, resource);
       if (metadata === undefined) {
         issue("no-metadata", { stage, url: targetUri }, at(resource));
         continue;
@@ -371,18 +307,14 @@ export const browserhiveSnapshotsRule: ValidationRule = {
       }
     }
 
-    // 索引: 写しの resource を指す行が在り、鍵は WARC-Target-URI のまま、JSON に status が無い。行は鍵や url ではなく
-    // 指す記録で探す —— 写しの URI を文書の URL で書いた archive で、その文書の応答の行を写しの行と取り違えない。
+    // 索引: 写しの resource を指す行が在り、鍵は WARC-Target-URI のまま、JSON に status が無い。行は指す記録で探す。
     const cdxjBuf = await wacz.readEntry(CDXJ_ENTRY);
     if (cdxjBuf !== undefined) {
       const lines = readIndexLines(cdxjBuf.toString("utf-8"));
       for (const { stage, resource } of taken) {
         if (resource === undefined) continue;
         const uri = getHeader(resource.record, "WARC-Target-URI") ?? "";
-        const file = resource.entry.slice("archive/".length);
-        const rows = lines.filter(
-          ({ entry }) => entry.fields["filename"] === file && String(entry.fields["offset"]) === String(resource.offset),
-        );
+        const rows = indexLinesOf(lines, resource);
         if (rows.length === 0) {
           issue("not-indexed", { stage, url: uri }, { entry: CDXJ_ENTRY });
           continue;
