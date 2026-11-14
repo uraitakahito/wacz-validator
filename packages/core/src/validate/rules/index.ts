@@ -29,6 +29,7 @@ import { browserhiveScreenshotsRule } from "./browserhive-screenshots.js";
 import { browserhiveRedactedRecordsRule } from "./browserhive-redacted-records.js";
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
 import { browserhiveTraceShapeRule } from "./browserhive-trace-shape.js";
+import { browserhiveRandomShapeRule } from "./browserhive-random-shape.js";
 import { browserhiveUserAgentRecordedRule } from "./browserhive-user-agent-recorded.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
@@ -177,6 +178,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // 取り込みの trace trace/events.jsonl が在り、resources に載り、要約 (browserhive:capture.trace) と行の数が合い、
   // 各行が決まった member と値を持ち、record が archive/ の response を名指すか (WACZ Profile 1.23.0)。
   browserhiveTraceShapeRule,
+  // 乱数の控え random/values.jsonl・random/recorder.js が要約 (browserhive:capture.random) の recorded に合って在り、
+  // resources に載り、各行が決まった member と値を持ち、record が archive/ の response を名指すか (WACZ Profile 1.26.0)。
+  browserhiveRandomShapeRule,
   // settings.userAgent が、主文書の request レコードの User-Agent と同じか (WACZ Profile 1.20.0)。
   browserhiveUserAgentRecordedRule,
   browserhiveStorageInventoryRule,

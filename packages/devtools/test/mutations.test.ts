@@ -8,7 +8,7 @@
  * rule の欠陥に化けるので、そこを先に塞ぐ。
  */
 import { describe, expect, it } from "vitest";
-import { AXTREE, DATAPACKAGE, MUTATIONS, TRACE, type TlsMember } from "../src/mutations.js";
+import { AXTREE, DATAPACKAGE, MUTATIONS, RANDOM, TRACE, type TlsMember } from "../src/mutations.js";
 
 /** 2 host・2 チェーンの最小形。どの tls の壊し方も適用できる。 */
 const tls = (): TlsMember => ({
@@ -19,9 +19,10 @@ const tls = (): TlsMember => ({
   chains: { aaa: ["leaf-a", "inter-a"], bbb: ["leaf-b", "inter-b"] },
 });
 
+/** tls と、乱数の控えを載せた resources。どの datapackage.json の壊し方も適用できる。 */
 const datapackageBytes = (member: TlsMember = tls()): Buffer =>
   Buffer.from(
-    `${JSON.stringify({ "browserhive:capture": { tls: member } }, null, 2)}\n`,
+    `${JSON.stringify({ resources: [{ path: "random/values.jsonl" }, { path: "random/recorder.js" }], "browserhive:capture": { tls: member } }, null, 2)}\n`,
     "utf8",
   );
 
@@ -49,9 +50,21 @@ const traceLines = (): Record<string, unknown>[] => [
 const traceBytes = (lines: Record<string, unknown>[] = traceLines()): Buffer =>
   Buffer.from(lines.map((line) => `${JSON.stringify(line)}\n`).join(""), "utf8");
 
+/** 2 つの文書の行と、それぞれの値の行。どの random の壊し方も適用できる。 */
+const randomLines = (): Record<string, unknown>[] => [
+  { profile: "browserhive:random/1", kind: "document", document: 0, url: "https://site.test/", frame: "main", dpr: 1 },
+  { profile: "browserhive:random/1", kind: "draw", document: 0, seq: 0, api: "Math.random", caller: "", value: 0.5 },
+  { profile: "browserhive:random/1", kind: "document", document: 1, url: "https://site.test/frame", frame: "frame", dpr: 1 },
+  { profile: "browserhive:random/1", kind: "draw", document: 0, seq: 1, api: "Math.random", caller: "", value: 0.25 },
+  { profile: "browserhive:random/1", kind: "draw", document: 1, seq: 0, api: "Math.random", caller: "", value: 0.75 },
+];
+
+const randomBytes = (lines: Record<string, unknown>[] = randomLines()): Buffer =>
+  Buffer.from(lines.map((line) => `${JSON.stringify(line)}\n`).join(""), "utf8");
+
 /** その壊し方が想定している、壊せる入力。 */
 const inputFor = (target: string): Buffer =>
-  target === AXTREE ? axtreeBytes() : target === TRACE ? traceBytes() : datapackageBytes();
+  target === AXTREE ? axtreeBytes() : target === TRACE ? traceBytes() : target === RANDOM ? randomBytes() : datapackageBytes();
 
 describe("MUTATIONS", () => {
   it("名前が重複しない", () => {
@@ -61,14 +74,14 @@ describe("MUTATIONS", () => {
 
   it("すべてが messageKey を名乗る", () => {
     for (const m of MUTATIONS) {
-      expect(m.expects).toMatch(/^browserhive\/(tls-(chain|san)|axtree-shape|trace-shape)\./);
+      expect(m.expects).toMatch(/^browserhive\/(tls-(chain|san)|axtree-shape|trace-shape|random-shape)\./);
     }
   });
 
   it("対象は既知のエントリだけ", () => {
     // 存在しないエントリを名乗る壊し方は、実行時に「そんなファイルは無い」で
     // 終わる —— 壊した覚えのない失敗として読まれるので、ここで止める。
-    for (const m of MUTATIONS) expect([DATAPACKAGE, AXTREE, TRACE]).toContain(m.target);
+    for (const m of MUTATIONS) expect([DATAPACKAGE, AXTREE, TRACE, RANDOM]).toContain(m.target);
   });
 
   it.each(MUTATIONS.map((m) => [m.name, m] as const))(
@@ -98,9 +111,7 @@ describe("壊せない入力", () => {
 
   it("chainRef がどこにも無ければ tls の壊し方は throw する", () => {
     const none = datapackageBytes({ hosts: { "a.test": null }, chains: {} });
-    for (const m of MUTATIONS.filter(
-      (x) => x.target === DATAPACKAGE && x.name !== "san-drift",
-    )) {
+    for (const m of MUTATIONS.filter((x) => x.expects.startsWith("browserhive/tls-chain."))) {
       expect(() => m.apply(none)).toThrow();
     }
   });
@@ -142,6 +153,20 @@ describe("壊せない入力", () => {
     const rewrite = MUTATIONS.find((m) => m.name === "trace-rewrite-record");
     expect(() => rewrite?.apply(traceBytes(traceLines().slice(1)))).toThrow();
   });
+
+  it("値の行が無ければ random-drop-draw は throw する（行の無いエントリでも）", () => {
+    const drop = MUTATIONS.find((m) => m.name === "random-drop-draw");
+    expect(drop).toBeDefined();
+    expect(() => drop?.apply(randomBytes(randomLines().filter((l) => l["kind"] === "document")))).toThrow();
+    expect(() => drop?.apply(Buffer.from("\n", "utf8"))).toThrow();
+  });
+
+  it("resources に random/values.jsonl が無ければ random-drop-resource は throw する", () => {
+    const drop = MUTATIONS.find((m) => m.name === "random-drop-resource");
+    expect(drop).toBeDefined();
+    const without = Buffer.from(`${JSON.stringify({ resources: [{ path: "random/recorder.js" }] })}\n`, "utf8");
+    expect(() => drop?.apply(without)).toThrow();
+  });
 });
 
 describe("trace の壊し方", () => {
@@ -169,5 +194,23 @@ describe("trace の壊し方", () => {
 
   it("trace-drop-entry は、エントリごと抜く（null を返す）", () => {
     expect(MUTATIONS.find((m) => m.name === "trace-drop-entry")?.apply(traceBytes()).data).toBeNull();
+  });
+});
+
+describe("random の壊し方", () => {
+  it("random-drop-draw は、最後の値の行だけを抜く（文書の行と、ほかの値の行は残す）", () => {
+    const { data } = MUTATIONS.find((m) => m.name === "random-drop-draw")?.apply(randomBytes()) ?? { data: null };
+    const after = (data?.toString("utf8") ?? "")
+      .split("\n")
+      .filter((l) => l !== "")
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(after).toEqual(randomLines().slice(0, -1));
+  });
+
+  it("random-drop-resource は、resources の random/values.jsonl の行だけを落とす", () => {
+    const { data } = MUTATIONS.find((m) => m.name === "random-drop-resource")?.apply(datapackageBytes()) ?? { data: null };
+    const after = JSON.parse(data?.toString("utf8") ?? "{}") as { resources?: unknown; "browserhive:capture"?: unknown };
+    expect(after.resources).toEqual([{ path: "random/recorder.js" }]);
+    expect(after["browserhive:capture"]).toEqual({ tls: tls() });
   });
 });

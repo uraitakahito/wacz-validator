@@ -366,6 +366,21 @@ export interface FixtureOptions {
    */
   traceSummary?: unknown;
   /**
+   * `random/values.jsonl`（乱数の控え）の中身。オブジェクトの配列なら 1 行ずつ JSONL に、文字列ならそのまま書く
+   * (JSON として読めない行や、空のファイルを作るため)。resources にも載る。undefined ならエントリごと作らない ——
+   * WACZ Profile 1.26.0 で入り、`browserhive:capture.random.recorded` が true の package だけが持つ。
+   *
+   * 要約 (`browserhive:capture.random`) はここからは作らない。`randomSummary` で渡す。
+   */
+  randomValues?: Record<string, unknown>[] | string;
+  /** `random/recorder.js`（値を控えたコード）の中身。resources にも載る。undefined ならエントリごと作らない。 */
+  randomRecorder?: string;
+  /**
+   * `browserhive:capture.random` をそのまま書き込む。undefined なら member ごと書かない —— WACZ Profile 1.26.0 で
+   * 必須になったが、それより前の archive には無い。中身は検査しない。
+   */
+  randomSummary?: unknown;
+  /**
    * `storage/origins.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、
    * 文字列ならそのまま書く (JSON として読めない行を作るため)。
    */
@@ -1258,6 +1273,18 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
           "utf-8",
         );
 
+  const randomValuesBytes =
+    options.randomValues === undefined
+      ? undefined
+      : Buffer.from(
+          typeof options.randomValues === "string"
+            ? options.randomValues
+            : options.randomValues.map((line) => `${JSON.stringify(line)}\n`).join(""),
+          "utf-8",
+        );
+  const randomRecorderBytes =
+    options.randomRecorder === undefined ? undefined : Buffer.from(options.randomRecorder, "utf-8");
+
   const storageBytes =
     options.storageValues === undefined
       ? undefined
@@ -1349,6 +1376,26 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
             bytes: traceBytes.byteLength,
           },
         ]),
+    ...(randomValuesBytes === undefined
+      ? []
+      : [
+          {
+            name: "values.jsonl",
+            path: "random/values.jsonl",
+            hash: sha256Hex(randomValuesBytes),
+            bytes: randomValuesBytes.byteLength,
+          },
+        ]),
+    ...(randomRecorderBytes === undefined
+      ? []
+      : [
+          {
+            name: "recorder.js",
+            path: "random/recorder.js",
+            hash: sha256Hex(randomRecorderBytes),
+            bytes: randomRecorderBytes.byteLength,
+          },
+        ]),
   ];
 
   // omit 指定された MUST ファイルは resources 宣言からも落とす(実体と宣言を一致)。
@@ -1431,6 +1478,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
     capture["trace"] = options.traceSummary;
     datapackage["browserhive:capture"] = capture;
   }
+  if (options.randomSummary !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["random"] = options.randomSummary;
+    datapackage["browserhive:capture"] = capture;
+  }
   const datapackageBytes = Buffer.from(`${JSON.stringify(datapackage, null, 2)}\n`, "utf-8");
 
   // `archiver` を Buffer-collecting な Writable に pipe してメモリ上
@@ -1492,6 +1544,12 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   }
   if (traceBytes !== undefined) {
     zip.append(traceBytes, { name: "trace/events.jsonl", date: entryDate });
+  }
+  if (randomValuesBytes !== undefined) {
+    zip.append(randomValuesBytes, { name: "random/values.jsonl", date: entryDate });
+  }
+  if (randomRecorderBytes !== undefined) {
+    zip.append(randomRecorderBytes, { name: "random/recorder.js", date: entryDate });
   }
   if (axtreeBytes !== undefined) {
     zip.append(axtreeBytes, { name: "accessibility/axtree.jsonl", date: entryDate });

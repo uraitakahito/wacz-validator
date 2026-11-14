@@ -80,7 +80,8 @@ by rule without parsing prose:
 The `warc/*` rules that check WARC 1.1 records can find the same thing in every
 record of a file, and so can `browserhive/redacted-records`.
 `browserhive/trace-shape` can find the same thing on every line of
-`trace/events.jsonl`. These rules report the first four occurrences of a message
+`trace/events.jsonl`, and `browserhive/random-shape` on every line of
+`random/values.jsonl`. These rules report the first four occurrences of a message
 in a file, and the fourth carries the number of the rest in `params.more`; its
 `message` ends with "(and N more like this in the same file)". `summary` counts
 the issues in the report, not every occurrence.
