@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/crashed-targets-listed (error · browserhive profile 限定)
  *
- * `completeness.crashedTargets` (renderer が落ちた、主文書以外の target) が、profile の決まりどおりか。
+ * `completeness.crashedTargets` (renderer が落ちた、主文書以外の target) が、BrowserHive WACZ Profile の決まりどおりか。
  * WACZ Profile 1.21.0 は次を定める。
  *
  *   - 配列で必ず在る。各項目は `type` と `status` を文字列で持ち、`url` は在るなら文字列

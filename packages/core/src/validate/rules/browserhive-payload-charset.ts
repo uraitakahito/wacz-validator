@@ -3,7 +3,7 @@
  *
  * 文字の本文が、サーバの送ったバイト列ではなく、書き手が文字符号を変えた物に見えないか。
  *
- * profile 1.13.0 は、response の payload をサーバのバイト列のまま (content-coding だけを外して) にし、
+ * BrowserHive WACZ Profile 1.13.0 は、response の payload をサーバのバイト列のまま (content-coding だけを外して) にし、
  * 文字符号を変えてはならない (MUST NOT) と定める。BrowserHive は v19 まで、browser が文字に読み替えた本文を
  * UTF-8 で書き戻していた。その跡は 2 つの形で残る:
  *

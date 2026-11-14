@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/snapshots (error · browserhive profile 限定)
  *
- * 取り込みが撮った DOM の写しを、archive のどこから読んでも同じ物が指されているか。WACZ Profile 1.17.0 は
+ * 取り込みが撮った DOM の写しを、archive のどこから読んでも同じ物が指されているか。BrowserHive WACZ Profile 1.17.0 は
  * `browserhive:capture.snapshots` に時点ごと（`after-load`・`after-behaviors`）の成り行き —— 撮った写しと、
  * 撮らなかった理由 —— を並べさせ、ページ一覧（`pages/pages.jsonl`）を写しごとの行にし、写しを索引に載せさせる。
  * BrowserHive WARC Profile 1.1.0 は、写しを `resource` と、それを `WARC-Refers-To` で指す `metadata` の組で書かせる。
@@ -36,8 +36,9 @@
  * archive と、名乗りが無いか読めない archive には当てない。
  *
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#snapshots
- *   （ページ一覧は同じ版の #pages、索引は #archive-files。#archive-files の出典は 1.24.0 を指す ——
- *   同じ節のスクリーンショットの決まりを `browserhive/screenshots` が見るので、同じ節は同じ版で指す）と
+ *   （ページ一覧は 1.18.0 の #pages、索引は #archive-files。#archive-files の出典は 1.25.0 を指す ——
+ *   同じ節のスクリーンショットの決まりを `browserhive/screenshots` が、WARC の名前の決まりを
+ *   `browserhive/warc-files` が見るので、同じ節は同じ版で指す）と
  *   https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots
  */
 import { ok } from "../../result.js";
@@ -185,8 +186,8 @@ export const browserhiveSnapshotsRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §Archive files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#archive-files",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/ja/#archive-files",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/ja/#archive-files",
       },
     },
   ],

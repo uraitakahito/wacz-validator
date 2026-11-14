@@ -3,7 +3,7 @@
  *
  * `settings.urlPolicies` が、順序付きの policy の一覧として読める形をしているか。
  *
- * **不在と空は別々に意味を持つ**ところが、この member の要。profile 1.3.0 は
+ * **不在と空は別々に意味を持つ**ところが、この member の要。BrowserHive WACZ Profile 1.3.0 は
  * 「一致が 1 件も無くても書く」と要求し、空の配列を「効いていた policy が無い」
  * という積極的な主張として定めた。書かなければ、読み手は「特別なものを何も
  * 要求しなかったページ」と「要求されたものを記録しないことにした取り込み」を
@@ -34,7 +34,7 @@ import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/url-policies";
 
-/** profile 1.3.0 が定める action。ここに無い値は、この版では読めない。 */
+/** WACZ Profile 1.3.0 が定める action。ここに無い値は、この版では読めない。 */
 const ACTIONS = new Set(["deny", "no-archive", "no-body"]);
 
 export const browserhiveUrlPoliciesRule: ValidationRule = {

@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/settle-shape (browserhive profile 限定 · >=10.3.0)
  *
- * `browserhive:capture.settle` が profile 1.7.0 の定めどおりに在るか。
+ * `browserhive:capture.settle` が BrowserHive WACZ Profile 1.7.0 の定めどおりに在るか。
  *
  * **見るのは 3 つの主張で、どれも「待ちの終わり方を、読み手が信じてよいか」に関わる。**
  *
@@ -36,7 +36,7 @@ const STRATEGY = "fully-loaded";
 
 const isNumber = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v);
 
-/** profile 1.7.0 §settle の「Required: yes」のうち、値そのものの行。 */
+/** WACZ Profile 1.7.0 §settle の「Required: yes」のうち、値そのものの行。 */
 const SCALARS: readonly { readonly name: string; readonly check: (v: unknown) => boolean }[] = [
   { name: "strategy", check: (v) => typeof v === "string" },
   { name: "endedBy", check: (v) => v === "quiet" || v === "deadline" },

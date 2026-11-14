@@ -21,7 +21,7 @@ A **producer-independent validator** for [WACZ](https://specs.webrecorder.net/wa
 at an archive and it reports, rule by rule, what conforms and what does not.
 
 Producer-independent means it makes no assumptions about which tool wrote the
-archive. It reads the ZIP as the spec describes it, so a WACZ from any recorder
+archive. It reads the ZIP as WACZ 1.1.1 describes it, so a WACZ from any recorder
 is judged the same way.
 
 ## Two things it is not
@@ -29,14 +29,14 @@ is judged the same way.
 It does not **replay** archives — that is [ReplayWeb.page](https://replayweb.page/)'s
 job. And it does not **produce** them; when this site mentions
 BrowserHive, that is a separate
-project whose output wacz-validator happens to check.
+project whose BrowserHive WACZ files wacz-validator happens to check.
 
 ## How it is put together
 
 ```mermaid
 flowchart LR
     tui["@wacz-validator/tui (bin: wacz-validator)"] ==>|"WS / JSON-RPC"| daemon["@wacz-validator/daemon"]
-    browser(["browser (planned)"]) -.->|"WS"| daemon
+    browser["capture-workbench (a browser client)"] -->|"REST"| daemon
     cli["@wacz-validator/validate-cli (bin: wacz-validator-validate)"] -->|validates with| core["@wacz-validator/core"]
     daemon -->|validates with| core
     tui -->|import| protocol["@wacz-validator/protocol"]
@@ -46,13 +46,12 @@ flowchart LR
     protocol -->|import| shared
 
     classDef shared fill:#fff3cd,stroke:#d4a72c,color:#5c4500;
-    classDef future fill:#eeeeee,stroke:#999999,color:#666666;
     class shared,protocol shared;
-    class browser future;
 ```
 
-The daemon is **stateless**, which is what lets a future browser frontend speak
-the same protocol as the terminal UI. See [Architecture](/wacz-validator/architecture/).
+The daemon is **stateless**, which is what lets a browser client —
+[capture-workbench](https://github.com/uraitakahito/capture-workbench) — call the same handlers as
+the terminal UI, over HTTP instead of the WebSocket. See [Architecture](/wacz-validator/architecture/).
 
 ## Where things are
 

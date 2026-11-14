@@ -9,7 +9,7 @@
 import { isRecord } from "./browserhive-storage.js";
 import type { WaczReader } from "../wacz/reader.js";
 
-/** 取り込みのログのエントリ。WACZ Profile 1.19.0 から、どの package も持つ（行が無ければ空のファイル）。 */
+/** 取り込みのログのエントリ。BrowserHive WACZ Profile 1.19.0 から、どの package も持つ（行が無ければ空のファイル）。 */
 export const LOGS_ENTRY = "logs/capture.jsonl";
 
 /** 各行が名乗る版。 */

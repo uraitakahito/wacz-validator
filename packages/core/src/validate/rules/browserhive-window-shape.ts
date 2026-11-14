@@ -2,7 +2,7 @@
  * Rule: browserhive/window-shape (error · browserhive profile 限定)
  *
  * 開かせなかったウィンドウの記録（`window` の欄を持つ metadata）の形。
- * profile 1.12.0 は、取り込みにウィンドウを開かせず、頁が求めた 1 回ごとに `window: not-opened` の
+ * BrowserHive WACZ Profile 1.12.0 は、取り込みにウィンドウを開かせず、頁が求めた 1 回ごとに `window: not-opened` の
  * metadata を書くと定める。見るのは 4 つ。`window` の値が `not-opened` であること、
  * `WARC-Target-URI` が在ること、`target` が在るなら `page` か `iframe` であること、
  * `action` を持たないこと（送らなかった要求の記録ではない）。

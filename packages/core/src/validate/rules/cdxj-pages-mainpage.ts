@@ -62,8 +62,8 @@ export const cdxjPagesMainpageRule: ValidationRule = {
 
     const mainPageURL = pkg.mainPageURL;
     if (typeof mainPageURL !== "string" || mainPageURL.length === 0) {
-      // mainPageURL の不在自体は別の producer バグだが、WACZ spec は
-      // 厳密には必須としていない (Webrecorder の spec は "optional but
+      // mainPageURL の不在自体は別の producer バグだが、WACZ 1.1.1 は
+      // 厳密には必須としていない (Webrecorder の WACZ 1.1.1 は "optional but
       // recommended" と書いている)。ここでは coverage gap だけを表面化
       // して、不在そのものは追わない。
       return ok(issues);

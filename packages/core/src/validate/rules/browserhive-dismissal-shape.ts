@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/dismissal-shape (browserhive profile 限定 · >=8.5.0)
  *
- * `browserhive:capture.dismissal` が在るとき、その形が profile 1.4.0 の定めどおりか。
+ * `browserhive:capture.dismissal` が在るとき、その形が BrowserHive WACZ Profile 1.4.0 の定めどおりか。
  *
  * **見るのは 2 つの主張だけで、どちらも「結果が反証できるか」に関わる。**
  *
@@ -16,7 +16,7 @@
  *    「両方の area を持つか `unreadable: true` のどちらか」と同じ形。
  *
  * **値の中身は見ない。** どのセレクタが効いていたか、いくつ消したかは producer が
- * 決めることで、profile も綴りを定めていない。
+ * 決めることで、WACZ Profile も綴りを定めていない。
  *
  * `dismissal` の不在は違反ではない —— 除去を試みなかった取り込みでは member ごと
  * 書かないのが正しい。不在が「配信されたままのページを保存した」を意味する以上、
@@ -33,7 +33,7 @@ import type { Issue, ValidationRule } from "../domain.js";
 
 const RULE = "browserhive/dismissal-shape";
 
-/** 在ることが必須な入力。profile 1.4.0 §dismissal の「Required: yes」の行。 */
+/** 在ることが必須な入力。WACZ Profile 1.4.0 §dismissal の「Required: yes」の行。 */
 const REQUIRED: readonly { readonly name: string; readonly check: (v: unknown) => boolean }[] = [
   { name: "selectors", check: Array.isArray },
   { name: "heuristic", check: isRecord },

@@ -4,7 +4,7 @@
  * URL の方針の `deny` が守られたか。最初に当たる方針が `deny` の URL に、送った要求の記録
  * (`request`) か、届いた応答の記録 (`response`・`revisit`) があれば落とす。
  *
- * profile は `deny` を「要求を送らない」と定める。1.11.0 からは、取り込みが起こすすべての要求
+ * BrowserHive WACZ Profile は `deny` を「要求を送らない」と定める。1.11.0 からは、取り込みが起こすすべての要求
  * (遷移・フレーム・worker・service worker・ページが開くウィンドウ) に届くと明記した。`deny` の
  * 当たった URL について archive が持ってよいのは、送らなかったことを言う metadata の記録
  * (`action: deny`) だけで、要求や応答の記録は、その URL が取り込みの機械を出た証拠になる。
@@ -13,7 +13,7 @@
  * ワイルドカードは `*` だけ、最初に当たった方針だけが効く。だから `?from=…` の付いた URL に、
  * query を見込まない pattern は当たらない。
  *
- * **版で分けない。** 送らない約束は profile の最初の版からある。ただし BrowserHive v17.0.0 までは
+ * **版で分けない。** 送らない約束は WACZ Profile の最初の版からある。ただし BrowserHive v17.0.0 までは
  * 主文書への `deny` で要求を止められず、そのとき記録器は応答を捨てて `action: deny` の記録だけを
  * 書いたので、その漏れはこの rule には見えない (身元が archive に無いという document-withheld の
  * warning が言う)。

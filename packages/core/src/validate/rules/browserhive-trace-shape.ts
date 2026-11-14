@@ -1,8 +1,8 @@
 /**
  * Rule: browserhive/trace-shape (error · browserhive profile 限定)
  *
- * 取り込みの trace `trace/events.jsonl` が、WACZ Profile 1.23.0 の trace・trace-directory・trace-lines の
- * 定めどおりか。指摘の種類（message key）は、仕様の決まり 1 つにつき 1 つ —— 仕様が決まりを 1 つ足し引き
+ * 取り込みの trace `trace/events.jsonl` が、BrowserHive WACZ Profile 1.23.0 の trace・trace-directory・trace-lines の
+ * 定めどおりか。指摘の種類（message key）は、WACZ Profile の決まり 1 つにつき 1 つ —— WACZ Profile が決まりを 1 つ足し引き
  * したら、ここも 1 つ足し引きする。
  *
  * 要約（`browserhive:capture.trace`）:

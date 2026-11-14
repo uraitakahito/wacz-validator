@@ -10,7 +10,7 @@ import type { WaczReader } from "../wacz/reader.js";
 /** BrowserHive が描画後のアクセシビリティツリーを書くエントリ。 */
 export const AXTREE_ENTRY = "accessibility/axtree.jsonl";
 
-/** profile が定める、この版で許される property。 */
+/** BrowserHive WACZ Profile が定める、この版で許される property。 */
 export const ALLOWED_NODE_KEYS: ReadonlySet<string> = new Set([
   "role",
   "name",

@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/screenshots (error / warning · browserhive profile 限定)
  *
- * 取り込みが時点ごとに撮ったスクリーンショットを、package が決まりどおりに持っているか。WACZ Profile 1.24.0 は
+ * 取り込みが時点ごとに撮ったスクリーンショットを、package が決まりどおりに持っているか。BrowserHive WACZ Profile 1.24.0 は
  * `browserhive:capture.screenshots` に時点ごと（`after-load`・`after-behaviors`）の成り行き —— 持っている絵と、
  * 持たない理由 —— を並べさせ、絵に写りうる物を package に残さないと頼まれた取り込みには絵を持たせない。
  * BrowserHive WARC Profile 1.3.0 は、絵を `resource`（block は WebP の静止画）と、それを `WARC-Refers-To` で指す
@@ -28,13 +28,13 @@
  *   - metadata: resource ごとにちょうど 1 つ。`WARC-Target-URI`・`WARC-Date` が resource と同じで、`screenshot`・
  *     `document-uri`・`viewport`・`device-pixel-ratio`・`image-size` を持ち、`action`・`truncated`・`window`・`snapshot` を
  *     持たない。`screenshot` が URI の中の時点、URI の中の URL が `document-uri` から fragment を除いた物。`viewport`・
- *     `image-size`・`device-pixel-ratio` が仕様の書式。`image-size` が画像自身の幅と高さ
+ *     `image-size`・`device-pixel-ratio` が WARC Profile の書式。`image-size` が画像自身の幅と高さ
  *   - resource も metadata も `WARC-Concurrent-To` を持たない
  *   - `screenshot` の欄を持つ metadata が、スクリーンショットの resource を指す
  *   - 索引にスクリーンショットの resource を指す行（`filename` と `offset` がそのレコード）が在り、その鍵が
  *     `WARC-Target-URI` そのままで、JSON に `status` が無い
  *
- * **画像の縦横の比は warning。** 仕様は「viewport を写し、その先を写さない」（MUST）から、画像の縦横の比が pixel への
+ * **画像の縦横の比は warning。** WARC Profile は「viewport を写し、その先を写さない」（MUST）から、画像の縦横の比が pixel への
  * 丸めを除いて viewport と同じになると言うが、その文に規範の語は無く、丸め方も決めていない。比の違う画像は、
  * 取り込みのページの全体を写した物か、viewport の一部だけの物でありうるので言う。
  *
@@ -51,7 +51,8 @@
  * 名乗る archive と、名乗りが無いか読めない archive には当てない。
  *
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#screenshots
- *   （索引は同じ版の #archive-files）と
+ *   （索引は #archive-files。出典は 1.25.0 を指す —— 同じ節を `browserhive/warc-files` と `browserhive/snapshots` も
+ *   見るので、同じ節は同じ版で指す）と
  *   https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#screenshots
  */
 import { ok } from "../../result.js";
@@ -256,8 +257,8 @@ export const browserhiveScreenshotsRule: ValidationRule = {
     {
       label: "BrowserHive WACZ Profile §Archive files",
       url: {
-        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#archive-files",
-        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/ja/#archive-files",
+        en: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        ja: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/ja/#archive-files",
       },
     },
   ],
@@ -272,7 +273,7 @@ export const browserhiveScreenshotsRule: ValidationRule = {
     const issue = (messageKey: string, params: MsgParams, location: IssueLocation): void => {
       issues.push({
         rule: RULE,
-        // 縦横の比だけは、仕様が規範の語なしに言う帰結なので warning（上の説明）。
+        // 縦横の比だけは、WARC Profile が規範の語なしに言う帰結なので warning（上の説明）。
         severity: messageKey !== "aspect" ? "error" : "warning",
         messageKey: `${RULE}.${messageKey}`,
         params,

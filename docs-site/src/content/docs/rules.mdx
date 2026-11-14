@@ -92,7 +92,8 @@ See [Profiles](/wacz-validator/profiles/).
 Rules fall into groups by the layer they inspect:
 
 - **`wacz/*`** — the ZIP layout itself: which files and directories must exist,
-  and what must not be in the reserved ones.
+  and what must not be in the reserved ones; and the file's own name, which
+  must end in `.wacz`.
 - **`datapackage/*`** — `datapackage.json`: the Frictionless structure, the
   declared `profile`, the WACZ version, and whether the hashes match what is
   actually in the archive.
@@ -111,11 +112,11 @@ Rules fall into groups by the layer they inspect:
     [`warc/recording-complete`](#warc-recording-complete), is the one `warc/*`
     rule that runs only under `--profile browserhive`: it counts the `metadata`
     records BrowserHive writes for fetches that failed or were cut short, a
-    convention of BrowserHive's own rather than part of WARC or WACZ.
+    convention of BrowserHive's own rather than part of WARC 1.1 or WACZ 1.1.1.
 - **`pages/*`** — `pages/pages.jsonl` against its schema.
 - **`wacz-auth/*`** — the signature in `datapackage-digest.json`.
 - **`browserhive/*`** — BrowserHive's own conventions, from the BrowserHive WACZ
-  and WARC profiles. They run only under `--profile browserhive`.
+  Profile and the BrowserHive WARC Profile. They run only under `--profile browserhive`.
 
 ## Why some rules exist twice over
 

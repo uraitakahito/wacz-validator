@@ -139,7 +139,8 @@ export interface FixtureOptions {
   warcResources?: WarcResourceSpec[];
   /**
    * `archive/` の主の本の名。既定は `data.warc.gz` (1.13.0 までの BrowserHive と他の producer の形)。
-   * BrowserHive 21.0.0 の形を作るなら `data-000.warc.gz`。CDXJ の `filename` と resources にも効く
+   * BrowserHive 21.0.0〜30 の形 (WACZ Profile 1.14.0〜1.24.0) を作るなら `data-000.warc.gz`、BrowserHive 31.0.0 の形
+   * (WACZ Profile 1.25.0) なら `data-000.browserhive.warc.gz`。CDXJ の `filename` と resources にも効く
    * (`cdxjFilenameOverride` が優先)。
    */
   warcName?: string;
@@ -491,6 +492,8 @@ export interface ExtraWarcSpec {
   cdxjFilename?: string;
   /** DEFLATE で入れる (既定は STORE)。 */
   deflate?: boolean;
+  /** 記録を gzip せずに並べる (既定は記録ごとに 1 つの gzip member)。名前は `name` のまま。 */
+  uncompressed?: boolean;
   /** warcinfo の gzip の中の 1 バイトを反転する。 */
   corruptAt?: number;
   responses?: WarcResponseSpec[];
@@ -871,6 +874,7 @@ const buildWarcGz = (
     revisits?: WarcRevisitSpec[];
     segmented?: WarcSegmentedSpec[];
     rawMembers?: Buffer[];
+    uncompressed?: boolean;
   },
 ): { bytes: Buffer; recordLength: number; offset: number; records: WarcRecordInfo[] } => {
   // 記録を積んだ順に並べる。`warcRecordPatches` の `index` はこの並びの位置。
@@ -944,7 +948,7 @@ const buildWarcGz = (
   const records: WarcRecordInfo[] = [];
   let at = 0;
   patched.forEach((raw, index) => {
-    const member = gzipSync(raw);
+    const member = opts.uncompressed === true ? raw : gzipSync(raw);
     const info = raws[index]?.info ?? { type: "raw" };
     // bit を 1 つ反転して warcinfo の gzip member が decode できないようにする。
     // gzip *の後* に corrupt させているのは、corruption が iterator に
@@ -1133,6 +1137,7 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
       ...(spec.resources !== undefined && { resources: spec.resources }),
       ...(spec.metadata !== undefined && { metadata: spec.metadata }),
       ...(spec.rawMembers !== undefined && { rawMembers: spec.rawMembers }),
+      ...(spec.uncompressed === true && { uncompressed: true }),
     }),
   }));
   // CDXJ "url" field は replay ツールが lookup する URL。何も

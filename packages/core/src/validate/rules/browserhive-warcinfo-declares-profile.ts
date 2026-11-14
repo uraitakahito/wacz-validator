@@ -2,7 +2,7 @@
  * Rule: browserhive/warcinfo-declares-profile (error · browserhive profile 限定)
  *
  * archive/ の WARC の本が、適合する BrowserHive WARC Profile の版を自分で名乗っているか。
- * WACZ Profile 1.16.0 は、archive/ の WARC がどれも BrowserHive WARC Profile に適合し、その版を
+ * BrowserHive WACZ Profile 1.16.0 は、archive/ の WARC がどれも BrowserHive WARC Profile に適合し、その版を
  * 先頭の warcinfo の `conformsTo` で名乗ると定める。見るのは 3 つ:
  *
  *   - 各本の warcinfo に `conformsTo` がちょうど 1 つ在る。2 つ並ぶと、読み手はどちらを正とすればよいか

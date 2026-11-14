@@ -1,9 +1,9 @@
 /**
  * Rule: browserhive/storage-inventory(browserhive profile 限定 · >=6.0.0)
  *
- * `browserhive:capture.storage` が在り、profile の定める形をしているか。
+ * `browserhive:capture.storage` が在り、BrowserHive WACZ Profile の定める形をしているか。
  *
- * **不在が違反である** ところが `tls` 系の rule と違う。profile 1.1.0 で目録は
+ * **不在が違反である** ところが `tls` 系の rule と違う。WACZ Profile 1.1.0 で目録は
  * MUST になった —— 目録が無いと、読み手は「localStorage から描画したページ」と
  * 「本当に見せるものが無かったページ」を区別できない。`completeness` は助けに
  * ならない: あれが報告するのはパッケージが保持していない body で、storage は
@@ -21,7 +21,7 @@
  *      主張、後者は**誰も下していない判断**の報告になる
  *   5. digest が sha256: + 64 桁である
  *
- * **値そのものは見ない。** 目録は値を持たないと profile が言っており、
+ * **値そのものは見ない。** 目録は値を持たないと WACZ Profile が言っており、
  * それを確かめるのは形の検査ではなく `storage-shape` の側の仕事。
  *
  * 版の条件があるのは、この member が browserhive 6.0.0 で入ったため。それ未満では
@@ -149,10 +149,10 @@ export const browserhiveStorageInventoryRule: ValidationRule = {
       const hasAreas = "local" in entry && "session" in entry;
 
       // 「読めなかった」と「両 area を持つ」は排他。どちらでもない形、あるいは
-      // 両方を名乗る形は、profile が分けようとした 2 つを混ぜている。
+      // 両方を名乗る形は、WACZ Profile が分けようとした 2 つを混ぜている。
       //
       // `valuesOversize` はここに**入らない** —— あれを持つ項目は area を
-      // 持ったままなので (profile 1.6.0 の MUST)、この XNOR を素通りする。
+      // 持ったままなので (WACZ Profile 1.6.0 の MUST)、この XNOR を素通りする。
       // 三値にすると、area を持つ普通の項目まで巻き込む。
       if (unreadable === hasAreas) {
         push(`${RULE}.origin-form`, { where });

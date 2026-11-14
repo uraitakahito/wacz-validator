@@ -29,7 +29,7 @@ wacz-validator 0.0.0 ·9f3c2a1 ⚠ daemon ·1b8e4d0     … 不一致(どちら�
 
 ## 画面の歩き方
 
-`tab` で Issues と Layout を行き来する。Layout は WACZ の §5.1 風の木で、ファイルを選んで
+`tab` で Issues と Layout を行き来する。Layout は WACZ 1.1.1 の §5.1 風の木で、ファイルを選んで
 `enter` を押すと、その中身を daemon の窓のエンドポイントで取って全幅に開く:
 
 - 行の窓 (`readLines`) —— 500 行ずつ。末尾に着くと続きを頼む。長い行は端末幅で切れる

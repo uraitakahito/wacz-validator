@@ -2,10 +2,10 @@
  * Rule: browserhive/document-withheld (error · browserhive profile 限定 · >=13.0.0)
  *
  * ページから作った記録 (`pages.jsonl` の文字と題、アクセシビリティツリー) を、それを読んだ文書の
- * 扱いで決めているか。profile の `browserhive:capture.document` に照らす。
+ * 扱いで決めているか。BrowserHive WACZ Profile の `browserhive:capture.document` に照らす。
  *
  * **3 つは WARC の本文ではなく描画されたページから読む**ので、方針が文書の本文を archive に
- * 入れなくても、それだけでは文字は archive から消えない。profile はそれを `document` の節で
+ * 入れなくても、それだけでは文字は archive から消えない。WACZ Profile はそれを `document` の節で
  * 縛る。見るのは 3 つ:
  *
  * ① `withheld` が、`document.url` に方針を照らし直した答えと一致すること (両向き)。URL の方針が
@@ -15,7 +15,7 @@
  *
  * ② `withheld` があれば、ページ行に `text` も `title` も無く、`accessibility/axtree.jsonl` も
  *    無いこと。ページ行が `textWithheld` を持つなら、値は `withheld` と等しいこと。
- *    例外は after-load の写しの行で、その時点の文書から読む (profile 1.17.0 から) ので、`document.url` と URL が
+ *    例外は after-load の写しの行で、その時点の文書から読む (WACZ Profile 1.17.0 から) ので、`document.url` と URL が
  *    違い、方針の当たらない文書の行は `text` と `title` を持てる —— 写した後でスクリプトが伏せる文書へ移った
  *    取り込みの形。方針は URL で照らすので、同じ文書が pushState で方針の当たる URL へ移った場合も同じ。
  *    ほかの行は見る: 文書の行と after-behaviors の行は `document` の文書から読み、方針の当たる文書は写さない。
@@ -29,10 +29,10 @@
  * warning にする。身元が archive の中を指していない —— 読んだ文書の記録が無い。頁の中で URL だけが替わった
  * 文書 (pushState) には、その URL の要求も応答も無いので、写しが身元を記録する。伏せた文書には写しが無いので、
  * 伏せる URL へ pushState した文書には warning が残る —— その URL の記録は本当に無い。スクリーンショットの metadata
- * (WARC Profile 1.3.0) も同じ `document-uri` を持つので、写しと同じに数える —— 写しを撮れず絵だけが残った時点の文書の
+ * (BrowserHive WARC Profile 1.3.0) も同じ `document-uri` を持つので、写しと同じに数える —— 写しを撮れず絵だけが残った時点の文書の
  * 身元は、絵の metadata が記録している。
  *
- * **`deny` の扱いは、archive が名乗る profile の版 (`conformsTo`) で分ける。** 1.11.0 から、
+ * **`deny` の扱いは、archive が名乗る WACZ Profile の版 (`conformsTo`) で分ける。** 1.11.0 から、
  * `deny` の当たった文書は要求されず、`withheld: "deny"` で伏せる。1.10.0 には `deny` の理由が無く、
  * そのころの BrowserHive (v13.0.0〜v17.0.0) は主文書への `deny` で要求を止められずにページを
  * 読んでいた。1.10.0 の archive では `deny` は何も伏せず、`deny` の記録も身元の在り処にならない ——
@@ -48,11 +48,11 @@
  * 置き換えるので、`document.url` と同じ字とは限らない —— 値を置き換えた `document-uri` が在れば、身元の warning も出さない。
  * `***` の無い URL は今までどおり見る。
  *
- * **`datapackage.json` の `title` は見ない。** profile は「ページから読んではならない」と言う
+ * **`datapackage.json` の `title` は見ない。** WACZ Profile は「ページから読んではならない」と言う
  * だけで、何を書くかは定めていない。伏せた題を archive は持っていないので、読んだものかどうかを
  * 照らしようがない。
  *
- * **`document` の無い archive は見ない。** profile 1.10.0 より前の archive には身元が無く、
+ * **`document` の無い archive は見ない。** WACZ Profile 1.10.0 より前の archive には身元が無く、
  * 照らしようがない。版を渡さずに走らせたとき、古い archive を一斉に落とさないためでもある。
  *
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document
@@ -80,21 +80,21 @@ const RULE = "browserhive/document-withheld";
 const DATAPACKAGE = "datapackage.json";
 const PAGES_ENTRY = "pages/pages.jsonl";
 
-/** 方針の名を持つ理由 (profile 1.10.0)。どれも `document.url` から照らし直せる。 */
+/** 方針の名を持つ理由 (WACZ Profile 1.10.0)。どれも `document.url` から照らし直せる。 */
 const POLICY_REASONS_1_10: ReadonlySet<string> = new Set(["url-policy", "content-type", "no-archive"]);
-/** profile 1.11.0 から、要求しなかった文書を名乗る `deny` が加わる。 */
+/** WACZ Profile 1.11.0 から、要求しなかった文書を名乗る `deny` が加わる。 */
 const POLICY_REASONS_1_11: ReadonlySet<string> = new Set([...POLICY_REASONS_1_10, "deny"]);
 /** 読んだ文書を言えないときの理由。照らし直すものが無い。 */
 const UNATTRIBUTED = "unattributed";
 
-/** `conformsTo` の URL から読む profile の版。`/wacz-profile/1.11.0/` の形。 */
+/** `conformsTo` の URL から読む WACZ Profile の版。`/wacz-profile/1.11.0/` の形。 */
 const CONFORMS_TO_VERSION = /\/wacz-profile\/(\d+)\.(\d+)\.(\d+)\//;
 
 /** after-load の写しの行の `url` の頭。後ろに、その時点の文書の URL（断片なし）が続く。 */
 const AFTER_LOAD_URI = "urn:browserhive:snapshot:after-load:";
 
 /**
- * archive が `deny` を伏せる理由として扱う版 (profile 1.11.0 以降) を名乗るか。名乗りが無いか
+ * archive が `deny` を伏せる理由として扱う版 (WACZ Profile 1.11.0 以降) を名乗るか。名乗りが無いか
  * 読めなければ、1.11.0 からの決まりで照らす。
  */
 const denyWithholds = (conformsTo: unknown): boolean => {
@@ -111,7 +111,7 @@ const typeName = (v: unknown): string => (v === null ? "null" : Array.isArray(v)
 /**
  * 方針だけから決まる、文書の扱い。`document.url` と、その URL の記録の MIME から。
  *
- * `deny` が最初に当たった文書は要求されない。profile 1.11.0 からは `"deny"` で伏せ、1.10.0 では
+ * `deny` が最初に当たった文書は要求されない。WACZ Profile 1.11.0 からは `"deny"` で伏せ、1.10.0 では
  * 何も伏せない (上の説明)。記録の無い文書 (`no-archive`・`deny`) には MIME が無いので、
  * content-type の方針は照らしようがない。
  */
@@ -130,7 +130,7 @@ const expectedFor = (
 };
 
 /**
- * WARC の metadata が、文書の URL として記録しているもの。
+ * BrowserHive WARC の metadata の記録が、文書の URL として記録しているもの。
  *
  * - `recorded`: `actions` のどれかを名乗る記録の `WARC-Target-URI`。BrowserHive は記録しなかった要求 (`no-archive`) と
  *   送らなかった要求 (`deny`) をこの形で残す

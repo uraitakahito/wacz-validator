@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/exchange-in-one-file (error · browserhive profile 限定 · >=21.0.0)
  *
- * 1 つの交信の記録が、同じ WARC の本に在るか。profile 1.14.0 は、`response`・`request`・`metadata` の
+ * 1 つの交信の記録が、同じ WARC の本に在るか。BrowserHive WACZ Profile 1.14.0 は、`response`・`request`・`metadata` の
  * 3 つを同じ本に置くと定める (producer は組を書く前にだけ本を切り替える)。記録は互いを
  * `WARC-Concurrent-To` (応答と要求) と `WARC-Refers-To` (metadata が指す応答) で名指すので、
  * 名指した先が別の本に在れば、交信が本をまたいでいる。

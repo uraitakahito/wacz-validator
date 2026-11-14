@@ -59,7 +59,7 @@ export const browserhiveBehaviorsShapeRule: ValidationRule = {
   },
   run: async (wacz) => {
     const capture = await readCapture(wacz);
-    // browserhive のアーカイブではない / datapackage が読めない。
+    // BrowserHive WACZ ではない / datapackage が読めない。
     if (capture === undefined) return ok([]);
 
     const declared = customIdsFromSettings(capture);

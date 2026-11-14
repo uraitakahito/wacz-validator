@@ -16,7 +16,7 @@ export const CUSTOM_ENTRY = "behaviors/custom.jsonl";
 /** `custom.jsonl` の各行が名乗る版。 */
 export const EXPECTED_PROFILE = "browserhive:behaviors/1";
 
-/** 各行が必ず持つ member。profile 1.5.0 §behaviors-custom がそのまま並ぶ。 */
+/** 各行が必ず持つ member。BrowserHive WACZ Profile 1.5.0 §behaviors-custom がそのまま並ぶ。 */
 export const REQUIRED_MEMBERS = ["profile", "id", "source"] as const;
 
 export interface CustomLine {

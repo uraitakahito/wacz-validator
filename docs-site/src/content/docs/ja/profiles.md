@@ -8,7 +8,7 @@ description: --profile が変えるものと、決して変えないもの。
 
 profile がすることは 2 つです。**severity を組み替える**ことと、**どの rule を走らせるかを
 決める**ことです。rule は、走らない profile を名指せます。BrowserHive の慣習の rule
-（`browserhive/*`）は `browserhive` でだけ走り、Data Package の 2 つの rule
+（`browserhive/*` と、BrowserHive が足す metadata の記録を読む `warc/recording-complete`）は `browserhive` でだけ走り、Data Package の 2 つの rule
 （`MUST` の `datapackage/frictionless-structure` と、`SHOULD` の `datapackage/frictionless-schema`）は
 `lenient` では走りません。ほかの rule はどの profile でも走るので、それ以外の `MUST` 違反は
 どの profile でも報告されます(`lenient` では `info` として出るだけです)。
@@ -36,12 +36,12 @@ profile がすることは 2 つです。**severity を組み替える**こと�
 `.cdxj.gz` は許しません。
 
 BrowserHive 生成の archive だと分かっていて、その house rule も守らせたいときに
-使います。他の producer の出力に当てると、その archive が従うと約束していない
+使います。BrowserHive WACZ でない WACZ に当てると、その archive が従うと約束していない
 慣習まで指摘することになります。
 
 #### producer のバージョンを添える
 
-BrowserHive はバージョンによって出力が変わります。`@` で添えると、その
+BrowserHive WACZ は BrowserHive のバージョンによって変わります。`@` で添えると、その
 バージョンで正しいと分かっている rule だけが走ります。
 
 ```sh
@@ -75,7 +75,7 @@ wacz-validator-validate --profile browserhive@2.1.0 archive.wacz
 
 `browserhive/*` の rule には、BrowserHive WACZ Profile の後の版で入った決まりを見るものがあります。
 その決まりを当てるかどうかは archive 自身が決めます —— `browserhive:capture.conformsTo` が名乗る
-profile の版で決まり、`--profile` では決まりません（`@<x.y.z>` を添えても添えなくても同じです）。
+WACZ Profile の版で決まり、`--profile` では決まりません（`@<x.y.z>` を添えても添えなくても同じです）。
 それより前の版を名乗る archive と、版を名乗らない archive には、その rule は何も当てません。
 rule は走り、当てるものが無く、passed に数えられます。
 
@@ -114,7 +114,7 @@ profile が変えるのは指摘の等級だけで、等級は指摘の種類で
 
 形の崩れがどこでも `error` なのは、読む側が記録の境目を見失い、索引と replay も一緒に失うからです。
 *shall* に反する欄があっても wabac.js の replay はほとんど壊れないので、`spec` は `warning` にします。
-BrowserHive は自分の WARC を WARC 1.1 のファイルだと名乗るので、`browserhive` は同じ指摘を `error` にします。
+BrowserHive は BrowserHive WARC を WARC 1.1 のファイルだと名乗るので、`browserhive` は同じ指摘を `error` にします。
 
 ## exit code
 

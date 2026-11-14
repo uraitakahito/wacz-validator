@@ -1,6 +1,6 @@
 ---
 title: Break it on purpose
-description: Take a WACZ captured by BrowserHive, break it deliberately, and watch a rule turn red
+description: Take a BrowserHive WACZ, break it deliberately, and watch a rule turn red
 ---
 
 A validator's green means one of two things: it checked and found nothing, or it
@@ -44,7 +44,7 @@ echo "$WACZ"
 ```
 
 ```
-s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.wacz
+s3://browserhive/66385280-2a2c-494d-9e2b-8e7198bb650b__chain-demo.browserhive.wacz
 ```
 
 The dev stack speaks TLS, so curl is given the stack's development CA; the

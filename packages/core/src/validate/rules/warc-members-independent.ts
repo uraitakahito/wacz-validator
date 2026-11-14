@@ -2,7 +2,7 @@
  * Rule: warc/members-independent
  *
  * 各 WARC record は独立した gzip member として配置する必要がある。
- * そうすると WARC spec に従って member を連結したものが valid な
+ * そうすると WARC 1.1 に従って member を連結したものが valid な
  * `.warc.gz` になり、CDXJ offset で他を decode せず単一 record まで
  * seek できる。
  *

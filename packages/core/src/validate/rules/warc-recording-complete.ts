@@ -11,11 +11,11 @@
  *
  * **方針で省いたもの (blocked) は未完了に数えない。** `deny`・`no-archive` の要求と、
  * `url-policy`・`content-type` で省いた本文は、要求者が頼んだ省略で、記録の欠けではない。
- * 隠す値を含むので落とした本文 (`secret`。WARC Profile 1.2.0) も同じ —— 要求者がそのシークレットを残すと頼まなかった結果。
+ * 隠す値を含むので落とした本文 (`secret`。BrowserHive WARC Profile 1.2.0) も同じ —— 要求者がそのシークレットを残すと頼まなかった結果。
  * 以前は数えていて、`deny` しか当たらない archive にも「未完了」の warning が出ていた。
  * 内訳 (`byReason.blocked`) とサンプルには残すので、何を省いたかは見えるまま。
  *
- * **開かせなかったウィンドウの記録（`window` の欄。profile 1.12.0）も数えない。** 要求を出していないので、取得の記録ではない。
+ * **開かせなかったウィンドウの記録（`window` の欄。BrowserHive WACZ Profile 1.12.0）も数えない。** 要求を出していないので、取得の記録ではない。
  * 内訳にもサンプルにも入れない。形は `browserhive/window-shape` が見る。
  *
  * **DOM の写しの metadata（`snapshot` の欄。BrowserHive WARC Profile 1.1.0）も数えない。** 写しの `resource` が何かを
@@ -27,7 +27,7 @@
  * 同じ形の、絵の `resource` が何かを言うレコードで、WARC Profile は同じことを読み手に禁じる（MUST NOT）。辻褄は
  * `browserhive/screenshots` が見る。
  *
- * 規格との関係: この metadata 慣習は WARC/WACZ の規格そのものではなく
+ * 規格との関係: この metadata 慣習は WARC 1.1・WACZ 1.1.1 の規格そのものではなく
  * browserhive 固有。よって `applicability.excludeProfiles` で
  * `spec` / `lenient` を除外し、`--profile browserhive` のときだけ走る。
  * 未完了レコードは「実際に起きた HTTP の正しい記録」で spec 違反ではない
@@ -53,7 +53,7 @@ type Reason = "failed" | "incomplete" | "truncated" | "unintercepted" | "blocked
  * 理由付きの記録が無く、気づかれなかった。
  *
  * - `truncated` が `too-large` / `task-cap`: 上限で落とした本文 ("truncated")
- * - `truncated` が `not-intercepted`: 届いたのにバイト列で読めなかった本文 ("unintercepted"。profile 1.13.0)
+ * - `truncated` が `not-intercepted`: 届いたのにバイト列で読めなかった本文 ("unintercepted"。WACZ Profile 1.13.0)
  * - `truncated` が `content-type` / `url-policy`: 方針で省いた本文 ("blocked")
  * - `truncated` が `secret`: 隠す値を含むので落とした本文 ("blocked"。WARC Profile 1.2.0)
  * - `action` が `deny` / `no-archive`: 方針で記録しなかった要求 ("blocked")
@@ -120,7 +120,7 @@ export const warcRecordingCompleteRule: ValidationRule = {
       }
       if (type !== "metadata") continue;
       const fields = fieldRecord(parseWarcFieldsBody(record.body).fields);
-      // 開かせなかったウィンドウの記録（profile 1.12.0）、DOM の写しの metadata（WARC Profile 1.1.0）、スクリーンショットの
+      // 開かせなかったウィンドウの記録（WACZ Profile 1.12.0）、DOM の写しの metadata（WARC Profile 1.1.0）、スクリーンショットの
       // metadata（WARC Profile 1.3.0）は、取得の記録ではない。未完了にも、方針の省略にも数えない。
       if (fields["window"] !== undefined || fields["snapshot"] !== undefined || fields["screenshot"] !== undefined) continue;
       const reason = classify(fields);

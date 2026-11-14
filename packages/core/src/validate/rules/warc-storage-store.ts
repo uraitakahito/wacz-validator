@@ -2,7 +2,7 @@
  * Rule: warc/storage-store
  *
  * `archive/` の WARC はどれも WACZ ZIP の中で STORE 方式 (compression
- * method 0) で格納すべきで、DEFLATE では駄目。WARC spec に従って
+ * method 0) で格納すべきで、DEFLATE では駄目。WARC 1.1 に従って
  * 内側の WARC はすでに gzip 圧縮されているので、その gzip wrapper
  * を更に deflate してもサイズが膨らむだけで展開メリットがなく、
  * downstream ツールが依存する offset / length コントラクトを壊す

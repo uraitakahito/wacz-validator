@@ -45,8 +45,8 @@ where its file happens to live.
 
 ```bash
 pnpm exec vitest --listTags                        # the vocabulary
-pnpm exec vitest run --tagsFilter frictionless     # 13 tests
-pnpm exec vitest run --tagsFilter 'docs && i18n'   # 2
+pnpm exec vitest run --tagsFilter frictionless     # one tag
+pnpm exec vitest run --tagsFilter 'docs && i18n'   # tests that carry both
 pnpm exec vitest run --tagsFilter '!corpus'
 pnpm test:ui --tagsFilter frictionless             # open the UI already filtered
 ```
@@ -68,7 +68,8 @@ Once the UI is open, typing `tag:frictionless` in its search box does the same.
 | `daemon` / `tui` | The respective package |
 
 :::caution[Not for speed]
-All 203 tests finish in 3.5s. Filtering here buys **findability, not time**.
+The whole suite runs on every `pnpm check` anyway. Filtering here buys
+**findability, not time**.
 Vitest's tags can also carry `timeout` and `retry` for the tests they mark;
 this repository does not use that half, because no class of test here wants a
 different execution policy.

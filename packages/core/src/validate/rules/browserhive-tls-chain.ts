@@ -5,7 +5,7 @@
  * 検証する。確かめるのは 4 つ:
  *
  *   1. `chainRef` の指す先が `chains` に在る(宙ぶらりんの参照を弾く)
- *   2. リーフが先頭に並んでいる(プロファイルの MUST)
+ *   2. リーフが先頭に並んでいる(BrowserHive WACZ Profile の MUST)
  *   3. 隣り合う証明書が実際に繋がっている(発行者 = 次の subject)
  *   4. その繋がりが署名で裏付けられている
  *
@@ -52,7 +52,7 @@ export const browserhiveTlsChainRule: ValidationRule = {
 
   run: async (wacz) => {
     const tls = await readTls(wacz);
-    // tls はプロファイルの任意 member。不在は違反ではない。
+    // tls は WACZ Profile の任意 member。不在は違反ではない。
     if (tls === undefined) return ok([]);
 
     const issues: Issue[] = [];

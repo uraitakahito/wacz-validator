@@ -9,7 +9,7 @@
  * 書くと `archive/archive/data.warc.gz` を探しに行って全 URL が 404
  * になる。
  *
- * Spec / 慣習: WACZ spec は相対パスを明示的には pin していないが、
+ * Spec / 慣習: WACZ 1.1.1 は相対パスを明示的には pin していないが、
  *       pywb / wacz-creator / browserhive のいずれも実際にはこの
  *       形で出力していて、wabac.js は `archive/` prefix を自前で
  *       入れている。
