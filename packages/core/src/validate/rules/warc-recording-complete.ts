@@ -21,7 +21,8 @@
  * **DOM の写しの metadata（`snapshot` の欄。BrowserHive WARC Profile 1.1.0）も数えない。** 写しの `resource` が何かを
  * 言う記録で、取得の記録ではない。WARC Profile は、読み手がこれを本文の無い応答や止めた要求の記録として数えることを
  * 禁じる（MUST NOT）。`truncated`・`action`・`reason` のどれも持たないので、飛ばさなければ「未完了」に落ちる。
- * window と同じく、内訳にもサンプルにも入れない。写しの辻褄は `browserhive/snapshots` が見る。
+ * window と同じく、内訳にもサンプルにも入れない。写しの辻褄は `browserhive/snapshots` が見る。子フレームの写しの
+ * metadata（WARC Profile 1.5.0）も `snapshot` の欄を持つので、同じく数えない（辻褄は `browserhive/frame-snapshots`）。
  *
  * **スクリーンショットの metadata（`screenshot` の欄。BrowserHive WARC Profile 1.3.0）も数えない。** 写しの metadata と
  * 同じ形の、絵の `resource` が何かを言うレコードで、WARC Profile は同じことを読み手に禁じる（MUST NOT）。辻褄は

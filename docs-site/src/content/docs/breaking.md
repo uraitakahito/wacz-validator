@@ -122,6 +122,7 @@ node packages/devtools/dist/break-wacz.js --list
   trace-drop-entry         trace/events.jsonl           → browserhive/trace-shape.missing
   random-drop-draw         random/values.jsonl          → browserhive/random-shape.count
   random-drop-resource     datapackage.json             → browserhive/random-shape.not-in-resources
+  frame-skip-written       datapackage.json             → browserhive/frame-snapshots.unlisted
 ```
 
 ```sh
