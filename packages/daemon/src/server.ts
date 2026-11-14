@@ -3,6 +3,8 @@
  *
  * WS は相関 id つきの request/response(セッション/購読は持たない)。
  * REST は WS と**同じハンドラ**を指す —— エンドポイントが 2 つでも、答えを作るのは 1 か所。
+ * 例外は `POST /record/body` だけ: REST にしか無く、対になる WS の method は無い
+ * (`dispatch` に枝が無い。答えが JSON でなく bytes)。
  * どのリクエストもハンドラが open→処理→close するだけで、サーバは可変状態を持たない。
  *
  * REST のエンドポイント:

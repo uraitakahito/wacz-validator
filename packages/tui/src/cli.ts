@@ -9,7 +9,7 @@
  * (`wacz-validator/readLines` / `readLine` / `readRecords` / `readRecord`)でファイルの
  * 中身を取り、全幅で表示する。wacz-validator は対話 TUI
  * 専用で、stdout / stdin が TTY でない(パイプ / CI 等)場合は描画できないので、
- * daemon を起動する前に `wacz-validator-validate`(core の bin)を案内して exit 2 で終わる。
+ * daemon を起動する前に `wacz-validator-validate`(@wacz-validator/validate-cli の bin)を案内して exit 2 で終わる。
  * 非対話・機械可読な出力は `wacz-validator-validate` の領分。
  *
  * tui は `@wacz-validator/core` を import しない — 型 / 定数 / exitCodeFor はすべて

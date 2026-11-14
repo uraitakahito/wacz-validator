@@ -116,8 +116,9 @@ wacz-validator --server ws://127.0.0.1:7333 samples/wikipedia.wacz
 :::
 
 同じ daemon は素の HTTP でも答えます —— 同じハンドラにエンドポイント（HTTP の method と path の組）が 1 つずつ: `POST /validate` と、
-archive の中身への窓（`POST /lines`・`/line`・`/records`・`/record`、raster の画像の
-実体を bytes で返す `/record/body`）。どの要求も archive の URI を運ぶので、daemon は
+archive の中身への窓（`POST /lines`・`/line`・`/records`・`/record`）。HTTP にしか無いエンドポイントが
+1 つ在ります: raster の画像の実体を bytes で返す `POST /record/body` で、対になる WebSocket の
+method は在りません。どの要求も archive の URI を運ぶので、daemon は
 呼び出しの間に何も持ちません。TUI では `tab` で配置へ、`enter` でファイル（行）か
 WARC（レコード）を開き、もう一度 `enter` で field に割った 1 行、または 1 レコードを開きます。
 
