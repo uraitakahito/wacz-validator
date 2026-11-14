@@ -51,7 +51,7 @@ warning / info レベルの issue が exit code を反転させることは無�
 stdout には `Report` が出力される。full schema は
 [JSON レポート](https://uraitakahito.github.io/wacz-validator/ja/json-report/)
 を参照。短い例（`validatorVersion` と `summary` の数は形を示すための値で、いまの版の出力ではない。
-`passed` は走った rule の数で、版と profile で変わる）:
+`passed` は走った rule のうち error の指摘を 1 件も出さなかった rule の数で、版と profile で変わる）:
 
 ```json
 {

@@ -6,9 +6,12 @@ description: --profile が変えるものと、決して変えないもの。
 `--profile <name>` は、producer 固有 / 様式的な指摘をどれだけ厳しく扱うかを
 選びます。既定は `spec` です。
 
-profile が組み替えるのは **severity だけです。spec が要求する check を抑止する
-ことはありません** — `MUST` 違反はどの profile でも報告されます(`lenient` では
-`info` として出るだけです)。
+profile がすることは 2 つです。**severity を組み替える**ことと、**どの rule を走らせるかを
+決める**ことです。rule は、走らない profile を名指せます。BrowserHive の慣習の rule
+（`browserhive/*`）は `browserhive` でだけ走り、Data Package の 2 つの rule
+（`MUST` の `datapackage/frictionless-structure` と、`SHOULD` の `datapackage/frictionless-schema`）は
+`lenient` では走りません。ほかの rule はどの profile でも走るので、それ以外の `MUST` 違反は
+どの profile でも報告されます(`lenient` では `info` として出るだけです)。
 
 ## 3 つの profile
 
@@ -84,7 +87,7 @@ rule のソース（`packages/core/src/validate/rules/` の下）に書いてあ
 ### `lenient`
 
 producer 固有 / 様式的な指摘をすべて `info` に降格させ、replay を壊す
-hard error だけを残します。
+hard error だけを残します。Data Package の 2 つの rule は、この profile では走りません。
 
 legacy な archive をトリアージするとき、つまり「正しいか?」ではなく
 「救えるか?」を問うときに使います。
