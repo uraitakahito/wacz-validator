@@ -44,6 +44,6 @@
     "eslint": "^10.14.0",
     "ink-testing-library": "^4.0.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }
