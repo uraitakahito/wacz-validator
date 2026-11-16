@@ -28,7 +28,7 @@
   "dependencies": {
     "@wacz-validator/contract": "workspace:*",
     "@wacz-validator/core": "workspace:*",
-    "commander": "^15.0.0"
+    "commander": "^15.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
