@@ -14,7 +14,7 @@ import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
 import { render } from "ink-testing-library";
 import { render as inkRender } from "ink";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
 import type { AbsolutePath, ExpectedBy, Field, RecordSummary, WireLine, WireReport } from "@wacz-validator/protocol";
 import { App, type ContentBridge } from "../src/app.js";
@@ -362,7 +362,14 @@ describe("tui — layout view", () => {
   it("Tab switches to the Layout view: §5.1 tree with compact status icons", async () => {
     const { lastFrame, stdin } = render(<App report={withEntries()} build={buildStub} />);
     stdin.write("\t"); // Tab
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    // 決め打ちの 60ms では、負荷の高い CI（pack-smoke）で描き終わる前に読むことがあった
+    // （2026-11-05 と 11-16 の main で赤）。木の葉が描かれるまで待ってから読む
+    await vi.waitFor(
+      () => {
+        expect(lastFrame() ?? "").toContain("data.warc.gz");
+      },
+      { timeout: 5000 },
+    );
     const frame = lastFrame() ?? "";
     expect(frame).toContain("data.warc.gz"); // tree leaf
     expect(frame).toContain("└──"); // §5.1 connector
