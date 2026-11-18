@@ -1,7 +1,8 @@
 name: audit
 
 # Known-vulnerability gate for both lockfiles: pnpm-lock.yaml (the workspace) and
-# docs-site/package-lock.json (npm — `pnpm audit` never reads it).
+# docs-site/package-lock.json (npm — `pnpm audit` never reads it;
+# npm audit has no ignore list, so it runs through scripts/npm-audit.mjs).
 #
 # Advisories are published independently of our pull requests, so this also runs
 # every day. It is a workflow of its own rather than a step of `pnpm check`: while

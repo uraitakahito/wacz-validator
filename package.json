@@ -21,7 +21,7 @@
     "test:ui": "vitest --ui",
     "test:report": "vitest run --reporter=html",
     "lint": "pnpm -r lint",
-    "audit": "pnpm audit --audit-level=low && npm audit --prefix docs-site --audit-level=low",
+    "audit": "pnpm audit --audit-level=low && node scripts/npm-audit.mjs docs-site",
     "check": "pnpm run check:store-name && pnpm run check:test-hosts && pnpm run test:scripts && pnpm --filter @wacz-validator/contract check && pnpm --filter @wacz-validator/core check && pnpm --filter @wacz-validator/validate-cli check && pnpm --filter @wacz-validator/protocol check && pnpm --filter @wacz-validator/daemon check && pnpm --filter @wacz-validator/devtools check && pnpm --filter @wacz-validator/tui check",
     "site:dev": "npm --prefix docs-site run dev",
     "site:build": "npm --prefix docs-site run build",
