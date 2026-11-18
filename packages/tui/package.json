@@ -31,11 +31,11 @@
   "dependencies": {
     "@wacz-validator/daemon": "workspace:*",
     "@wacz-validator/protocol": "workspace:*",
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "ink": "^8.0.0",
     "picocolors": "^1.1.1",
     "react": "^19.3.1",
-    "ws": "^8.22.1"
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

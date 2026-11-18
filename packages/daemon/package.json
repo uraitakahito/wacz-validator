@@ -29,8 +29,8 @@
     "@wacz-validator/contract": "workspace:*",
     "@wacz-validator/core": "workspace:*",
     "@wacz-validator/protocol": "workspace:*",
-    "commander": "^15.0.0",
-    "ws": "^8.22.1"
+    "commander": "^15.1.0",
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

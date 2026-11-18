@@ -24,7 +24,7 @@
   "dependencies": {
     "@wacz-validator/core": "workspace:*",
     "archiver": "^8.0.0",
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "yauzl-promise": "^4.0.0"
   },
   "devDependencies": {
