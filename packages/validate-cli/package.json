@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/validate-cli",
-  "version": "0.51.1",
+  "version": "0.52.0",
   "description": "wacz-validator-validate — the non-interactive CLI over @wacz-validator/core. Emits a machine-readable JSON report to stdout.",
   "license": "Unlicense",
   "type": "module",

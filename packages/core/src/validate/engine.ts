@@ -45,7 +45,9 @@ import type {
   Issue,
   Report,
   ReportSummary,
+  RuleOutcome,
   RuleProfile,
+  RuleResult,
   SkippedRule,
   ValidationRule,
 } from "./domain.js";
@@ -127,6 +129,7 @@ export const runValidation = async (
   // 完了順に push する形へ書き換えると、両方が静かに壊れる。
   const issues = perRule.flat();
   const summary = summarise(issues, activeRules.length, Date.now() - startedAt);
+  const rules = ruleResults(opts.rules, profile, activeRules, perRule, skipped);
   // ファイル一覧 + issue 紐付け(best-effort)。entryNames/getEntryMeta は
   // central directory 由来で payload を読まないので追加 I/O はほぼ無い。
   const entries = await buildEntries(wacz, issues);
@@ -143,6 +146,9 @@ export const runValidation = async (
     summary,
     issues,
     entries,
+    // 走らせなかった rule も載せる。summary の数は単位が混ざる（passed は rule・failed は指摘）ので、
+    // rule ごとに読みたい消費者はこちらを読む。
+    rules,
     // 条件付き spread にすることで `stats` を "明示的に undefined" で
     // はなく「不在」として表現できる — exactOptionalPropertyTypes が
     // これを要求する。
@@ -169,6 +175,40 @@ const applyProfile = (issues: Issue[], rule: ValidationRule, profile: RuleProfil
   return issues.map((issue) => {
     const next = override[issue.messageKey];
     return next === undefined ? issue : { ...issue, severity: next };
+  });
+};
+
+/**
+ * 渡した rule の全部（`all` の順）を、1 本 1 行の結果に。走らせた rule は自分の箱（`perRule`。`activeRules` と同じ順）
+ * の指摘を severity ごとに数え、一番重いもので結果を決める。走らせなかった rule は、profile で外したか
+ * （`excluded`）、版で外したか（`skipped`）。
+ */
+const ruleResults = (
+  all: readonly ValidationRule[],
+  profile: RuleProfile,
+  activeRules: readonly ValidationRule[],
+  perRule: readonly Issue[][],
+  skipped: readonly SkippedRule[],
+): RuleResult[] => {
+  const ran = new Map(activeRules.map((rule, i) => [rule, perRule[i] ?? []]));
+  const ranges = new Map(skipped.map((s) => [s.rule, s.range]));
+  return all.map((rule) => {
+    const base = { rule: rule.name, conformance: rule.conformance, descriptionKey: rule.descriptionKey, docs: rule.docs };
+    const issues = ran.get(rule);
+    if (issues === undefined) {
+      const counts = { error: 0, warning: 0, info: 0 };
+      if (rule.applicability?.excludeProfiles?.includes(profile) === true) return { ...base, outcome: "excluded", counts };
+      const range = ranges.get(rule.name);
+      return { ...base, outcome: "skipped", counts, ...(range !== undefined && { range }) };
+    }
+    const counts = {
+      error: issues.filter((i) => i.severity === "error").length,
+      warning: issues.filter((i) => i.severity === "warning").length,
+      info: issues.filter((i) => i.severity === "info").length,
+    };
+    const outcome: RuleOutcome =
+      counts.error > 0 ? "failed" : counts.warning > 0 ? "warned" : counts.info > 0 ? "noted" : "passed";
+    return { ...base, outcome, counts };
   });
 };
 

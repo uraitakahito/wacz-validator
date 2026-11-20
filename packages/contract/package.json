@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/contract",
-  "version": "0.51.1",
+  "version": "0.52.0",
   "description": "The vocabulary every wacz-validator surface agrees on — rule profiles, locales, and the CLI exit-code contract. Depends on nothing.",
   "license": "Unlicense",
   "type": "module",

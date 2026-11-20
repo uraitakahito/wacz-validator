@@ -51,6 +51,11 @@ producer バグが上の方に上がります。
 
 `durationMs` は validation の実行時間で、プロセス起動時間は含みません。
 
+**数の単位はそろっていません。** `passed` は rule の数（`error` を 1 件も出さなかった rule。
+warning だけを出した rule もここに入ります）で、`failed`・`warnings`・`info` は issue の数です。
+1 つの rule が error を 3 件出すと `failed` は 3 になります。rule ごとに数えるなら
+[`rules`](#rules--rule-ごとに-1-行) を読んでください。
+
 ## Issue
 
 各 issue はそれを上げた rule を名乗るので、prose を解析しなくても rule 単位で
@@ -187,11 +192,56 @@ jq -r '.profile.version // "unpinned"'   # バージョンだけが要るとき
 ```
 
 `stats` と同じく**該当が無ければ key ごと出ません**。だからバージョンを添えない
-実行の JSON は従来と 1 バイトも変わりません。
+実行の JSON に `skipped` の key はありません。
 
 省略ではなく明示にしているのは、`issues` が空であることの意味が 2 通りあるから
 です —— 「見て、問題が無かった」と「そもそも見ていない」。consumer が前者だと
 思い込むと、報告が嘘に近づきます。
+
+## `rules` — rule ごとに 1 行
+
+`issues` が言うのは、何が悪かったかだけです。`rules` は、何を見たかを言います。実行に渡した
+rule の全部を、登録の順に 1 本 1 行で載せます。走らせなかった rule も載ります。
+
+```ts file="packages/core/src/validate/domain.ts#report-rules"
+```
+
+- `outcome` は、その rule が出した issue のうち一番重いもので決まります。severity は profile が
+  組み替えた後の値です。`lenient` が warning を `info` に下げる rule は、`lenient` では `noted`、
+  `spec` では `warned` です。
+- `excluded` は、profile の定義で外れる rule です（`applicability.excludeProfiles`。`spec` での
+  BrowserHive の rule）。`skipped` は [`skipped`](#skipped--見なかったものを書く) と同じ rule で、
+  `range` を持ちます。どちらも数は全部 0 です。
+- 数を足すと `summary.failed`・`summary.warnings`・`summary.info` に合います。
+- wacz-validator が出す JSON では、`description`（頼まれた言語での rule の説明）が付き、`docs` は
+  issue と同じく 1 本の URL に畳まれます。表示する側は、自分の辞書を持たずに一覧を出せます。
+
+```json
+"rules": [
+  {
+    "rule": "cdxj/warc-offsets",
+    "outcome": "failed",
+    "counts": { "error": 3, "warning": 0, "info": 0 },
+    "conformance": "MUST",
+    "descriptionKey": "cdxj/warc-offsets.desc",
+    "description": "…",
+    "docs": [{ "label": "WACZ 1.1.1 §…", "url": "https://…" }]
+  },
+  {
+    "rule": "browserhive/tls-chain",
+    "outcome": "excluded",
+    "counts": { "error": 0, "warning": 0, "info": 0 },
+    "…": "…"
+  }
+]
+```
+
+```sh
+# 見て、落ちた rule（1 行に 1 本）
+wacz-validator-validate a.wacz | jq -r '.rules[] | select(.outcome == "failed") | .rule'
+# この実行が見なかった rule
+wacz-validator-validate a.wacz | jq -r '.rules[] | select(.outcome == "excluded" or .outcome == "skipped") | .rule'
+```
 
 ## `warcinfo` — WARC の本が自分について書いていること
 

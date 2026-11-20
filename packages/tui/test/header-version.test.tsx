@@ -18,6 +18,7 @@ const report: WireReport = {
   summary: { passed: 1, failed: 0, warnings: 0, info: 0, durationMs: 1 },
   issues: [],
   entries: [],
+  rules: [],
 };
 
 const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 50));

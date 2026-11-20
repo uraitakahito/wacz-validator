@@ -202,6 +202,7 @@ describe("renderJson の warcinfo", () => {
     summary: { passed: 0, failed: 0, warnings: 0, info: 0, durationMs: 0 },
     issues: [],
     entries: [],
+    rules: [],
     warcinfo: [
       {
         entry: "archive/data.warc.gz",

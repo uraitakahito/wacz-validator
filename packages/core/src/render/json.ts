@@ -53,5 +53,11 @@ export const renderJson = (report: Report, locale: Locale): string => {
           ),
         },
   );
-  return `${JSON.stringify({ ...report, issues, ...(warcinfo !== undefined && { warcinfo }) }, null, 2)}\n`;
+  // rule ごとの結果に、説明と出典を locale で付ける（issue の message・docs と同じ解き方）。
+  const rules = report.rules.map(({ docs, ...result }) => ({
+    ...result,
+    description: t(result.descriptionKey, {}, locale),
+    docs: docs.map((d) => ({ label: d.label, url: d.url[locale] ?? d.url.en })),
+  }));
+  return `${JSON.stringify({ ...report, issues, rules, ...(warcinfo !== undefined && { warcinfo }) }, null, 2)}\n`;
 };

@@ -120,6 +120,1192 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
   "profile": {
     "name": "spec",
   },
+  "rules": [
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "wacz-auth: checks that the signature in datapackage-digest.json covers the hash it claims, under the certificate the package carries, and that the certificate covers the domain it names. Uses only what the package holds — whether the chain reaches a trusted root, and whether the timestamp is valid, are the verifier's own decisions and are not asked here.",
+      "descriptionKey": "wacz-auth/signature.desc",
+      "docs": [
+        {
+          "label": "wacz-auth 0.1.0 §Domain-Ownership Identity",
+          "url": "https://specs.webrecorder.net/wacz-auth/0.1.0/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz-auth/signature",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ 1.1.1 §5.2 requires these files/directories to exist",
+      "descriptionKey": "wacz/required-files.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/required-files",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "no custom files may be added to the reserved archive/ indexes/ pages/ directories (WACZ 1.1.1 MUST NOT)",
+      "descriptionKey": "wacz/reserved-dirs-clean.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/reserved-dirs-clean",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "the WACZ file's name ends in .wacz (WACZ 1.1.1 §Zip Format File Extension: a ZIP file that follows the WACZ format MUST use the extension .wacz); a name that cannot be told (an http URL whose last path segment has no dot) is not checked",
+      "descriptionKey": "wacz/file-extension.desc",
+      "docs": [
+        {
+          "label": "WACZ §Zip Format File Extension",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#zip-format-file-extension",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/file-extension",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must set profile === "data-package"",
+      "descriptionKey": "datapackage/profile-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/profile-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty wacz_version",
+      "descriptionKey": "datapackage/wacz-version-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/wacz-version-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json resource hashes must match the WACZ contents",
+      "descriptionKey": "datapackage/resource-hashes.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resource-hashes",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json should conform to the Frictionless v1 schema (auxiliary)",
+      "descriptionKey": "datapackage/frictionless-schema.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty resources array; each resource needs name and path (or data)",
+      "descriptionKey": "datapackage/frictionless-structure.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package §required",
+          "url": "https://specs.frictionlessdata.io/data-package/#required-properties",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-structure",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage-digest.json should be present and its hash must match datapackage.json (WACZ 1.1.1 §5.2.5)",
+      "descriptionKey": "datapackage/digest.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage-digest.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-digest-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/digest",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every file in the WACZ must be listed in datapackage.json resources (WACZ 1.1.1 MUST)",
+      "descriptionKey": "datapackage/resources-complete.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resources-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "each pages/pages.jsonl page line must be valid JSON with url and ts (WACZ 1.1.1 §5.2.3)",
+      "descriptionKey": "pages/page-schema.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "pages/page-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 1,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ must contain a wabac-recognised index (.cdx / .cdxj / .idx)",
+      "descriptionKey": "cdxj/index-recognised-by-wabac.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "failed",
+      "rule": "cdxj/index-recognised-by-wabac",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "index CDXJ (plain or gzipped) must contain valid CDXJ data (WACZ 1.1.1 §5.2.2)",
+      "descriptionKey": "cdxj/index-valid-data.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-valid-data",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 1,
+      },
+      "description": "indexes/index.cdxj must not be gzipped (wabac.js silently ignores .cdxj.gz)",
+      "descriptionKey": "cdxj/index-not-gzipped.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "warned",
+      "rule": "cdxj/index-not-gzipped",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj entries must use archive-relative filenames (not "archive/...")",
+      "descriptionKey": "cdxj/filename-archive-relative.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/filename-archive-relative",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "archive WARCs must use .warc.gz when GZIP-encoded and .warc otherwise (WACZ 1.1.1 §5.2.1)",
+      "descriptionKey": "warc/extension-gzip-match.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/extension-gzip-match",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must be stored with method STORE (0), not DEFLATE",
+      "descriptionKey": "warc/storage-store.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/storage-store",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must concatenate independent gzip members",
+      "descriptionKey": "warc/members-independent.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record-at-time compression",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-at-time-compression",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/members-independent",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Every WARC record has the shape WARC 1.1 gives a record: a WARC/1.1 version line, name: value fields that end in CRLF, a blank line, a block of Content-Length bytes and a closing CRLF CRLF",
+      "descriptionKey": "warc/record-structure.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §File and record model",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#file-and-record-model",
+        },
+        {
+          "label": "WARC 1.1 §Content-Length",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-length-mandatory",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-type-mandatory",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/record-structure",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the fields WARC 1.1 makes mandatory: WARC-Record-ID, WARC-Date and WARC-Type on every record, and WARC-Target-URI, WARC-Profile and the segment fields where the record type needs them",
+      "descriptionKey": "warc/mandatory-fields.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Target-URI",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-target-uri",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/mandatory-fields",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry only the fields WARC 1.1 allows for their type, and no defined field twice (WARC-Concurrent-To excepted)",
+      "descriptionKey": "warc/fields-by-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/fields-by-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "The values of the WARC 1.1 fields have the form the standard gives them: record IDs in angle brackets, bare URIs, W3CDTF timestamps in UTC, numbers, labelled digests, IP addresses and media types",
+      "descriptionKey": "warc/field-values.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/field-values",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the Content-Type WARC 1.1 recommends: one on every non-empty block, application/http on HTTP requests and responses, application/warc-fields on warcinfo",
+      "descriptionKey": "warc/content-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Content-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-type",
+        },
+        {
+          "label": "WARC 1.1 §response",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#http-and-https-schemes",
+        },
+        {
+          "label": "WARC 1.1 §warcinfo",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/content-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "revisit records follow their WARC-Profile: one of the two WARC 1.1 profiles, a WARC-Payload-Digest and WARC-Truncated: length for identical-payload-digest, and the recommended WARC-Refers-To fields",
+      "descriptionKey": "warc/revisit.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §revisit",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#revisit",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Identical Payload Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-identical-payload-digest",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Server Not Modified",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-server-not-modified",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/revisit",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Segmented records form a proper series: an origin numbered 1, continuations numbered from 2 without gaps, one target URI, and a WARC-Segment-Total-Length on the last continuation that matches the blocks",
+      "descriptionKey": "warc/segmentation.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record segmentation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-segmentation",
+        },
+        {
+          "label": "WARC 1.1 §continuation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#continuation",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/segmentation",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj offset/length must land on a WARC gzip-member boundary",
+      "descriptionKey": "cdxj/warc-offsets.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/warc-offsets",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.mainPageURL must appear in both pages/pages.jsonl and indexes/index.cdxj",
+      "descriptionKey": "cdxj/pages-mainpage.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/pages-mainpage",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records' WARC-Payload-Digest must match a fresh sha256 of the payload",
+      "descriptionKey": "warc/payload-digest.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/payload-digest",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: surface how many recorded requests were incomplete/failed (metadata records of a BrowserHive WARC file)",
+      "descriptionKey": "warc/recording-complete.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §metadata",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#metadata",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "warc/recording-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: verifies the certificate chains in tls, using only what the package itself holds",
+      "descriptionKey": "browserhive/tls-chain.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-chain",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded accessibility tree against the pruning rules the BrowserHive WACZ Profile declares",
+      "descriptionKey": "browserhive/axtree-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §accessibility",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#accessibility",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/axtree-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the contents of behaviors/custom.jsonl against settings.behaviors. Every behavior the settings report as coming from the request must have its source here — that source arrived with the request and is recoverable from nowhere else once the response is discarded. The converse is not required: a line may have no matching entry, because a behavior can be placed in the page and then decline to act, and the code still ran.",
+      "descriptionKey": "browserhive/behaviors-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §behaviors",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.5.0/#behaviors-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/behaviors-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the shape of browserhive:capture.dismissal when it is present. It must carry the selectors and heuristic that were in force even when nothing was removed — an empty list of removals reads the same whether twenty selectors were tried or none, so the outcome is only checkable next to the input. And a removal that could not be carried out must state that instead of reporting an empty result, because it observed nothing.",
+      "descriptionKey": "browserhive/dismissal-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §dismissal",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.4.0/#dismissal",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/dismissal-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that browserhive:capture.settings carries every member the BrowserHive WACZ Profile requires. Without this check a producer can drop a required member and still claim conformance — which is how the cache member stayed in 1.1.0 for several releases after no implementation wrote it.",
+      "descriptionKey": "browserhive/settings-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settings-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks browserhive:capture.settle against BrowserHive WACZ Profile 1.7.0. It must be present, since the wait runs on every capture. Every signal's time must be written, as null when the signal was not satisfied: an omitted time reads as a signal nobody watched. And endedBy must agree with the times — "quiet" beside a null, or "deadline" with none, is a claim the capture did not earn.",
+      "descriptionKey": "browserhive/settle-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-shape",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: reports an archive whose wait after navigation ran into its deadline, naming the signals that were not satisfied. This is not a violation — BrowserHive WACZ Profile 1.7.0 says a deadline is not a failure, and the package holds what the page had become by then. It is shown because a reader weighing the archive as evidence needs to know the page was still changing when it was taken, and nothing else in the archive says so.",
+      "descriptionKey": "browserhive/settle-deadline.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-deadline",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive declares, in order, what the capture did about each URL pattern in force. BrowserHive WACZ Profile 1.3.0 requires the list even when nothing matched, because an empty list is the claim that nothing was filtered; and it requires an action on each entry, because that is what says whether the request was sent at all.",
+      "descriptionKey": "browserhive/url-policies.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §URL and media type policies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/#policies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/url-policies",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a body a policy omitted must not be listed as dropped at a size limit (completeness.truncatedUrls)",
+      "descriptionKey": "browserhive/policy-not-truncated.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §completeness",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.9.0/#completeness",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/policy-not-truncated",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the page's text, its title and its accessibility tree are read from the rendered page, so a policy that kept the document's body out of the archive does not by itself keep them out. Checks browserhive:capture.document against the BrowserHive WACZ Profile (an archive that conforms to 1.10.0 is held to 1.10.0, where deny withholds nothing): withheld must be what the policies give for the document it names, in both directions; a withheld document leaves no text or title on its page entry (except an after-load snapshot's entry read from a document the policies do not withhold) and no accessibility tree; otherwise the tree names that document, not the requested URL",
+      "descriptionKey": "browserhive/document-withheld.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §document",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/document-withheld",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a deny policy promises that the request is never sent. Checks the WARC for request, response or revisit records of URLs whose first matching urlPolicies entry is deny; only a metadata record saying the request was withheld may stand for such a URL (BrowserHive WACZ Profile 1.11.0)",
+      "descriptionKey": "browserhive/deny-enforced.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §urlPolicies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#urlpolicies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/deny-enforced",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a record of a window not opened (a metadata record carrying window) says window: not-opened, names in WARC-Target-URI the URL the window would have loaded, names page or iframe in target when it has one, and carries no action — it is not a record of a withheld request (BrowserHive WACZ Profile 1.12.0)",
+      "descriptionKey": "browserhive/window-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records of windows not opened",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#records-of-windows-not-opened",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/window-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: bodies that crossed the wire but could not be read as bytes (metadata truncated: not-intercepted) are listed in completeness.uninterceptedUrls, and their response records carry WARC-Truncated: unspecified (BrowserHive WACZ Profile 1.13.0)",
+      "descriptionKey": "browserhive/unintercepted-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Records of bodies not kept",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/#records-of-bodies-not-kept",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/unintercepted-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: completeness.crashedTargets (targets other than the main document whose renderer crashed) is an array of well-formed entries, makes complete false when not empty, is sorted, and omits url when a policy or document.withheld says so (BrowserHive WACZ Profile 1.21.0). Without this, an archive could deny that part of the page died during the capture.",
+      "descriptionKey": "browserhive/crashed-targets-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §crashedTargets",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/#completeness-crashed-targets",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/crashed-targets-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a text body that looks re-encoded by the writer rather than kept as the bytes the server sent (BrowserHive WACZ Profile 1.13.0 forbids converting a body's character encoding; a guess, so a warning)",
+      "descriptionKey": "browserhive/payload-charset.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Response payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#response-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/payload-charset",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: archive/ holds only data-NNN.browserhive.warc.gz (data-NNN.warc.gz in an archive that declares BrowserHive WACZ Profile 1.24.0 or earlier), numbered contiguously from 000; each file is compressed with GZIP (from WACZ Profile 1.25.0) and begins with a warcinfo that names it; every file but the last is at least settings.limits.maxWarcBytes long (WACZ Profile 1.14.0)",
+      "descriptionKey": "browserhive/warc-files.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warc-files",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: an archive that declares BrowserHive WACZ Profile 1.25.0 or later is named with a name that ends in .browserhive.wacz (a SHOULD; the mark is a hint, not a declaration of conformance). A name that cannot be told is not checked",
+      "descriptionKey": "browserhive/wacz-name.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Package name",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#package-name",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/wacz-name",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the response, request and metadata records of one exchange, and the resource and metadata records of one DOM snapshot or of one screenshot, are in the same WARC file (BrowserHive WACZ Profile 1.14.0, BrowserHive WARC Profile 1.1.0 and 1.3.0)",
+      "descriptionKey": "browserhive/exchange-in-one-file.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records and files",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/exchange-in-one-file",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: each WARC file's warcinfo declares, in exactly one conformsTo field, the version of BrowserHive WARC Profile the file conforms to, and every file of the archive declares the same one (BrowserHive WACZ Profile 1.16.0)",
+      "descriptionKey": "browserhive/warcinfo-declares-profile.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §The warcinfo record",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#warcinfo",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warcinfo-declares-profile",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every DOM snapshot the capture took is the same one wherever it is read from — the snapshots member of datapackage, the resource and metadata records in the WARC, the page list and the index — and holds no script element (BrowserHive WACZ Profile 1.17.0 and 1.18.0, BrowserHive WARC Profile 1.1.0)",
+      "descriptionKey": "browserhive/snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Pages",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/#pages",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every frame snapshot the capture took is the same one wherever it is read from — the frames of its stage in the snapshots member of datapackage, the resource and metadata records in the WARC, the data-browserhive-snapshot attribute in the snapshot of its parent and the index — is not a page of pages/pages.jsonl, and holds no script element (BrowserHive WACZ Profile 1.27.0, BrowserHive WARC Profile 1.5.0)",
+      "descriptionKey": "browserhive/frame-snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Frame snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshots",
+        },
+        {
+          "label": "BrowserHive WARC Profile §The records of a frame snapshot",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-records",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Naming a frame snapshot from its parent",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-references",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Frames",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.27.0/#snapshot-frames",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/frame-snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every screenshot the capture took at a stage is the same one wherever it is read from — the screenshots member of datapackage, the resource and metadata records in the WARC, and the index; the package of a capture that was asked to keep out what a picture could show (a secret, a media type policy, a withheld document, a no-archive or no-body policy that matched a request for a document, an image or media) holds none; and the picture is a still WebP image (BrowserHive WACZ Profile 1.24.0, BrowserHive WARC Profile 1.3.0)",
+      "descriptionKey": "browserhive/screenshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/screenshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a request or response record that says it had values replaced (BrowserHive-Redacted) has that field in its defined form and at least that many *** in the places it names. A record whose body was dropped for holding a hidden secret (WARC-Truncated: secret) holds no body and, if a response, is referred to by a metadata record with truncated: secret. Both describe the bytes they hold in their digests and HTTP Content-Length (BrowserHive WARC Profile 1.2.0). Passing does not mean the values are gone: wacz-validator does not know them, so a record that left a value in place, or replaced one without saying so, passes.",
+      "descriptionKey": "browserhive/redacted-records.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Redacted records",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/#redacted-records",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/redacted-records",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: logs/capture.jsonl, the log of the capture, is present, and each of its lines is a JSON object carrying the members BrowserHive WACZ Profile 1.19.0 defines — profile browserhive:log/1, at as an RFC 3339 timestamp, ms as an integer of 0 or more that never falls below the line before, source and level from their fixed values, msg as a string; script on exactly the lines whose source is script, naming an entry of settings.behaviors; dpr, when present, one of settings.devicePixelRatios; truncated, when present, a boolean — and the log holds no line from the page when document carries withheld (WACZ Profile 1.19.0)",
+      "descriptionKey": "browserhive/logs-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §The logs directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Log lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/logs-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: trace/events.jsonl, the trace of the capture, is present and declared in resources; browserhive:capture.trace says how many lines it holds; each line is a JSON object carrying the members BrowserHive WACZ Profile 1.23.0 defines — profile browserhive:trace/1, kind request, id, hop, url, method, startedAt as an RFC 3339 timestamp, ms, and outcome from its fixed values; lines that share an id are in ascending order of hop; a line of a request that was not archived or was denied holds nothing of the answer; record, when present, names a response record in archive/ whose WARC-Date is the startedAt of the line; and when the trace left no line out, every http(s) response record is named by a line (WACZ Profile 1.23.0)",
+      "descriptionKey": "browserhive/trace-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §trace",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The trace directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Trace lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/trace-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: browserhive:capture.random says whether the package holds the values the scripts of the captured page received at random — when recorded is true it carries documents, draws and truncated and no skipped, and the package holds random/values.jsonl and random/recorder.js, both declared in resources; when it is false it carries skipped (not-requested, withheld or failed) and the package holds neither entry, nor does a package whose document is withheld; each line is a JSON object with profile browserhive:random/1 and kind document or draw; document lines carry document (unique, ascending), url, frame (main or frame) and dpr, and record and date together, naming a response record in archive/ whose WARC-Date is date and whose WARC-Target-URI is url; draw lines carry document (of an earlier document line), seq (0, then one more per line of the document), api (Math.random, crypto.getRandomValues or crypto.randomUUID), caller, bytes for crypto.getRandomValues only, and value in the form its api sets; documents and draws are the numbers of those lines (WACZ Profile 1.26.0)",
+      "descriptionKey": "browserhive/random-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §random",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The random directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Random lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/random-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every request record for mainPageURL carries settings.userAgent in its User-Agent header (BrowserHive WACZ Profile 1.20.0). Without this check, settings can name a value the capture never sent.",
+      "descriptionKey": "browserhive/user-agent-recorded.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/user-agent-recorded",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive records what web storage the captured origins held. The inventory is required by BrowserHive WACZ Profile 1.1.0: without it a reader cannot tell a page that rendered from localStorage from one that had nothing to show, and completeness cannot say so because storage never became a body.",
+      "descriptionKey": "browserhive/storage-inventory.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/#storage",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-inventory",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks storage/origins.jsonl against the BrowserHive WACZ Profile, and against what the inventory says about it. A reader decides whether the archive carries stored values by reading valuesRecorded alone, so the two must agree.",
+      "descriptionKey": "browserhive/storage-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#storage-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded san against the certificate the package carries",
+      "descriptionKey": "browserhive/tls-san.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-san",
+    },
+  ],
   "source": {
     "kind": "file",
     "path": "<tmp>/fixture.wacz",
@@ -260,6 +1446,1192 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
   "profile": {
     "name": "spec",
   },
+  "rules": [
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "wacz-auth: checks that the signature in datapackage-digest.json covers the hash it claims, under the certificate the package carries, and that the certificate covers the domain it names. Uses only what the package holds — whether the chain reaches a trusted root, and whether the timestamp is valid, are the verifier's own decisions and are not asked here.",
+      "descriptionKey": "wacz-auth/signature.desc",
+      "docs": [
+        {
+          "label": "wacz-auth 0.1.0 §Domain-Ownership Identity",
+          "url": "https://specs.webrecorder.net/wacz-auth/0.1.0/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz-auth/signature",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ 1.1.1 §5.2 requires these files/directories to exist",
+      "descriptionKey": "wacz/required-files.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/required-files",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "no custom files may be added to the reserved archive/ indexes/ pages/ directories (WACZ 1.1.1 MUST NOT)",
+      "descriptionKey": "wacz/reserved-dirs-clean.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/reserved-dirs-clean",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "the WACZ file's name ends in .wacz (WACZ 1.1.1 §Zip Format File Extension: a ZIP file that follows the WACZ format MUST use the extension .wacz); a name that cannot be told (an http URL whose last path segment has no dot) is not checked",
+      "descriptionKey": "wacz/file-extension.desc",
+      "docs": [
+        {
+          "label": "WACZ §Zip Format File Extension",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#zip-format-file-extension",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/file-extension",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 1,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must set profile === "data-package"",
+      "descriptionKey": "datapackage/profile-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "failed",
+      "rule": "datapackage/profile-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty wacz_version",
+      "descriptionKey": "datapackage/wacz-version-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/wacz-version-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json resource hashes must match the WACZ contents",
+      "descriptionKey": "datapackage/resource-hashes.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resource-hashes",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json should conform to the Frictionless v1 schema (auxiliary)",
+      "descriptionKey": "datapackage/frictionless-schema.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty resources array; each resource needs name and path (or data)",
+      "descriptionKey": "datapackage/frictionless-structure.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package §required",
+          "url": "https://specs.frictionlessdata.io/data-package/#required-properties",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-structure",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage-digest.json should be present and its hash must match datapackage.json (WACZ 1.1.1 §5.2.5)",
+      "descriptionKey": "datapackage/digest.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage-digest.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-digest-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/digest",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every file in the WACZ must be listed in datapackage.json resources (WACZ 1.1.1 MUST)",
+      "descriptionKey": "datapackage/resources-complete.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resources-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "each pages/pages.jsonl page line must be valid JSON with url and ts (WACZ 1.1.1 §5.2.3)",
+      "descriptionKey": "pages/page-schema.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "pages/page-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ must contain a wabac-recognised index (.cdx / .cdxj / .idx)",
+      "descriptionKey": "cdxj/index-recognised-by-wabac.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-recognised-by-wabac",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "index CDXJ (plain or gzipped) must contain valid CDXJ data (WACZ 1.1.1 §5.2.2)",
+      "descriptionKey": "cdxj/index-valid-data.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-valid-data",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj must not be gzipped (wabac.js silently ignores .cdxj.gz)",
+      "descriptionKey": "cdxj/index-not-gzipped.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-not-gzipped",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj entries must use archive-relative filenames (not "archive/...")",
+      "descriptionKey": "cdxj/filename-archive-relative.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/filename-archive-relative",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "archive WARCs must use .warc.gz when GZIP-encoded and .warc otherwise (WACZ 1.1.1 §5.2.1)",
+      "descriptionKey": "warc/extension-gzip-match.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/extension-gzip-match",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must be stored with method STORE (0), not DEFLATE",
+      "descriptionKey": "warc/storage-store.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/storage-store",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must concatenate independent gzip members",
+      "descriptionKey": "warc/members-independent.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record-at-time compression",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-at-time-compression",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/members-independent",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Every WARC record has the shape WARC 1.1 gives a record: a WARC/1.1 version line, name: value fields that end in CRLF, a blank line, a block of Content-Length bytes and a closing CRLF CRLF",
+      "descriptionKey": "warc/record-structure.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §File and record model",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#file-and-record-model",
+        },
+        {
+          "label": "WARC 1.1 §Content-Length",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-length-mandatory",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-type-mandatory",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/record-structure",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the fields WARC 1.1 makes mandatory: WARC-Record-ID, WARC-Date and WARC-Type on every record, and WARC-Target-URI, WARC-Profile and the segment fields where the record type needs them",
+      "descriptionKey": "warc/mandatory-fields.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Target-URI",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-target-uri",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/mandatory-fields",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry only the fields WARC 1.1 allows for their type, and no defined field twice (WARC-Concurrent-To excepted)",
+      "descriptionKey": "warc/fields-by-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/fields-by-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "The values of the WARC 1.1 fields have the form the standard gives them: record IDs in angle brackets, bare URIs, W3CDTF timestamps in UTC, numbers, labelled digests, IP addresses and media types",
+      "descriptionKey": "warc/field-values.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/field-values",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the Content-Type WARC 1.1 recommends: one on every non-empty block, application/http on HTTP requests and responses, application/warc-fields on warcinfo",
+      "descriptionKey": "warc/content-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Content-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-type",
+        },
+        {
+          "label": "WARC 1.1 §response",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#http-and-https-schemes",
+        },
+        {
+          "label": "WARC 1.1 §warcinfo",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/content-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "revisit records follow their WARC-Profile: one of the two WARC 1.1 profiles, a WARC-Payload-Digest and WARC-Truncated: length for identical-payload-digest, and the recommended WARC-Refers-To fields",
+      "descriptionKey": "warc/revisit.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §revisit",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#revisit",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Identical Payload Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-identical-payload-digest",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Server Not Modified",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-server-not-modified",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/revisit",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Segmented records form a proper series: an origin numbered 1, continuations numbered from 2 without gaps, one target URI, and a WARC-Segment-Total-Length on the last continuation that matches the blocks",
+      "descriptionKey": "warc/segmentation.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record segmentation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-segmentation",
+        },
+        {
+          "label": "WARC 1.1 §continuation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#continuation",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/segmentation",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj offset/length must land on a WARC gzip-member boundary",
+      "descriptionKey": "cdxj/warc-offsets.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/warc-offsets",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.mainPageURL must appear in both pages/pages.jsonl and indexes/index.cdxj",
+      "descriptionKey": "cdxj/pages-mainpage.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/pages-mainpage",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records' WARC-Payload-Digest must match a fresh sha256 of the payload",
+      "descriptionKey": "warc/payload-digest.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/payload-digest",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: surface how many recorded requests were incomplete/failed (metadata records of a BrowserHive WARC file)",
+      "descriptionKey": "warc/recording-complete.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §metadata",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#metadata",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "warc/recording-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: verifies the certificate chains in tls, using only what the package itself holds",
+      "descriptionKey": "browserhive/tls-chain.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-chain",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded accessibility tree against the pruning rules the BrowserHive WACZ Profile declares",
+      "descriptionKey": "browserhive/axtree-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §accessibility",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#accessibility",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/axtree-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the contents of behaviors/custom.jsonl against settings.behaviors. Every behavior the settings report as coming from the request must have its source here — that source arrived with the request and is recoverable from nowhere else once the response is discarded. The converse is not required: a line may have no matching entry, because a behavior can be placed in the page and then decline to act, and the code still ran.",
+      "descriptionKey": "browserhive/behaviors-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §behaviors",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.5.0/#behaviors-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/behaviors-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the shape of browserhive:capture.dismissal when it is present. It must carry the selectors and heuristic that were in force even when nothing was removed — an empty list of removals reads the same whether twenty selectors were tried or none, so the outcome is only checkable next to the input. And a removal that could not be carried out must state that instead of reporting an empty result, because it observed nothing.",
+      "descriptionKey": "browserhive/dismissal-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §dismissal",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.4.0/#dismissal",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/dismissal-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that browserhive:capture.settings carries every member the BrowserHive WACZ Profile requires. Without this check a producer can drop a required member and still claim conformance — which is how the cache member stayed in 1.1.0 for several releases after no implementation wrote it.",
+      "descriptionKey": "browserhive/settings-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settings-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks browserhive:capture.settle against BrowserHive WACZ Profile 1.7.0. It must be present, since the wait runs on every capture. Every signal's time must be written, as null when the signal was not satisfied: an omitted time reads as a signal nobody watched. And endedBy must agree with the times — "quiet" beside a null, or "deadline" with none, is a claim the capture did not earn.",
+      "descriptionKey": "browserhive/settle-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-shape",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: reports an archive whose wait after navigation ran into its deadline, naming the signals that were not satisfied. This is not a violation — BrowserHive WACZ Profile 1.7.0 says a deadline is not a failure, and the package holds what the page had become by then. It is shown because a reader weighing the archive as evidence needs to know the page was still changing when it was taken, and nothing else in the archive says so.",
+      "descriptionKey": "browserhive/settle-deadline.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-deadline",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive declares, in order, what the capture did about each URL pattern in force. BrowserHive WACZ Profile 1.3.0 requires the list even when nothing matched, because an empty list is the claim that nothing was filtered; and it requires an action on each entry, because that is what says whether the request was sent at all.",
+      "descriptionKey": "browserhive/url-policies.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §URL and media type policies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/#policies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/url-policies",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a body a policy omitted must not be listed as dropped at a size limit (completeness.truncatedUrls)",
+      "descriptionKey": "browserhive/policy-not-truncated.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §completeness",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.9.0/#completeness",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/policy-not-truncated",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the page's text, its title and its accessibility tree are read from the rendered page, so a policy that kept the document's body out of the archive does not by itself keep them out. Checks browserhive:capture.document against the BrowserHive WACZ Profile (an archive that conforms to 1.10.0 is held to 1.10.0, where deny withholds nothing): withheld must be what the policies give for the document it names, in both directions; a withheld document leaves no text or title on its page entry (except an after-load snapshot's entry read from a document the policies do not withhold) and no accessibility tree; otherwise the tree names that document, not the requested URL",
+      "descriptionKey": "browserhive/document-withheld.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §document",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/document-withheld",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a deny policy promises that the request is never sent. Checks the WARC for request, response or revisit records of URLs whose first matching urlPolicies entry is deny; only a metadata record saying the request was withheld may stand for such a URL (BrowserHive WACZ Profile 1.11.0)",
+      "descriptionKey": "browserhive/deny-enforced.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §urlPolicies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#urlpolicies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/deny-enforced",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a record of a window not opened (a metadata record carrying window) says window: not-opened, names in WARC-Target-URI the URL the window would have loaded, names page or iframe in target when it has one, and carries no action — it is not a record of a withheld request (BrowserHive WACZ Profile 1.12.0)",
+      "descriptionKey": "browserhive/window-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records of windows not opened",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#records-of-windows-not-opened",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/window-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: bodies that crossed the wire but could not be read as bytes (metadata truncated: not-intercepted) are listed in completeness.uninterceptedUrls, and their response records carry WARC-Truncated: unspecified (BrowserHive WACZ Profile 1.13.0)",
+      "descriptionKey": "browserhive/unintercepted-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Records of bodies not kept",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/#records-of-bodies-not-kept",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/unintercepted-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: completeness.crashedTargets (targets other than the main document whose renderer crashed) is an array of well-formed entries, makes complete false when not empty, is sorted, and omits url when a policy or document.withheld says so (BrowserHive WACZ Profile 1.21.0). Without this, an archive could deny that part of the page died during the capture.",
+      "descriptionKey": "browserhive/crashed-targets-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §crashedTargets",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/#completeness-crashed-targets",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/crashed-targets-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a text body that looks re-encoded by the writer rather than kept as the bytes the server sent (BrowserHive WACZ Profile 1.13.0 forbids converting a body's character encoding; a guess, so a warning)",
+      "descriptionKey": "browserhive/payload-charset.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Response payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#response-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/payload-charset",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: archive/ holds only data-NNN.browserhive.warc.gz (data-NNN.warc.gz in an archive that declares BrowserHive WACZ Profile 1.24.0 or earlier), numbered contiguously from 000; each file is compressed with GZIP (from WACZ Profile 1.25.0) and begins with a warcinfo that names it; every file but the last is at least settings.limits.maxWarcBytes long (WACZ Profile 1.14.0)",
+      "descriptionKey": "browserhive/warc-files.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warc-files",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: an archive that declares BrowserHive WACZ Profile 1.25.0 or later is named with a name that ends in .browserhive.wacz (a SHOULD; the mark is a hint, not a declaration of conformance). A name that cannot be told is not checked",
+      "descriptionKey": "browserhive/wacz-name.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Package name",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#package-name",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/wacz-name",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the response, request and metadata records of one exchange, and the resource and metadata records of one DOM snapshot or of one screenshot, are in the same WARC file (BrowserHive WACZ Profile 1.14.0, BrowserHive WARC Profile 1.1.0 and 1.3.0)",
+      "descriptionKey": "browserhive/exchange-in-one-file.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records and files",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/exchange-in-one-file",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: each WARC file's warcinfo declares, in exactly one conformsTo field, the version of BrowserHive WARC Profile the file conforms to, and every file of the archive declares the same one (BrowserHive WACZ Profile 1.16.0)",
+      "descriptionKey": "browserhive/warcinfo-declares-profile.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §The warcinfo record",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#warcinfo",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warcinfo-declares-profile",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every DOM snapshot the capture took is the same one wherever it is read from — the snapshots member of datapackage, the resource and metadata records in the WARC, the page list and the index — and holds no script element (BrowserHive WACZ Profile 1.17.0 and 1.18.0, BrowserHive WARC Profile 1.1.0)",
+      "descriptionKey": "browserhive/snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Pages",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/#pages",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every frame snapshot the capture took is the same one wherever it is read from — the frames of its stage in the snapshots member of datapackage, the resource and metadata records in the WARC, the data-browserhive-snapshot attribute in the snapshot of its parent and the index — is not a page of pages/pages.jsonl, and holds no script element (BrowserHive WACZ Profile 1.27.0, BrowserHive WARC Profile 1.5.0)",
+      "descriptionKey": "browserhive/frame-snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Frame snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshots",
+        },
+        {
+          "label": "BrowserHive WARC Profile §The records of a frame snapshot",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-records",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Naming a frame snapshot from its parent",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-references",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Frames",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.27.0/#snapshot-frames",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/frame-snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every screenshot the capture took at a stage is the same one wherever it is read from — the screenshots member of datapackage, the resource and metadata records in the WARC, and the index; the package of a capture that was asked to keep out what a picture could show (a secret, a media type policy, a withheld document, a no-archive or no-body policy that matched a request for a document, an image or media) holds none; and the picture is a still WebP image (BrowserHive WACZ Profile 1.24.0, BrowserHive WARC Profile 1.3.0)",
+      "descriptionKey": "browserhive/screenshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/screenshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a request or response record that says it had values replaced (BrowserHive-Redacted) has that field in its defined form and at least that many *** in the places it names. A record whose body was dropped for holding a hidden secret (WARC-Truncated: secret) holds no body and, if a response, is referred to by a metadata record with truncated: secret. Both describe the bytes they hold in their digests and HTTP Content-Length (BrowserHive WARC Profile 1.2.0). Passing does not mean the values are gone: wacz-validator does not know them, so a record that left a value in place, or replaced one without saying so, passes.",
+      "descriptionKey": "browserhive/redacted-records.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Redacted records",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/#redacted-records",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/redacted-records",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: logs/capture.jsonl, the log of the capture, is present, and each of its lines is a JSON object carrying the members BrowserHive WACZ Profile 1.19.0 defines — profile browserhive:log/1, at as an RFC 3339 timestamp, ms as an integer of 0 or more that never falls below the line before, source and level from their fixed values, msg as a string; script on exactly the lines whose source is script, naming an entry of settings.behaviors; dpr, when present, one of settings.devicePixelRatios; truncated, when present, a boolean — and the log holds no line from the page when document carries withheld (WACZ Profile 1.19.0)",
+      "descriptionKey": "browserhive/logs-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §The logs directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Log lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/logs-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: trace/events.jsonl, the trace of the capture, is present and declared in resources; browserhive:capture.trace says how many lines it holds; each line is a JSON object carrying the members BrowserHive WACZ Profile 1.23.0 defines — profile browserhive:trace/1, kind request, id, hop, url, method, startedAt as an RFC 3339 timestamp, ms, and outcome from its fixed values; lines that share an id are in ascending order of hop; a line of a request that was not archived or was denied holds nothing of the answer; record, when present, names a response record in archive/ whose WARC-Date is the startedAt of the line; and when the trace left no line out, every http(s) response record is named by a line (WACZ Profile 1.23.0)",
+      "descriptionKey": "browserhive/trace-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §trace",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The trace directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Trace lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/trace-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: browserhive:capture.random says whether the package holds the values the scripts of the captured page received at random — when recorded is true it carries documents, draws and truncated and no skipped, and the package holds random/values.jsonl and random/recorder.js, both declared in resources; when it is false it carries skipped (not-requested, withheld or failed) and the package holds neither entry, nor does a package whose document is withheld; each line is a JSON object with profile browserhive:random/1 and kind document or draw; document lines carry document (unique, ascending), url, frame (main or frame) and dpr, and record and date together, naming a response record in archive/ whose WARC-Date is date and whose WARC-Target-URI is url; draw lines carry document (of an earlier document line), seq (0, then one more per line of the document), api (Math.random, crypto.getRandomValues or crypto.randomUUID), caller, bytes for crypto.getRandomValues only, and value in the form its api sets; documents and draws are the numbers of those lines (WACZ Profile 1.26.0)",
+      "descriptionKey": "browserhive/random-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §random",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The random directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Random lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/random-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every request record for mainPageURL carries settings.userAgent in its User-Agent header (BrowserHive WACZ Profile 1.20.0). Without this check, settings can name a value the capture never sent.",
+      "descriptionKey": "browserhive/user-agent-recorded.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/user-agent-recorded",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive records what web storage the captured origins held. The inventory is required by BrowserHive WACZ Profile 1.1.0: without it a reader cannot tell a page that rendered from localStorage from one that had nothing to show, and completeness cannot say so because storage never became a body.",
+      "descriptionKey": "browserhive/storage-inventory.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/#storage",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-inventory",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks storage/origins.jsonl against the BrowserHive WACZ Profile, and against what the inventory says about it. A reader decides whether the archive carries stored values by reading valuesRecorded alone, so the two must agree.",
+      "descriptionKey": "browserhive/storage-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#storage-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded san against the certificate the package carries",
+      "descriptionKey": "browserhive/tls-san.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-san",
+    },
+  ],
   "source": {
     "kind": "file",
     "path": "<tmp>/fixture.wacz",
@@ -370,6 +2742,1192 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
   "profile": {
     "name": "spec",
   },
+  "rules": [
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "wacz-auth: checks that the signature in datapackage-digest.json covers the hash it claims, under the certificate the package carries, and that the certificate covers the domain it names. Uses only what the package holds — whether the chain reaches a trusted root, and whether the timestamp is valid, are the verifier's own decisions and are not asked here.",
+      "descriptionKey": "wacz-auth/signature.desc",
+      "docs": [
+        {
+          "label": "wacz-auth 0.1.0 §Domain-Ownership Identity",
+          "url": "https://specs.webrecorder.net/wacz-auth/0.1.0/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz-auth/signature",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ 1.1.1 §5.2 requires these files/directories to exist",
+      "descriptionKey": "wacz/required-files.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/required-files",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "no custom files may be added to the reserved archive/ indexes/ pages/ directories (WACZ 1.1.1 MUST NOT)",
+      "descriptionKey": "wacz/reserved-dirs-clean.desc",
+      "docs": [
+        {
+          "label": "WACZ §directories-and-files",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#directories-and-files",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/reserved-dirs-clean",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "the WACZ file's name ends in .wacz (WACZ 1.1.1 §Zip Format File Extension: a ZIP file that follows the WACZ format MUST use the extension .wacz); a name that cannot be told (an http URL whose last path segment has no dot) is not checked",
+      "descriptionKey": "wacz/file-extension.desc",
+      "docs": [
+        {
+          "label": "WACZ §Zip Format File Extension",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#zip-format-file-extension",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "wacz/file-extension",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must set profile === "data-package"",
+      "descriptionKey": "datapackage/profile-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/profile-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty wacz_version",
+      "descriptionKey": "datapackage/wacz-version-required.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/wacz-version-required",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json resource hashes must match the WACZ contents",
+      "descriptionKey": "datapackage/resource-hashes.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resource-hashes",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json should conform to the Frictionless v1 schema (auxiliary)",
+      "descriptionKey": "datapackage/frictionless-schema.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package",
+          "url": "https://specs.frictionlessdata.io/data-package/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.json must declare a non-empty resources array; each resource needs name and path (or data)",
+      "descriptionKey": "datapackage/frictionless-structure.desc",
+      "docs": [
+        {
+          "label": "Frictionless Data Package §required",
+          "url": "https://specs.frictionlessdata.io/data-package/#required-properties",
+        },
+        {
+          "label": "Frictionless Data Resource",
+          "url": "https://specs.frictionlessdata.io/data-resource/",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/frictionless-structure",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage-digest.json should be present and its hash must match datapackage.json (WACZ 1.1.1 §5.2.5)",
+      "descriptionKey": "datapackage/digest.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage-digest.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-digest-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/digest",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every file in the WACZ must be listed in datapackage.json resources (WACZ 1.1.1 MUST)",
+      "descriptionKey": "datapackage/resources-complete.desc",
+      "docs": [
+        {
+          "label": "WACZ §datapackage.json",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "datapackage/resources-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "each pages/pages.jsonl page line must be valid JSON with url and ts (WACZ 1.1.1 §5.2.3)",
+      "descriptionKey": "pages/page-schema.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "pages/page-schema",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WACZ must contain a wabac-recognised index (.cdx / .cdxj / .idx)",
+      "descriptionKey": "cdxj/index-recognised-by-wabac.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-recognised-by-wabac",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "index CDXJ (plain or gzipped) must contain valid CDXJ data (WACZ 1.1.1 §5.2.2)",
+      "descriptionKey": "cdxj/index-valid-data.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-valid-data",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj must not be gzipped (wabac.js silently ignores .cdxj.gz)",
+      "descriptionKey": "cdxj/index-not-gzipped.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/index-not-gzipped",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj entries must use archive-relative filenames (not "archive/...")",
+      "descriptionKey": "cdxj/filename-archive-relative.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/filename-archive-relative",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "archive WARCs must use .warc.gz when GZIP-encoded and .warc otherwise (WACZ 1.1.1 §5.2.1)",
+      "descriptionKey": "warc/extension-gzip-match.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/extension-gzip-match",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must be stored with method STORE (0), not DEFLATE",
+      "descriptionKey": "warc/storage-store.desc",
+      "docs": [
+        {
+          "label": "WACZ §archive",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#archive",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/storage-store",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "every WARC under archive/ must concatenate independent gzip members",
+      "descriptionKey": "warc/members-independent.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record-at-time compression",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-at-time-compression",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/members-independent",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Every WARC record has the shape WARC 1.1 gives a record: a WARC/1.1 version line, name: value fields that end in CRLF, a blank line, a block of Content-Length bytes and a closing CRLF CRLF",
+      "descriptionKey": "warc/record-structure.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §File and record model",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#file-and-record-model",
+        },
+        {
+          "label": "WARC 1.1 §Content-Length",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-length-mandatory",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-type-mandatory",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/record-structure",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the fields WARC 1.1 makes mandatory: WARC-Record-ID, WARC-Date and WARC-Type on every record, and WARC-Target-URI, WARC-Profile and the segment fields where the record type needs them",
+      "descriptionKey": "warc/mandatory-fields.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Target-URI",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-target-uri",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/mandatory-fields",
+    },
+    {
+      "conformance": "MUST NOT",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry only the fields WARC 1.1 allows for their type, and no defined field twice (WARC-Concurrent-To excepted)",
+      "descriptionKey": "warc/fields-by-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/fields-by-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "The values of the WARC 1.1 fields have the form the standard gives them: record IDs in angle brackets, bare URIs, W3CDTF timestamps in UTC, numbers, labelled digests, IP addresses and media types",
+      "descriptionKey": "warc/field-values.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Named fields",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#named-fields",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/field-values",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records carry the Content-Type WARC 1.1 recommends: one on every non-empty block, application/http on HTTP requests and responses, application/warc-fields on warcinfo",
+      "descriptionKey": "warc/content-type.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Content-Type",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#content-type",
+        },
+        {
+          "label": "WARC 1.1 §response",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#http-and-https-schemes",
+        },
+        {
+          "label": "WARC 1.1 §warcinfo",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warcinfo",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/content-type",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "revisit records follow their WARC-Profile: one of the two WARC 1.1 profiles, a WARC-Payload-Digest and WARC-Truncated: length for identical-payload-digest, and the recommended WARC-Refers-To fields",
+      "descriptionKey": "warc/revisit.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §revisit",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#revisit",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Identical Payload Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-identical-payload-digest",
+        },
+        {
+          "label": "WARC 1.1 §Profile: Server Not Modified",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#profile-server-not-modified",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/revisit",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "Segmented records form a proper series: an origin numbered 1, continuations numbered from 2 without gaps, one target URI, and a WARC-Segment-Total-Length on the last continuation that matches the blocks",
+      "descriptionKey": "warc/segmentation.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §Record segmentation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#record-segmentation",
+        },
+        {
+          "label": "WARC 1.1 §continuation",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#continuation",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/segmentation",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "indexes/index.cdxj offset/length must land on a WARC gzip-member boundary",
+      "descriptionKey": "cdxj/warc-offsets.desc",
+      "docs": [
+        {
+          "label": "WACZ §indexes",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#indexes",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/warc-offsets",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "datapackage.mainPageURL must appear in both pages/pages.jsonl and indexes/index.cdxj",
+      "descriptionKey": "cdxj/pages-mainpage.desc",
+      "docs": [
+        {
+          "label": "WACZ §pages",
+          "url": "https://specs.webrecorder.net/wacz/1.1.1/#pages",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "cdxj/pages-mainpage",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "WARC records' WARC-Payload-Digest must match a fresh sha256 of the payload",
+      "descriptionKey": "warc/payload-digest.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §WARC-Payload-Digest",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#warc-payload-digest",
+        },
+      ],
+      "outcome": "passed",
+      "rule": "warc/payload-digest",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: surface how many recorded requests were incomplete/failed (metadata records of a BrowserHive WARC file)",
+      "descriptionKey": "warc/recording-complete.desc",
+      "docs": [
+        {
+          "label": "WARC 1.1 §metadata",
+          "url": "https://uraitakahito.github.io/warc-specifications/specifications/warc-format/warc-1.1-annotated/#metadata",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "warc/recording-complete",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: verifies the certificate chains in tls, using only what the package itself holds",
+      "descriptionKey": "browserhive/tls-chain.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-chain",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded accessibility tree against the pruning rules the BrowserHive WACZ Profile declares",
+      "descriptionKey": "browserhive/axtree-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §accessibility",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#accessibility",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/axtree-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the contents of behaviors/custom.jsonl against settings.behaviors. Every behavior the settings report as coming from the request must have its source here — that source arrived with the request and is recoverable from nowhere else once the response is discarded. The converse is not required: a line may have no matching entry, because a behavior can be placed in the page and then decline to act, and the code still ran.",
+      "descriptionKey": "browserhive/behaviors-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §behaviors",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.5.0/#behaviors-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/behaviors-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the shape of browserhive:capture.dismissal when it is present. It must carry the selectors and heuristic that were in force even when nothing was removed — an empty list of removals reads the same whether twenty selectors were tried or none, so the outcome is only checkable next to the input. And a removal that could not be carried out must state that instead of reporting an empty result, because it observed nothing.",
+      "descriptionKey": "browserhive/dismissal-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §dismissal",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.4.0/#dismissal",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/dismissal-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that browserhive:capture.settings carries every member the BrowserHive WACZ Profile requires. Without this check a producer can drop a required member and still claim conformance — which is how the cache member stayed in 1.1.0 for several releases after no implementation wrote it.",
+      "descriptionKey": "browserhive/settings-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settings-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks browserhive:capture.settle against BrowserHive WACZ Profile 1.7.0. It must be present, since the wait runs on every capture. Every signal's time must be written, as null when the signal was not satisfied: an omitted time reads as a signal nobody watched. And endedBy must agree with the times — "quiet" beside a null, or "deadline" with none, is a claim the capture did not earn.",
+      "descriptionKey": "browserhive/settle-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-shape",
+    },
+    {
+      "conformance": "MAY",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: reports an archive whose wait after navigation ran into its deadline, naming the signals that were not satisfied. This is not a violation — BrowserHive WACZ Profile 1.7.0 says a deadline is not a failure, and the package holds what the page had become by then. It is shown because a reader weighing the archive as evidence needs to know the page was still changing when it was taken, and nothing else in the archive says so.",
+      "descriptionKey": "browserhive/settle-deadline.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settle",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.7.0/#settle",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/settle-deadline",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive declares, in order, what the capture did about each URL pattern in force. BrowserHive WACZ Profile 1.3.0 requires the list even when nothing matched, because an empty list is the claim that nothing was filtered; and it requires an action on each entry, because that is what says whether the request was sent at all.",
+      "descriptionKey": "browserhive/url-policies.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §URL and media type policies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.3.0/#policies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/url-policies",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a body a policy omitted must not be listed as dropped at a size limit (completeness.truncatedUrls)",
+      "descriptionKey": "browserhive/policy-not-truncated.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §completeness",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.9.0/#completeness",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/policy-not-truncated",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the page's text, its title and its accessibility tree are read from the rendered page, so a policy that kept the document's body out of the archive does not by itself keep them out. Checks browserhive:capture.document against the BrowserHive WACZ Profile (an archive that conforms to 1.10.0 is held to 1.10.0, where deny withholds nothing): withheld must be what the policies give for the document it names, in both directions; a withheld document leaves no text or title on its page entry (except an after-load snapshot's entry read from a document the policies do not withhold) and no accessibility tree; otherwise the tree names that document, not the requested URL",
+      "descriptionKey": "browserhive/document-withheld.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §document",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#document",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/document-withheld",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a deny policy promises that the request is never sent. Checks the WARC for request, response or revisit records of URLs whose first matching urlPolicies entry is deny; only a metadata record saying the request was withheld may stand for such a URL (BrowserHive WACZ Profile 1.11.0)",
+      "descriptionKey": "browserhive/deny-enforced.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §urlPolicies",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#urlpolicies",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/deny-enforced",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a record of a window not opened (a metadata record carrying window) says window: not-opened, names in WARC-Target-URI the URL the window would have loaded, names page or iframe in target when it has one, and carries no action — it is not a record of a withheld request (BrowserHive WACZ Profile 1.12.0)",
+      "descriptionKey": "browserhive/window-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records of windows not opened",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#records-of-windows-not-opened",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/window-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: bodies that crossed the wire but could not be read as bytes (metadata truncated: not-intercepted) are listed in completeness.uninterceptedUrls, and their response records carry WARC-Truncated: unspecified (BrowserHive WACZ Profile 1.13.0)",
+      "descriptionKey": "browserhive/unintercepted-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Records of bodies not kept",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.13.0/#records-of-bodies-not-kept",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/unintercepted-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: completeness.crashedTargets (targets other than the main document whose renderer crashed) is an array of well-formed entries, makes complete false when not empty, is sorted, and omits url when a policy or document.withheld says so (BrowserHive WACZ Profile 1.21.0). Without this, an archive could deny that part of the page died during the capture.",
+      "descriptionKey": "browserhive/crashed-targets-listed.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §crashedTargets",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.21.0/#completeness-crashed-targets",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/crashed-targets-listed",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a text body that looks re-encoded by the writer rather than kept as the bytes the server sent (BrowserHive WACZ Profile 1.13.0 forbids converting a body's character encoding; a guess, so a warning)",
+      "descriptionKey": "browserhive/payload-charset.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Response payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#response-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/payload-charset",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: archive/ holds only data-NNN.browserhive.warc.gz (data-NNN.warc.gz in an archive that declares BrowserHive WACZ Profile 1.24.0 or earlier), numbered contiguously from 000; each file is compressed with GZIP (from WACZ Profile 1.25.0) and begins with a warcinfo that names it; every file but the last is at least settings.limits.maxWarcBytes long (WACZ Profile 1.14.0)",
+      "descriptionKey": "browserhive/warc-files.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warc-files",
+    },
+    {
+      "conformance": "SHOULD",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: an archive that declares BrowserHive WACZ Profile 1.25.0 or later is named with a name that ends in .browserhive.wacz (a SHOULD; the mark is a hint, not a declaration of conformance). A name that cannot be told is not checked",
+      "descriptionKey": "browserhive/wacz-name.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §Package name",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#package-name",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/wacz-name",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: the response, request and metadata records of one exchange, and the resource and metadata records of one DOM snapshot or of one screenshot, are in the same WARC file (BrowserHive WACZ Profile 1.14.0, BrowserHive WARC Profile 1.1.0 and 1.3.0)",
+      "descriptionKey": "browserhive/exchange-in-one-file.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Records and files",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/exchange-in-one-file",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: each WARC file's warcinfo declares, in exactly one conformsTo field, the version of BrowserHive WARC Profile the file conforms to, and every file of the archive declares the same one (BrowserHive WACZ Profile 1.16.0)",
+      "descriptionKey": "browserhive/warcinfo-declares-profile.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §The warcinfo record",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/#warcinfo",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/warcinfo-declares-profile",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every DOM snapshot the capture took is the same one wherever it is read from — the snapshots member of datapackage, the resource and metadata records in the WARC, the page list and the index — and holds no script element (BrowserHive WACZ Profile 1.17.0 and 1.18.0, BrowserHive WARC Profile 1.1.0)",
+      "descriptionKey": "browserhive/snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/#snapshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Pages",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/#pages",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every frame snapshot the capture took is the same one wherever it is read from — the frames of its stage in the snapshots member of datapackage, the resource and metadata records in the WARC, the data-browserhive-snapshot attribute in the snapshot of its parent and the index — is not a page of pages/pages.jsonl, and holds no script element (BrowserHive WACZ Profile 1.27.0, BrowserHive WARC Profile 1.5.0)",
+      "descriptionKey": "browserhive/frame-snapshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Frame snapshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshots",
+        },
+        {
+          "label": "BrowserHive WARC Profile §The records of a frame snapshot",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-records",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Naming a frame snapshot from its parent",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/#frame-snapshot-references",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Frames",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.27.0/#snapshot-frames",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/frame-snapshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every screenshot the capture took at a stage is the same one wherever it is read from — the screenshots member of datapackage, the resource and metadata records in the WARC, and the index; the package of a capture that was asked to keep out what a picture could show (a secret, a media type policy, a withheld document, a no-archive or no-body policy that matched a request for a document, an image or media) holds none; and the picture is a still WebP image (BrowserHive WACZ Profile 1.24.0, BrowserHive WARC Profile 1.3.0)",
+      "descriptionKey": "browserhive/screenshots.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §screenshots",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/#screenshots",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Archive files",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.25.0/#archive-files",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/screenshots",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: a request or response record that says it had values replaced (BrowserHive-Redacted) has that field in its defined form and at least that many *** in the places it names. A record whose body was dropped for holding a hidden secret (WARC-Truncated: secret) holds no body and, if a response, is referred to by a metadata record with truncated: secret. Both describe the bytes they hold in their digests and HTTP Content-Length (BrowserHive WARC Profile 1.2.0). Passing does not mean the values are gone: wacz-validator does not know them, so a record that left a value in place, or replaced one without saying so, passes.",
+      "descriptionKey": "browserhive/redacted-records.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Redacted records",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/#redacted-records",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/redacted-records",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: logs/capture.jsonl, the log of the capture, is present, and each of its lines is a JSON object carrying the members BrowserHive WACZ Profile 1.19.0 defines — profile browserhive:log/1, at as an RFC 3339 timestamp, ms as an integer of 0 or more that never falls below the line before, source and level from their fixed values, msg as a string; script on exactly the lines whose source is script, naming an entry of settings.behaviors; dpr, when present, one of settings.devicePixelRatios; truncated, when present, a boolean — and the log holds no line from the page when document carries withheld (WACZ Profile 1.19.0)",
+      "descriptionKey": "browserhive/logs-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §The logs directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Log lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.19.0/#logs-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/logs-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: trace/events.jsonl, the trace of the capture, is present and declared in resources; browserhive:capture.trace says how many lines it holds; each line is a JSON object carrying the members BrowserHive WACZ Profile 1.23.0 defines — profile browserhive:trace/1, kind request, id, hop, url, method, startedAt as an RFC 3339 timestamp, ms, and outcome from its fixed values; lines that share an id are in ascending order of hop; a line of a request that was not archived or was denied holds nothing of the answer; record, when present, names a response record in archive/ whose WARC-Date is the startedAt of the line; and when the trace left no line out, every http(s) response record is named by a line (WACZ Profile 1.23.0)",
+      "descriptionKey": "browserhive/trace-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §trace",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The trace directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Trace lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/#trace-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/trace-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: browserhive:capture.random says whether the package holds the values the scripts of the captured page received at random — when recorded is true it carries documents, draws and truncated and no skipped, and the package holds random/values.jsonl and random/recorder.js, both declared in resources; when it is false it carries skipped (not-requested, withheld or failed) and the package holds neither entry, nor does a package whose document is withheld; each line is a JSON object with profile browserhive:random/1 and kind document or draw; document lines carry document (unique, ascending), url, frame (main or frame) and dpr, and record and date together, naming a response record in archive/ whose WARC-Date is date and whose WARC-Target-URI is url; draw lines carry document (of an earlier document line), seq (0, then one more per line of the document), api (Math.random, crypto.getRandomValues or crypto.randomUUID), caller, bytes for crypto.getRandomValues only, and value in the form its api sets; documents and draws are the numbers of those lines (WACZ Profile 1.26.0)",
+      "descriptionKey": "browserhive/random-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §random",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §The random directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-directory",
+        },
+        {
+          "label": "BrowserHive WACZ Profile §Random lines",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.26.0/#random-lines",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/random-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: every request record for mainPageURL carries settings.userAgent in its User-Agent header (BrowserHive WACZ Profile 1.20.0). Without this check, settings can name a value the capture never sent.",
+      "descriptionKey": "browserhive/user-agent-recorded.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §settings",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#settings",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/user-agent-recorded",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks that the archive records what web storage the captured origins held. The inventory is required by BrowserHive WACZ Profile 1.1.0: without it a reader cannot tell a page that rendered from localStorage from one that had nothing to show, and completeness cannot say so because storage never became a body.",
+      "descriptionKey": "browserhive/storage-inventory.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.6.0/#storage",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-inventory",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks storage/origins.jsonl against the BrowserHive WACZ Profile, and against what the inventory says about it. A reader decides whether the archive carries stored values by reading valuesRecorded alone, so the two must agree.",
+      "descriptionKey": "browserhive/storage-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §storage directory",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.22.0/#storage-directory",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/storage-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: checks the recorded san against the certificate the package carries",
+      "descriptionKey": "browserhive/tls-san.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §tls",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#tls",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/tls-san",
+    },
+  ],
   "source": {
     "kind": "file",
     "path": "<tmp>/fixture.wacz",

@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/core",
-  "version": "0.51.1",
+  "version": "0.52.0",
   "description": "WACZ validation engine — emits a machine-readable JSON report or plain text.",
   "license": "Unlicense",
   "type": "module",

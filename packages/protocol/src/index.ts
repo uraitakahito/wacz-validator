@@ -24,6 +24,7 @@ import type {
   Issue,
   Report,
   ResolvedDocLink,
+  RuleResult,
   WarcHeader,
   WarcinfoField,
   WarcinfoRecord,
@@ -43,6 +44,7 @@ export type {
   ReportSource,
   ReportStats,
   ReportSummary,
+  RuleOutcome,
   RuleProfile,
   Severity,
   WarcHeader,
@@ -175,9 +177,19 @@ export interface WireWarcinfoRecord extends Omit<WarcinfoRecord, "fields"> {
   fields?: WireWarcinfoField[];
 }
 
+/**
+ * renderJson が説明（`description`）を足し、出典を locale で 1 本の URL に畳んだ rule の結果。
+ * 走らせなかった rule（`skipped`・`excluded`）にも説明と出典は付く。
+ */
+export interface WireRuleResult extends Omit<RuleResult, "docs"> {
+  description: string;
+  docs: readonly ResolvedDocLink[];
+}
+
 /** daemon が返す解決済み Report(renderJson 出力に対応)。 */
-export interface WireReport extends Omit<Report, "issues" | "warcinfo"> {
+export interface WireReport extends Omit<Report, "issues" | "warcinfo" | "rules"> {
   issues: WireIssue[];
+  rules: WireRuleResult[];
   warcinfo?: WireWarcinfoRecord[];
 }
 
