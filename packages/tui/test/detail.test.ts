@@ -40,6 +40,7 @@ describe("entryIssues", () => {
       { rule: "c/three", severity: "info", messageKey: "c/three.x", message: "three" }, // location 無し
     ],
     entries: [],
+    rules: [],
   } satisfies WireReport;
 
   it("location.entry が一致する issue だけを返す", () => {

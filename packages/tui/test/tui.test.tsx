@@ -105,6 +105,7 @@ const makeReport = (overrides: Partial<WireReport> = {}): WireReport => ({
     },
   ],
   entries: [],
+  rules: [],
   ...overrides,
 });
 

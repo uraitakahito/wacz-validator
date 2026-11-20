@@ -479,6 +479,37 @@ export interface WarcinfoRecord {
 }
 // #endregion report-warcinfo
 
+// #region report-rules
+/**
+ * rule 1 本の結果。`failed` から `passed` までは走らせた rule で、指摘の severity（profile の上書きの後）の
+ * 一番重いもので決まる。`skipped` と `excluded` は走らせなかった rule。
+ *
+ * - `failed` — error を 1 件以上出した
+ * - `warned` — error は無く、warning を 1 件以上出した
+ * - `noted` — info だけを出した
+ * - `passed` — 指摘を 1 件も出さなかった
+ * - `skipped` — producer のバージョンが範囲の外で走らせなかった（{@link SkippedRule} と同じ rule）
+ * - `excluded` — この profile では走らせない（`applicability.excludeProfiles`）
+ */
+export type RuleOutcome = "failed" | "warned" | "noted" | "passed" | "skipped" | "excluded";
+
+export interface RuleResult {
+  /** `Issue.rule` と同じ値。 */
+  rule: string;
+  outcome: RuleOutcome;
+  /** この rule が出した指摘の数を severity ごとに（profile の上書きの後）。走らせなかった rule は全部 0。 */
+  counts: { error: number; warning: number; info: number };
+  /** spec の規範レベル。rule の宣言のまま（{@link ValidationRule.conformance}）。 */
+  conformance: Conformance;
+  /** rule の説明の i18n キー（`<rule>.desc`）。renderer が locale で解く。 */
+  descriptionKey: string;
+  /** rule の出典。renderer が locale で 1 本の URL に畳む。 */
+  docs: readonly DocLink[];
+  /** `skipped` のときだけ。rule が求めた producer のバージョンの範囲（例 `">=1.11.0"`）。 */
+  range?: string;
+}
+// #endregion report-rules
+
 // #region report
 export interface Report {
   /**
@@ -495,6 +526,11 @@ export interface Report {
   issues: Issue[];
   /** WACZ 内のファイル一覧 + 検証の紐付け。{@link ReportEntry} を参照。 */
   entries: ReportEntry[];
+  /**
+   * 渡した rule の全部を、渡した順（既定は `DEFAULT_RULES` の登録の順）に 1 本 1 行で。
+   * 走らせなかった rule も載る。{@link RuleResult} を参照。
+   */
+  rules: RuleResult[];
   /** best-effort な metadata — {@link ReportStats} を参照。 */
   stats?: ReportStats;
   /**

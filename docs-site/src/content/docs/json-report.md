@@ -52,6 +52,11 @@ reason `s3` carries no connection settings (`forcePathStyle`) in its `uri`.
 
 `durationMs` measures the validation run, not process startup.
 
+**The counts are not in one unit.** `passed` counts rules (those that raised no
+`error`; a rule that raised only warnings is counted here), while `failed`,
+`warnings` and `info` count issues: one rule that reports three errors makes
+`failed` 3. To count by rule, read [`rules`](#rules--one-row-per-rule).
+
 ## Issues
 
 Each issue names the rule that raised it, so a report can be filtered or diffed
@@ -195,11 +200,60 @@ written down**, in `skipped`:
 ```
 
 Like `stats`, the key is absent when there is nothing to report, so a run
-without a version produces byte-identical JSON to before.
+without a version has no `skipped` key.
 
 It is explicit rather than omitted because an empty `issues` has two possible
 meanings — "looked, found nothing" and "never looked". A consumer that assumes
 the first is being misled.
+
+## `rules` — one row per rule
+
+`issues` only says what went wrong. `rules` says what was looked at: every rule
+the run was given, in registration order, one row each — including the rules
+that did not run.
+
+```ts file="packages/core/src/validate/domain.ts#report-rules"
+```
+
+- `outcome` comes from the heaviest issue the rule raised, after the profile has
+  rewritten severities. A rule whose warning `lenient` lowers to `info` is
+  `noted` there and `warned` under `spec`.
+- `excluded` is a rule the profile leaves out by definition
+  (`applicability.excludeProfiles` — the BrowserHive rules under `spec`).
+  `skipped` is the same rule as in [`skipped`](#skipped--recording-what-was-not-looked-at),
+  with its `range`. Both have all counts at 0.
+- The counts add up to `summary.failed`, `summary.warnings` and `summary.info`.
+- In the JSON that wacz-validator prints, `description` (the rule's
+  explanation in the requested language) is added, and `docs` is folded to one
+  URL per link, the same way as on an issue. A client can show the list without
+  a catalogue of its own.
+
+```json
+"rules": [
+  {
+    "rule": "cdxj/warc-offsets",
+    "outcome": "failed",
+    "counts": { "error": 3, "warning": 0, "info": 0 },
+    "conformance": "MUST",
+    "descriptionKey": "cdxj/warc-offsets.desc",
+    "description": "…",
+    "docs": [{ "label": "WACZ 1.1.1 §…", "url": "https://…" }]
+  },
+  {
+    "rule": "browserhive/tls-chain",
+    "outcome": "excluded",
+    "counts": { "error": 0, "warning": 0, "info": 0 },
+    "…": "…"
+  }
+]
+```
+
+```sh
+# what was looked at and failed, one line per rule
+wacz-validator-validate a.wacz | jq -r '.rules[] | select(.outcome == "failed") | .rule'
+# what this run did not look at
+wacz-validator-validate a.wacz | jq -r '.rules[] | select(.outcome == "excluded" or .outcome == "skipped") | .rule'
+```
 
 ## `warcinfo` — what the WARC files say about themselves
 
