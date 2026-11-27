@@ -1166,6 +1166,28 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
         "info": 0,
         "warning": 0,
       },
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
+      "descriptionKey": "browserhive/http-message-length.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Length of the HTTP message",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/http-message-length",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
       "description": "browserhive: logs/capture.jsonl, the log of the capture, is present, and each of its lines is a JSON object carrying the members BrowserHive WACZ Profile 1.19.0 defines — profile browserhive:log/1, at as an RFC 3339 timestamp, ms as an integer of 0 or more that never falls below the line before, source and level from their fixed values, msg as a string; script on exactly the lines whose source is script, naming an entry of settings.behaviors; dpr, when present, one of settings.devicePixelRatios; truncated, when present, a boolean — and the log holds no line from the page when document carries withheld (WACZ Profile 1.19.0)",
       "descriptionKey": "browserhive/logs-shape.desc",
       "docs": [
@@ -2492,6 +2514,28 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
         "info": 0,
         "warning": 0,
       },
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
+      "descriptionKey": "browserhive/http-message-length.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Length of the HTTP message",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/http-message-length",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
       "description": "browserhive: logs/capture.jsonl, the log of the capture, is present, and each of its lines is a JSON object carrying the members BrowserHive WACZ Profile 1.19.0 defines — profile browserhive:log/1, at as an RFC 3339 timestamp, ms as an integer of 0 or more that never falls below the line before, source and level from their fixed values, msg as a string; script on exactly the lines whose source is script, naming an entry of settings.behaviors; dpr, when present, one of settings.devicePixelRatios; truncated, when present, a boolean — and the log holds no line from the page when document carries withheld (WACZ Profile 1.19.0)",
       "descriptionKey": "browserhive/logs-shape.desc",
       "docs": [
@@ -3780,6 +3824,28 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
       ],
       "outcome": "excluded",
       "rule": "browserhive/redacted-records",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
+      "descriptionKey": "browserhive/http-message-length.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WARC Profile §Length of the HTTP message",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/http-message-length",
     },
     {
       "conformance": "MUST",

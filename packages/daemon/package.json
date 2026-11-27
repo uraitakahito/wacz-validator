@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/daemon",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "Stateless HTTP/WS validation daemon — owns @wacz-validator/core, serves the tui and (future) browser clients.",
   "license": "Unlicense",
   "type": "module",

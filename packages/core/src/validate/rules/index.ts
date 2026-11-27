@@ -28,6 +28,7 @@ import { browserhiveSnapshotsRule } from "./browserhive-snapshots.js";
 import { browserhiveFrameSnapshotsRule } from "./browserhive-frame-snapshots.js";
 import { browserhiveScreenshotsRule } from "./browserhive-screenshots.js";
 import { browserhiveRedactedRecordsRule } from "./browserhive-redacted-records.js";
+import { browserhiveHttpMessageLengthRule } from "./browserhive-http-message-length.js";
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
 import { browserhiveTraceShapeRule } from "./browserhive-trace-shape.js";
 import { browserhiveRandomShapeRule } from "./browserhive-random-shape.js";
@@ -176,6 +177,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   browserhiveScreenshotsRule,
   // 値を置き換えたレコードと、値を含む本文を落としたレコードの名乗りと形 (WARC Profile 1.2.0)。値が残っていないことは見ない。
   browserhiveRedactedRecordsRule,
+  // response・request のレコードの HTTP の Content-Length が持つ本文の長さを言い、Transfer-Encoding を持たないか
+  // (WARC Profile 1.6.0・1.7.0)。送る本文を持たない応答や、本文を得られなかった要求に、送った長さや chunked が残っていないか。
+  browserhiveHttpMessageLengthRule,
   // 取り込みのログ logs/capture.jsonl が在り、各行が決まった member と値を持ち、settings と document に合うか
   // (WACZ Profile 1.19.0)。
   browserhiveLogsShapeRule,

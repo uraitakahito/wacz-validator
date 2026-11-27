@@ -83,7 +83,8 @@ by rule without parsing prose:
 ### One finding repeated across a file is folded
 
 The `warc/*` rules that check WARC 1.1 records can find the same thing in every
-record of a file, and so can `browserhive/redacted-records`.
+record of a file, and so can `browserhive/redacted-records` and
+`browserhive/http-message-length`.
 `browserhive/trace-shape` can find the same thing on every line of
 `trace/events.jsonl`, and `browserhive/random-shape` on every line of
 `random/values.jsonl`. These rules report the first four occurrences of a message

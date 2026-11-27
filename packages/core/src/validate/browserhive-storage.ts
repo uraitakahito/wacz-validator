@@ -13,7 +13,9 @@
  * Spec: https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.1.0/#storage
  */
 import { datapackageOf } from "./datapackage-source.js";
+import { fieldValues, parseWarcFieldsBody } from "../wacz/named-fields.js";
 import type { WaczReader } from "../wacz/reader.js";
+import { getHeader, type ParsedWarcRecord } from "../wacz/warc-header.js";
 
 /** 値のファイル。目録が `valuesRecorded: true` のときだけ在る。 */
 export const STORAGE_ENTRY = "storage/origins.jsonl";
@@ -95,6 +97,30 @@ export const profileAtLeast = (conformsTo: unknown, major: number, minor: number
   const [found, foundMinor] = [Number(match[1]), Number(match[2])];
   return found > major || (found === major && foundMinor >= minor);
 };
+
+/**
+ * BrowserHive WARC Profile の版の URL。版ごとの文書を指し、`latest/` は版ではないので通さない。
+ * WARC の本は、先頭の warcinfo の `conformsTo` でこれを名乗る（WACZ Profile が名乗る {@link profileAtLeast} の版とは別）。
+ */
+export const WARC_PROFILE_URL = /^https:\/\/uraitakahito\.github\.io\/browserhive-warc-spec\/(\d+)\.(\d+)\.\d+\/$/;
+
+/** 値が `major.minor` 以上の BrowserHive WARC Profile の版の URL か。版の URL でなければ `false`。 */
+export const warcProfileAtLeast = (conformsTo: string, major: number, minor: number): boolean => {
+  const match = WARC_PROFILE_URL.exec(conformsTo);
+  if (match === null) return false;
+  const [found, foundMinor] = [Number(match[1]), Number(match[2])];
+  return found > major || (found === major && foundMinor >= minor);
+};
+
+/**
+ * 本の先頭のレコードが warcinfo で、`major.minor` 以上の BrowserHive WARC Profile を名乗るか。
+ * 名乗りが無いか読めない本は `false` —— その版で初めて決まった MUST を、何に対して書かれたか分からない本に当てない。
+ */
+export const warcinfoDeclaresAtLeast = (first: ParsedWarcRecord, major: number, minor: number): boolean =>
+  (getHeader(first, "WARC-Type") ?? "").toLowerCase() === "warcinfo" &&
+  fieldValues(parseWarcFieldsBody(first.body).fields, "conformsTo").some((value) =>
+    warcProfileAtLeast(value, major, minor),
+  );
 
 /** `sha256:` + 小文字 16 進 64 桁。WACZ Profile が定める形。 */
 export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
