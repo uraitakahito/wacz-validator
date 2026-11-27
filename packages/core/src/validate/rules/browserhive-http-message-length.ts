@@ -16,6 +16,8 @@
  * 空なのに、サーバが送った長さや `chunked` が残っていると、レコードだけを読む読み手（jwarc など）が落とす。`HEAD` への
  * 答えと `304` の長さは HTTP では正しい値だが、レコードの中では本文の長さと読まれるので、ここでも言う。
  *
+ * 同じ名の見出しが 2 つあれば、`records.ts` の `httpHeader` のとおり後ろの値で見る（前の値が誤りでも、後ろの値が合えば通る）。
+ *
  * **本文を得られなかった要求に `WARC-Truncated: unspecified` が付いているかは見られない。** レコードだけでは、ブラウザが
  * 本文を送ったかが分からない。見られるのは逆の向き（印の付いた要求が本文を持たない）だけ。
  *
@@ -46,6 +48,13 @@ export const browserhiveHttpMessageLengthRule: ValidationRule = {
       url: {
         en: "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/ja/#http-message-length",
+      },
+    },
+    {
+      label: "BrowserHive WARC Profile §Request payloads",
+      url: {
+        en: "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        ja: "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/ja/#request-payloads",
       },
     },
   ],
@@ -88,7 +97,8 @@ export const browserhiveHttpMessageLengthRule: ValidationRule = {
         const coding = httpHeader(message.http, "Transfer-Encoding");
         if (coding !== undefined) report("transfer-encoding", { url, type, value: shown(coding.trim()) }, location);
         if (type !== "request") continue;
-        if (length === undefined && coding === undefined && held > 0) {
+        // Transfer-Encoding を持っていても、長さの無い本文つきの要求は 1.7.0 の MUST に当たるので、両方を言う。
+        if (length === undefined && held > 0) {
           report("http-length-missing", { url, actual: String(held) }, location);
         }
         if (getHeader(record, "WARC-Truncated")?.trim().toLowerCase() === "unspecified" && held > 0) {

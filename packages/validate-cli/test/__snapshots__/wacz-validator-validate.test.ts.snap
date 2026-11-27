@@ -1173,6 +1173,10 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
           "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        },
       ],
       "outcome": "excluded",
       "rule": "browserhive/http-message-length",
@@ -2517,6 +2521,10 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
           "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
+        },
       ],
       "outcome": "excluded",
       "rule": "browserhive/http-message-length",
@@ -3830,6 +3838,10 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
         {
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
           "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
+        },
+        {
+          "label": "BrowserHive WARC Profile §Request payloads",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#request-payloads",
         },
       ],
       "outcome": "excluded",

@@ -188,6 +188,13 @@ describe("browserhive/http-message-length", () => {
       expect(await check([message({ head: ["HTTP/1.1 200 OK"], body: "target" })], WARC_1_7)).toEqual([]);
     });
 
+    it("Transfer-Encoding を持ち長さの無い、本文つきの要求は、両方を言う", async () => {
+      expect((await check([post(["Transfer-Encoding: chunked"], "a=1&b2")], WARC_1_7)).map(([key]) => key)).toEqual([
+        "transfer-encoding",
+        "http-length-missing",
+      ]);
+    });
+
     it("WARC-Truncated: unspecified の要求が本文を持てば言う", async () => {
       expect(await check([post(["Content-Length: 6"], "a=1&b2", ["WARC-Truncated: unspecified"])], WARC_1_7)).toEqual([
         ["truncated-body", { url: URI, bytes: "6" }],
