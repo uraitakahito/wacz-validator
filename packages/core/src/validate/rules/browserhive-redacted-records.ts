@@ -34,8 +34,9 @@
 import { ok } from "../../result.js";
 import { fieldRecord, fieldValues, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 import { httpHeader, parseRecord, type ParsedRecord } from "../../wacz/records.js";
-import { getHeader, parseWarcRecord, type ParsedWarcRecord } from "../../wacz/warc-header.js";
+import { getHeader, parseWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
+import { warcinfoDeclaresAtLeast } from "../browserhive-storage.js";
 import type { IssueLocation, ValidationRule } from "../domain.js";
 import { WarcIssueBucket } from "../warc-issue-bucket.js";
 import { shown } from "../warc11-scan.js";
@@ -52,22 +53,6 @@ const MARK = "***";
 const PART_NAMES: readonly string[] = ["target-uri", "headers", "payload"];
 
 const PART = /^([a-z-]+)=([1-9]\d*)$/;
-
-/** BrowserHive WARC Profile の版の URL。版ごとの文書を指す。`latest/` は版ではないので読まない。 */
-const WARC_PROFILE_VERSION = /^https:\/\/uraitakahito\.github\.io\/browserhive-warc-spec\/(\d+)\.(\d+)\.\d+\/$/;
-
-/** 値が 1.2.0 以上の BrowserHive WARC Profile か。 */
-const isProfileWithRedaction = (conformsTo: string): boolean => {
-  const match = WARC_PROFILE_VERSION.exec(conformsTo);
-  if (match === null) return false;
-  const [major, minor] = [Number(match[1]), Number(match[2])];
-  return major > 1 || (major === 1 && minor >= 2);
-};
-
-/** 本の先頭のレコードが warcinfo で、1.2.0 以上の版を名乗るか。 */
-const declaresRedaction = (first: ParsedWarcRecord): boolean =>
-  (getHeader(first, "WARC-Type") ?? "").toLowerCase() === "warcinfo" &&
-  fieldValues(parseWarcFieldsBody(first.body).fields, "conformsTo").some(isProfileWithRedaction);
 
 /** `BrowserHive-Redacted` の値を部分の名と数に読む。文法に合わなければ `undefined`。 */
 const parseParts = (value: string): [string, number][] | undefined => {
@@ -137,7 +122,7 @@ export const browserhiveRedactedRecordsRule: ValidationRule = {
       let first = true;
       for (const member of iterateWarcMembers(buf, { loose: true })) {
         const record = parseWarcRecord(member.raw);
-        if (first && (record === null || !declaresRedaction(record))) break;
+        if (first && (record === null || !warcinfoDeclaresAtLeast(record, 1, 2))) break;
         first = false;
         if (record === null) continue;
 

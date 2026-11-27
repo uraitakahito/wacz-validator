@@ -25,14 +25,11 @@
 import { ok } from "../../result.js";
 import { getHeader, parseWarcRecord, type ParsedWarcRecord } from "../../wacz/warc-header.js";
 import { iterateWarcMembers } from "../../wacz/warc-iter.js";
-import { profileAtLeast, readCapture } from "../browserhive-storage.js";
+import { profileAtLeast, readCapture, WARC_PROFILE_URL } from "../browserhive-storage.js";
 import type { Issue, ValidationRule } from "../domain.js";
 import { fieldValues, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 
 const RULE = "browserhive/warcinfo-declares-profile";
-
-/** BrowserHive WARC Profile の版の URL。版ごとの文書を指し、`latest/` は版ではないので通さない。 */
-const WARC_PROFILE_URL = /^https:\/\/uraitakahito\.github\.io\/browserhive-warc-spec\/\d+\.\d+\.\d+\/$/;
 
 /** 本の最初のレコード。読めなければ `null`。 */
 const firstRecord = (buf: Buffer): ParsedWarcRecord | null => {

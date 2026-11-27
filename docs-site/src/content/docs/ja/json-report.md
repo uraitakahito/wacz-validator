@@ -78,7 +78,7 @@ warning だけを出した rule もここに入ります）で、`failed`・`war
 
 ### 同じ本で繰り返す指摘はまとめます
 
-WARC 1.1 の記録を見る `warc/*` の rule は、本の全部の記録で同じものを見つけることがあります。`browserhive/redacted-records` も同じです。
+WARC 1.1 の記録を見る `warc/*` の rule は、本の全部の記録で同じものを見つけることがあります。`browserhive/redacted-records` と `browserhive/http-message-length` も同じです。
 そのときは同じ本・同じ message の issue を 4 件まで出し、4 件目の `params.more` に、出さなかった残りの件数を入れます。
 その issue の `message` の末尾には「（同じ本にほか N 件）」が付きます。
 `browserhive/trace-shape` は `trace/events.jsonl` の、`browserhive/random-shape` は `random/values.jsonl` の全部の行で同じものを見つけることがあり、同じまとめ方をします。

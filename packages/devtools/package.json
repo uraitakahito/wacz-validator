@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/devtools",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "開発用の道具。WACZ をわざと壊し、rule が反応することを確かめる。publish しない。",
   "private": true,
   "license": "Unlicense",

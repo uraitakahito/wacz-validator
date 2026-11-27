@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/protocol",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "Shared wire types for the wacz-validator daemon protocol (tui / daemon / future browser).",
   "license": "Unlicense",
   "type": "module",
