@@ -1166,12 +1166,12 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
         "info": 0,
         "warning": 0,
       },
-      "description": "browserhive: in every response record, the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD (BrowserHive WARC Profile 1.6.0). Request records are not checked here.",
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
       "descriptionKey": "browserhive/http-message-length.desc",
       "docs": [
         {
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
-          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/#http-message-length",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         },
       ],
       "outcome": "excluded",
@@ -2510,12 +2510,12 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
         "info": 0,
         "warning": 0,
       },
-      "description": "browserhive: in every response record, the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD (BrowserHive WARC Profile 1.6.0). Request records are not checked here.",
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
       "descriptionKey": "browserhive/http-message-length.desc",
       "docs": [
         {
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
-          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/#http-message-length",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         },
       ],
       "outcome": "excluded",
@@ -3824,12 +3824,12 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
         "info": 0,
         "warning": 0,
       },
-      "description": "browserhive: in every response record, the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD (BrowserHive WARC Profile 1.6.0). Request records are not checked here.",
+      "description": "browserhive: in every response record (BrowserHive WARC Profile 1.6.0) and request record (1.7.0), the HTTP Content-Length, if there is one, states the number of bytes of the body the record holds, and the HTTP message has no Transfer-Encoding — also for a response that has no body to send, such as a redirect, a 304 or an answer to HEAD. A request record that holds a body has a Content-Length, and one with WARC-Truncated: unspecified (a body the producer could not obtain) holds none. Whether every request whose body was not obtained carries that mark cannot be told from the record.",
       "descriptionKey": "browserhive/http-message-length.desc",
       "docs": [
         {
           "label": "BrowserHive WARC Profile §Length of the HTTP message",
-          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/#http-message-length",
+          "url": "https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/#http-message-length",
         },
       ],
       "outcome": "excluded",

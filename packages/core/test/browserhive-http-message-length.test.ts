@@ -17,6 +17,7 @@ const RULE = "browserhive/http-message-length";
 const WARC_PROFILE = "https://uraitakahito.github.io/browserhive-warc-spec";
 const WARC_1_5 = `${WARC_PROFILE}/1.5.0/`;
 const WARC_1_6 = `${WARC_PROFILE}/1.6.0/`;
+const WARC_1_7 = `${WARC_PROFILE}/1.7.0/`;
 const WARC_2_0 = `${WARC_PROFILE}/2.0.0/`;
 const URI = "https://site.test/start";
 
@@ -97,13 +98,13 @@ describe("browserhive/http-message-length", () => {
   describe("落とす形", () => {
     it("サーバの Content-Length: 35 が残った本文の無い 302 を言う", async () => {
       expect(await check([redirect("Content-Length: 35")])).toEqual([
-        ["http-length", { url: URI, declared: "35", actual: "0" }],
+        ["http-length", { url: URI, type: "response", declared: "35", actual: "0" }],
       ]);
     });
 
     it("Transfer-Encoding: chunked が残った本文の無い 302 を言う", async () => {
       expect(await check([redirect("Transfer-Encoding: chunked")])).toEqual([
-        ["transfer-encoding", { url: URI, value: "chunked" }],
+        ["transfer-encoding", { url: URI, type: "response", value: "chunked" }],
       ]);
     });
 
@@ -114,15 +115,15 @@ describe("browserhive/http-message-length", () => {
           message({ id: 2, head: ["HTTP/1.1 304 Not Modified", "ETag: \"v1\"", "Content-Length: 777"] }),
         ]),
       ).toEqual([
-        ["http-length", { url: URI, declared: "1234", actual: "0" }],
-        ["http-length", { url: URI, declared: "777", actual: "0" }],
+        ["http-length", { url: URI, type: "response", declared: "1234", actual: "0" }],
+        ["http-length", { url: URI, type: "response", declared: "777", actual: "0" }],
       ]);
     });
 
     it("同じ名の Content-Length が 2 つ並べば、後ろの値で照らす（前の値だけが合っていても通さない）", async () => {
       expect(
         await check([message({ head: ["HTTP/1.1 200 OK", "Content-Length: 6", "Content-Length: 35"], body: "target" })]),
-      ).toEqual([["http-length", { url: URI, declared: "35", actual: "6" }]]);
+      ).toEqual([["http-length", { url: URI, type: "response", declared: "35", actual: "6" }]]);
     });
 
     it("値を置き換えた本文の無い 302 に残った chunked も言う（redacted-records は長さしか見ない）", async () => {
@@ -139,21 +140,66 @@ describe("browserhive/http-message-length", () => {
         ],
         "HTTP/1.1 302 Found\r\nLocation: /target?t=***\r\nTransfer-Encoding: chunked\r\n\r\n",
       );
-      expect(await check([redacted])).toEqual([["transfer-encoding", { url: URI, value: "chunked" }]]);
+      expect(await check([redacted])).toEqual([["transfer-encoding", { url: URI, type: "response", value: "chunked" }]]);
     });
 
     it("本文のある応答でも、長さが本文と違えば言う", async () => {
       expect(
         await check([message({ head: ["HTTP/1.1 200 OK", "Content-Length: 7"], body: "target" })]),
-      ).toEqual([["http-length", { url: URI, declared: "7", actual: "6" }]]);
+      ).toEqual([["http-length", { url: URI, type: "response", declared: "7", actual: "6" }]]);
+    });
+  });
+
+  describe("request（1.7.0 から）", () => {
+    const post = (head: readonly string[], body = "", fields: readonly string[] = []): Buffer => {
+      const block = `${["POST /upload HTTP/1.1", "Host: site.test", ...head].join("\r\n")}\r\n\r\n${body}`;
+      return rawRecord(
+        [
+          "WARC/1.1",
+          "WARC-Type: request",
+          `WARC-Record-ID: ${recordId(7)}`,
+          "WARC-Date: 2026-11-28T00:00:00Z",
+          `WARC-Target-URI: ${URI}`,
+          "Content-Type: application/http;msgtype=request",
+          ...fields,
+          `Content-Length: ${String(Buffer.byteLength(block))}`,
+        ],
+        block,
+      );
+    };
+
+    it("本文の長さを言う要求と、本文を得られず長さの無い印つきの要求には何も言わない", async () => {
+      expect(
+        await check(
+          [post(["Content-Length: 6"], "a=1&b2"), post(["Content-Type: application/octet-stream"], "", ["WARC-Truncated: unspecified"])],
+          WARC_1_7,
+        ),
+      ).toEqual([]);
+    });
+
+    it("本文が 0 バイトなのに送った長さ 2048 が残った要求を言う", async () => {
+      expect(await check([post(["Content-Length: 2048"], "", ["WARC-Truncated: unspecified"])], WARC_1_7)).toEqual([
+        ["http-length", { url: URI, type: "request", declared: "2048", actual: "0" }],
+      ]);
+    });
+
+    it("本文を持つのに長さが無い要求を言う —— 長さの無い HTTP/1.1 の要求は本文 0 と読まれる（応答には言わない）", async () => {
+      expect(await check([post([], "a=1&b2")], WARC_1_7)).toEqual([["http-length-missing", { url: URI, actual: "6" }]]);
+      expect(await check([message({ head: ["HTTP/1.1 200 OK"], body: "target" })], WARC_1_7)).toEqual([]);
+    });
+
+    it("WARC-Truncated: unspecified の要求が本文を持てば言う", async () => {
+      expect(await check([post(["Content-Length: 6"], "a=1&b2", ["WARC-Truncated: unspecified"])], WARC_1_7)).toEqual([
+        ["truncated-body", { url: URI, bytes: "6" }],
+      ]);
     });
   });
 
   describe("当てない所", () => {
-    it("request のレコードは見ない —— 同じ見出しでも response なら言う", async () => {
+    it("1.6.0 を名乗る本の request は見ない —— 同じ要求でも 1.7.0 を名乗る本なら言う", async () => {
       const head = ["POST /form HTTP/1.1", "Host: site.test", "Content-Length: 35", "Transfer-Encoding: chunked"];
-      expect(await check([message({ type: "request", head })])).toEqual([]);
-      expect((await check([message({ type: "response", head: ["HTTP/1.1 200 OK", ...head.slice(2)] })])).map(([key]) => key)).toEqual([
+      expect(await check([message({ type: "request", head })], WARC_1_6)).toEqual([]);
+      expect((await check([message({ type: "request", head })], WARC_1_7)).map(([key]) => key)).toEqual([
         "http-length",
         "transfer-encoding",
       ]);
