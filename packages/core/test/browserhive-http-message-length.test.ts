@@ -119,6 +119,29 @@ describe("browserhive/http-message-length", () => {
       ]);
     });
 
+    it("同じ名の Content-Length が 2 つ並べば、後ろの値で照らす（前の値だけが合っていても通さない）", async () => {
+      expect(
+        await check([message({ head: ["HTTP/1.1 200 OK", "Content-Length: 6", "Content-Length: 35"], body: "target" })]),
+      ).toEqual([["http-length", { url: URI, declared: "35", actual: "6" }]]);
+    });
+
+    it("値を置き換えた本文の無い 302 に残った chunked も言う（redacted-records は長さしか見ない）", async () => {
+      const redacted = rawRecord(
+        [
+          "WARC/1.1",
+          "WARC-Type: response",
+          `WARC-Record-ID: ${recordId(9)}`,
+          "WARC-Date: 2026-11-28T00:00:00Z",
+          `WARC-Target-URI: ${URI}`,
+          "Content-Type: application/http;msgtype=response",
+          "BrowserHive-Redacted: headers=1",
+          `Content-Length: ${String(Buffer.byteLength("HTTP/1.1 302 Found\r\nLocation: /target?t=***\r\nTransfer-Encoding: chunked\r\n\r\n"))}`,
+        ],
+        "HTTP/1.1 302 Found\r\nLocation: /target?t=***\r\nTransfer-Encoding: chunked\r\n\r\n",
+      );
+      expect(await check([redacted])).toEqual([["transfer-encoding", { url: URI, value: "chunked" }]]);
+    });
+
     it("本文のある応答でも、長さが本文と違えば言う", async () => {
       expect(
         await check([message({ head: ["HTTP/1.1 200 OK", "Content-Length: 7"], body: "target" })]),
@@ -142,6 +165,8 @@ describe("browserhive/http-message-length", () => {
       expect(await check(records, null)).toEqual([]);
       expect(await check(records, `${WARC_PROFILE}/latest/`)).toEqual([]);
       expect((await check(records, WARC_2_0)).map(([key]) => key)).toEqual(["http-length"]);
+      // 版を字で比べると 1.10.0 が 1.6.0 より前に並ぶ。数で比べる。
+      expect((await check(records, `${WARC_PROFILE}/1.10.0/`)).map(([key]) => key)).toEqual(["http-length"]);
     });
 
     it("browserhive の profile だけで走る", async () => {
