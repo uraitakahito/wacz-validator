@@ -14,8 +14,8 @@
  *   - `reason-length`  `reason` が Unicode の code point で 1〜500（`.length` は UTF-16 の code unit なので使わない）
  *   - `path-pattern`   `pathPattern` が `/` で始まる
  *   - `scope`          `scope` が `seeds` か `links`
- *   - `date-time`      `grantedAt`・`expiresAt` が UTC の RFC 3339 の date-time（`Z` か `±00:00` で終わる。producer は
- *                      値を書き直さないので、時差つきの申告は形の誤り）
+ *   - `date-time`      `grantedAt`・`expiresAt` が UTC の RFC 3339 の date-time で、offset は `Z`（`+00:00` も時差つきも
+ *                      形の誤り。producer は値を書き直さず、producer と同じ字を形として見る）
  *
  * 1 つの member には 1 つだけ言う（欠け → 型 → 値）。表に無い member には何も言わない（`browserhive/settings-shape`
  * と同じ）。`reason` の中身は報告へ写さず、長さだけを言う。`reason`・`grantedBy` は人の書いた言葉と呼び名を運ぶ
@@ -53,8 +53,8 @@ const kind = (v: unknown): string => (v === null ? "null" : Array.isArray(v) ? "
 /** 人の書いた言葉と呼び名を運ぶ member。文字列でない時も、値は写さない。 */
 const PERSONAL: ReadonlySet<string> = new Set(["reason", "grantedBy"]);
 
-/** UTC の date-time: RFC 3339 の形で、`Z` か `±00:00` で終わる。 */
-const utcDateTime = (v: string): boolean => RFC3339_DATE_TIME.test(v) && /([Zz]|[+-]00:00)$/.test(v);
+/** UTC の date-time: RFC 3339 の形で、offset は `Z`（spec 1.29.0 の表。`+00:00` は通さない）。 */
+const utcDateTime = (v: string): boolean => RFC3339_DATE_TIME.test(v) && v.endsWith("Z");
 
 /** `scope` の語。 */
 const SCOPES: ReadonlySet<string> = new Set(["seeds", "links"]);

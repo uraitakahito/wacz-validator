@@ -103,8 +103,8 @@ describe("browserhive/robots-override-shape", () => {
       expect(good.summary.passed).toBe(broken.summary.passed + 1);
     });
 
-    it("scope は seeds でもよい。時刻は UTC なら、+00:00 の書き方でも、秒の小数つきでもよい", async () => {
-      const override = overrideWith({ scope: "seeds", grantedAt: "2026-11-20T02:15:00+00:00", expiresAt: "2027-11-20T02:15:00.250Z" });
+    it("scope は seeds でもよい。時刻は秒の小数つきでもよい", async () => {
+      const override = overrideWith({ scope: "seeds", expiresAt: "2027-11-20T02:15:00.250Z" });
       expect(await run(archive(override))).toEqual([]);
     });
 
@@ -177,8 +177,8 @@ describe("browserhive/robots-override-shape", () => {
     });
 
     it.each(["grantedAt", "expiresAt"] as const)("%s が date-time でない", async (member) => {
-      // 終わりから 2 つ目は、形は RFC 3339 だが UTC でない（producer は書き直さないので、申告の形の誤り）。
-      for (const value of ["2026-11-20", "2026-11-20 02:15:00Z", "2026-11-20T02:15:00", "2026-13-20T02:15:00Z", "tomorrow", "2026-11-20T11:15:00+09:00", ""]) {
+      // 終わりの 3 つ（空の前）は、形は RFC 3339 だが、offset が `Z` でない（spec 1.29.0 は `Z` と書くと定める）。
+      for (const value of ["2026-11-20", "2026-11-20 02:15:00Z", "2026-11-20T02:15:00", "2026-13-20T02:15:00Z", "tomorrow", "2026-11-20T11:15:00+09:00", "2026-11-20T02:15:00+00:00", "2026-11-20T02:15:00z", ""]) {
         expect(await run(archive(overrideWith({ [member]: value })))).toEqual([bad("date-time", { member, found: JSON.stringify(value) })]);
       }
     });
@@ -218,13 +218,13 @@ describe("browserhive/robots-override-shape", () => {
         "browserhive:capture.robotsOverride.reason holds 0 Unicode code points — it holds 1 to 500",
         'browserhive:capture.robotsOverride.scope is "all" — it must be seeds or links',
         "browserhive:capture.robotsOverride lacks grantedBy (required by BrowserHive WACZ Profile 1.29.0)",
-        'browserhive:capture.robotsOverride.expiresAt is "never" — it must be an RFC 3339 date-time in UTC',
+        'browserhive:capture.robotsOverride.expiresAt is "never" — it must be an RFC 3339 date-time in UTC, with the offset written Z',
       ]);
       expect(messages("ja")).toEqual([
         "browserhive:capture.robotsOverride.reason が Unicode の code point で 0 —— 1〜500 でなければならない",
         'browserhive:capture.robotsOverride.scope が "all" —— seeds か links でなければならない',
         "browserhive:capture.robotsOverride に grantedBy がありません (BrowserHive WACZ Profile 1.29.0 の必須)",
-        'browserhive:capture.robotsOverride.expiresAt が "never" —— UTC の RFC 3339 の date-time でなければならない',
+        'browserhive:capture.robotsOverride.expiresAt が "never" —— UTC の RFC 3339 の date-time で、offset は Z でなければならない',
       ]);
     });
   });
