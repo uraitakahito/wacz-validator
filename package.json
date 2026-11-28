@@ -4,7 +4,7 @@
     "https://stackoverflow.com/questions/14221579/how-do-i-add-comments-to-package-json-for-npm-install"
   ],
   "name": "wacz-validator-monorepo",
-  "version": "0.53.0",
+  "version": "0.54.0",
   "private": true,
   "description": "Monorepo for wacz-validator — @wacz-validator/core (validator) and @wacz-validator/tui (Ink TUI).",
   "license": "Unlicense",

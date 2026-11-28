@@ -32,6 +32,7 @@ import { browserhiveHttpMessageLengthRule } from "./browserhive-http-message-len
 import { browserhiveLogsShapeRule } from "./browserhive-logs-shape.js";
 import { browserhiveTraceShapeRule } from "./browserhive-trace-shape.js";
 import { browserhiveRandomShapeRule } from "./browserhive-random-shape.js";
+import { browserhiveRobotsOverrideShapeRule } from "./browserhive-robots-override-shape.js";
 import { browserhiveUserAgentRecordedRule } from "./browserhive-user-agent-recorded.js";
 import { browserhiveDocumentWithheldRule } from "./browserhive-document-withheld.js";
 import { browserhiveDismissalShapeRule } from "./browserhive-dismissal-shape.js";
@@ -189,6 +190,9 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // 乱数の控え random/values.jsonl・random/recorder.js が要約 (browserhive:capture.random) の recorded に合って在り、
   // resources に載り、各行が決まった member と値を持ち、record が archive/ の response を名指すか (WACZ Profile 1.26.0)。
   browserhiveRandomShapeRule,
+  // 要求者の申告 browserhive:capture.robotsOverride が、在るなら決まった member と値を持つか (WACZ Profile 1.29.0)。
+  // 任意の member なので、無ければ何も言わない。申告が本当かは見ない。
+  browserhiveRobotsOverrideShapeRule,
   // settings.userAgent が、主文書の request レコードの User-Agent と同じか (WACZ Profile 1.20.0)。
   browserhiveUserAgentRecordedRule,
   browserhiveStorageInventoryRule,

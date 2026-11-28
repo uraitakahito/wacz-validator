@@ -1262,6 +1262,24 @@ exports[`cli — JSON output shape (default) > gzipped CDXJ JSON snapshot 1`] = 
         "info": 0,
         "warning": 0,
       },
+      "description": "browserhive: browserhive:capture.robotsOverride, if the package carries it, is an object that holds every member BrowserHive WACZ Profile 1.29.0 defines, each a string — exemptionId and grantedBy of 1 character or more, reason of 1 to 500 Unicode code points, pathPattern beginning with /, scope seeds or links, and grantedAt and expiresAt each an RFC 3339 date-time. The member is optional, and a package without it is not reported. It is a declaration of the requester, and the producer checks nothing of it but this form: whether robots.txt disallowed the URL, and whether the exemption exists, covers the URL or was in force, cannot be told from the package.",
+      "descriptionKey": "browserhive/robots-override-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §robotsOverride",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.29.0/#robotsoverride",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/robots-override-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
       "description": "browserhive: every request record for mainPageURL carries settings.userAgent in its User-Agent header (BrowserHive WACZ Profile 1.20.0). Without this check, settings can name a value the capture never sent.",
       "descriptionKey": "browserhive/user-agent-recorded.desc",
       "docs": [
@@ -2610,6 +2628,24 @@ exports[`cli — JSON output shape (default) > missing-profile JSON snapshot 1`]
         "info": 0,
         "warning": 0,
       },
+      "description": "browserhive: browserhive:capture.robotsOverride, if the package carries it, is an object that holds every member BrowserHive WACZ Profile 1.29.0 defines, each a string — exemptionId and grantedBy of 1 character or more, reason of 1 to 500 Unicode code points, pathPattern beginning with /, scope seeds or links, and grantedAt and expiresAt each an RFC 3339 date-time. The member is optional, and a package without it is not reported. It is a declaration of the requester, and the producer checks nothing of it but this form: whether robots.txt disallowed the URL, and whether the exemption exists, covers the URL or was in force, cannot be told from the package.",
+      "descriptionKey": "browserhive/robots-override-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §robotsOverride",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.29.0/#robotsoverride",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/robots-override-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
       "description": "browserhive: every request record for mainPageURL carries settings.userAgent in its User-Agent header (BrowserHive WACZ Profile 1.20.0). Without this check, settings can name a value the capture never sent.",
       "descriptionKey": "browserhive/user-agent-recorded.desc",
       "docs": [
@@ -3920,6 +3956,24 @@ exports[`cli — JSON output shape (default) > valid WACZ JSON snapshot 1`] = `
       ],
       "outcome": "excluded",
       "rule": "browserhive/random-shape",
+    },
+    {
+      "conformance": "MUST",
+      "counts": {
+        "error": 0,
+        "info": 0,
+        "warning": 0,
+      },
+      "description": "browserhive: browserhive:capture.robotsOverride, if the package carries it, is an object that holds every member BrowserHive WACZ Profile 1.29.0 defines, each a string — exemptionId and grantedBy of 1 character or more, reason of 1 to 500 Unicode code points, pathPattern beginning with /, scope seeds or links, and grantedAt and expiresAt each an RFC 3339 date-time. The member is optional, and a package without it is not reported. It is a declaration of the requester, and the producer checks nothing of it but this form: whether robots.txt disallowed the URL, and whether the exemption exists, covers the URL or was in force, cannot be told from the package.",
+      "descriptionKey": "browserhive/robots-override-shape.desc",
+      "docs": [
+        {
+          "label": "BrowserHive WACZ Profile §robotsOverride",
+          "url": "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.29.0/#robotsoverride",
+        },
+      ],
+      "outcome": "excluded",
+      "rule": "browserhive/robots-override-shape",
     },
     {
       "conformance": "MUST",
