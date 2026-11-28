@@ -103,8 +103,8 @@ describe("browserhive/robots-override-shape", () => {
       expect(good.summary.passed).toBe(broken.summary.passed + 1);
     });
 
-    it("scope は seeds でもよい。時刻は時差つきでも、秒の小数つきでもよい（producer は UTC に書き直さない）", async () => {
-      const override = overrideWith({ scope: "seeds", grantedAt: "2026-11-20T11:15:00+09:00", expiresAt: "2027-11-20T02:15:00.250Z" });
+    it("scope は seeds でもよい。時刻は UTC なら、+00:00 の書き方でも、秒の小数つきでもよい", async () => {
+      const override = overrideWith({ scope: "seeds", grantedAt: "2026-11-20T02:15:00+00:00", expiresAt: "2027-11-20T02:15:00.250Z" });
       expect(await run(archive(override))).toEqual([]);
     });
 
@@ -133,7 +133,13 @@ describe("browserhive/robots-override-shape", () => {
     });
 
     it.each(MEMBERS)("%s が文字列でない", async (member) => {
-      expect(await run(archive(overrideWith({ [member]: 42 })))).toEqual([bad("not-string", { member, found: "42" })]);
+      const found = member === "reason" || member === "grantedBy" ? "number" : "42";
+      expect(await run(archive(overrideWith({ [member]: 42 })))).toEqual([bad("not-string", { member, found })]);
+    });
+
+    it.each(["reason", "grantedBy"] as const)("%s が文字列でない時、中身は報告に写さない", async (member) => {
+      expect(await run(archive(overrideWith({ [member]: ["人の書いた言葉"] })))).toEqual([bad("not-string", { member, found: "array" })]);
+      expect(await run(archive(overrideWith({ [member]: { text: "人の書いた言葉" } })))).toEqual([bad("not-string", { member, found: "object" })]);
     });
 
     it("null の member は、欠けではなく型の違いとして言う", async () => {
@@ -171,7 +177,8 @@ describe("browserhive/robots-override-shape", () => {
     });
 
     it.each(["grantedAt", "expiresAt"] as const)("%s が date-time でない", async (member) => {
-      for (const value of ["2026-11-20", "2026-11-20 02:15:00Z", "2026-11-20T02:15:00", "2026-13-20T02:15:00Z", "tomorrow", ""]) {
+      // 終わりから 2 つ目は、形は RFC 3339 だが UTC でない（producer は書き直さないので、申告の形の誤り）。
+      for (const value of ["2026-11-20", "2026-11-20 02:15:00Z", "2026-11-20T02:15:00", "2026-13-20T02:15:00Z", "tomorrow", "2026-11-20T11:15:00+09:00", ""]) {
         expect(await run(archive(overrideWith({ [member]: value })))).toEqual([bad("date-time", { member, found: JSON.stringify(value) })]);
       }
     });
@@ -189,9 +196,10 @@ describe("browserhive/robots-override-shape", () => {
 
   describe("オブジェクトでない", () => {
     it.each([
-      ["文字列", "exempt", '"exempt"'],
-      ["配列", [goodOverride()], JSON.stringify([goodOverride()])],
-      ["true", true, "true"],
+      // 値は写さず、型の名だけを言う（配列の中の reason・grantedBy が報告に出ない）。
+      ["文字列", "exempt", "string"],
+      ["配列", [goodOverride()], "array"],
+      ["true", true, "boolean"],
       ["null", null, "null"],
     ])("%s", async (_name, value, found) => {
       expect(await run(archive(value))).toEqual([bad("not-object", { found })]);
@@ -210,13 +218,13 @@ describe("browserhive/robots-override-shape", () => {
         "browserhive:capture.robotsOverride.reason holds 0 Unicode code points — it holds 1 to 500",
         'browserhive:capture.robotsOverride.scope is "all" — it must be seeds or links',
         "browserhive:capture.robotsOverride lacks grantedBy (required by BrowserHive WACZ Profile 1.29.0)",
-        'browserhive:capture.robotsOverride.expiresAt is "never" — it must be an RFC 3339 date-time',
+        'browserhive:capture.robotsOverride.expiresAt is "never" — it must be an RFC 3339 date-time in UTC',
       ]);
       expect(messages("ja")).toEqual([
         "browserhive:capture.robotsOverride.reason が Unicode の code point で 0 —— 1〜500 でなければならない",
         'browserhive:capture.robotsOverride.scope が "all" —— seeds か links でなければならない',
         "browserhive:capture.robotsOverride に grantedBy がありません (BrowserHive WACZ Profile 1.29.0 の必須)",
-        'browserhive:capture.robotsOverride.expiresAt が "never" —— RFC 3339 の date-time でなければならない',
+        'browserhive:capture.robotsOverride.expiresAt が "never" —— UTC の RFC 3339 の date-time でなければならない',
       ]);
     });
   });
@@ -231,7 +239,7 @@ describe("browserhive/robots-override-shape", () => {
     });
 
     it("同じ archive でも、1.29.0 を名乗れば落ちる（黙ったのは archive の版のせい）", async () => {
-      expect(await run(broken())).toEqual([bad("not-object", { found: '"exempt"' })]);
+      expect(await run(broken())).toEqual([bad("not-object", { found: "string" })]);
     });
 
     it("archive が版を名乗らなければ当てない", async () => {

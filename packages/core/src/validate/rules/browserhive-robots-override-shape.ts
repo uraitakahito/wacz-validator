@@ -14,11 +14,13 @@
  *   - `reason-length`  `reason` が Unicode の code point で 1〜500（`.length` は UTF-16 の code unit なので使わない）
  *   - `path-pattern`   `pathPattern` が `/` で始まる
  *   - `scope`          `scope` が `seeds` か `links`
- *   - `date-time`      `grantedAt`・`expiresAt` が RFC 3339 の date-time（時差つきも通す。producer は UTC に
- *                      書き直さない）
+ *   - `date-time`      `grantedAt`・`expiresAt` が UTC の RFC 3339 の date-time（`Z` か `±00:00` で終わる。producer は
+ *                      値を書き直さないので、時差つきの申告は形の誤り）
  *
  * 1 つの member には 1 つだけ言う（欠け → 型 → 値）。表に無い member には何も言わない（`browserhive/settings-shape`
- * と同じ）。`reason` の中身は報告へ写さず、長さだけを言う。
+ * と同じ）。`reason` の中身は報告へ写さず、長さだけを言う。`reason`・`grantedBy` は人の書いた言葉と呼び名を運ぶ
+ * （spec の Security の節）ので、形が崩れている時も値は写さず、型の名だけを言う —— `robotsOverride` 全体が
+ * オブジェクトでない時と、この 2 つが文字列でない時。ほかの member は値を写す。
  *
  * **見ないこと。** 申告は要求者の物で、producer が確かめるのもこの形だけ（形の合わない申告の要求は断る）。`robots.txt` がその URL を断っていたか、例外が
  * 在って URL に当たるか、取り込みの時に効いていたか（`grantedAt` と `expiresAt` の前後を含む）は、package からは
@@ -45,6 +47,15 @@ const RULE = "browserhive/robots-override-shape";
 /** JSON の値を文字で。無い値は `undefined`。文字は引用符つきになり、数と取り違えない。 */
 const json = (v: unknown): string => (v === undefined ? "undefined" : JSON.stringify(v));
 
+/** 値の型の名。値そのものを報告へ写さない所で使う。 */
+const kind = (v: unknown): string => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
+
+/** 人の書いた言葉と呼び名を運ぶ member。文字列でない時も、値は写さない。 */
+const PERSONAL: ReadonlySet<string> = new Set(["reason", "grantedBy"]);
+
+/** UTC の date-time: RFC 3339 の形で、`Z` か `±00:00` で終わる。 */
+const utcDateTime = (v: string): boolean => RFC3339_DATE_TIME.test(v) && /([Zz]|[+-]00:00)$/.test(v);
+
 /** `scope` の語。 */
 const SCOPES: ReadonlySet<string> = new Set(["seeds", "links"]);
 
@@ -70,8 +81,8 @@ const MEMBERS: readonly (readonly [member: string, check: (value: string) => Fin
   ["pathPattern", (v) => (v.startsWith("/") ? undefined : ["path-pattern", { found: json(v) }])],
   ["scope", (v) => (SCOPES.has(v) ? undefined : ["scope", { found: json(v) }])],
   ["grantedBy", (v) => (v === "" ? ["empty", { member: "grantedBy" }] : undefined)],
-  ["grantedAt", (v) => (RFC3339_DATE_TIME.test(v) ? undefined : ["date-time", { member: "grantedAt", found: json(v) }])],
-  ["expiresAt", (v) => (RFC3339_DATE_TIME.test(v) ? undefined : ["date-time", { member: "expiresAt", found: json(v) }])],
+  ["grantedAt", (v) => (utcDateTime(v) ? undefined : ["date-time", { member: "grantedAt", found: json(v) }])],
+  ["expiresAt", (v) => (utcDateTime(v) ? undefined : ["date-time", { member: "expiresAt", found: json(v) }])],
 ];
 
 export const browserhiveRobotsOverrideShapeRule: ValidationRule = {
@@ -110,7 +121,7 @@ export const browserhiveRobotsOverrideShapeRule: ValidationRule = {
     };
 
     if (!isRecord(override)) {
-      issue("not-object", { found: json(override) });
+      issue("not-object", { found: kind(override) });
       return ok(issues);
     }
     for (const [member, check] of MEMBERS) {
@@ -118,7 +129,7 @@ export const browserhiveRobotsOverrideShapeRule: ValidationRule = {
       if (value === undefined) {
         issue("missing-member", { member });
       } else if (typeof value !== "string") {
-        issue("not-string", { member, found: json(value) });
+        issue("not-string", { member, found: PERSONAL.has(member) ? kind(value) : json(value) });
       } else {
         const finding = check(value);
         if (finding !== undefined) issue(...finding);
