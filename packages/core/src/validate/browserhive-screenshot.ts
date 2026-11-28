@@ -7,12 +7,19 @@
  *
  * Spec: https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/#screenshots
  */
+import { afterCaptureScriptsStage } from "./browserhive-storage.js";
 
 /** スクリーンショットの `WARC-Target-URI` の頭。後ろに時点、`:`、その時点の文書の URL（fragment 無し）が続く。 */
 export const SCREENSHOT_URI = "urn:browserhive:screenshot:";
 
-/** この版が定める時点。`screenshot` の欄の値で、URI の中にも同じ字で入る。 */
-export const SCREENSHOT_STAGES: readonly string[] = ["after-load", "after-behaviors"];
+/**
+ * archive の版が定める時点。`screenshot` の欄の値で、URI の中にも同じ字で入る。capture scripts の後の時点の名は
+ * 版で違う（{@link afterCaptureScriptsStage}）。
+ */
+export const screenshotStages = (conformsTo: unknown): readonly string[] => [
+  "after-load",
+  afterCaptureScriptsStage(conformsTo),
+];
 
 /** `viewport`・`image-size` の値（仕様の ABNF の `size`）: 幅、小文字の `x`、高さ。どちらも 1 以上の 10 進で、先頭に 0 が無い。 */
 export const SCREENSHOT_SIZE = /^([1-9]\d*)x([1-9]\d*)$/;
@@ -24,13 +31,16 @@ export const SCREENSHOT_SIZE = /^([1-9]\d*)x([1-9]\d*)$/;
 export const SCREENSHOT_RATIO = /^(?:[1-9]\d*(?:\.\d*[1-9])?|0\.\d*[1-9])$/;
 
 /**
- * スクリーンショットの `WARC-Target-URI` を時点と文書の URL に分ける。頭が違うか、時点がこの版の定める物で
- * ないか、URL が空なら `undefined`。
+ * スクリーンショットの `WARC-Target-URI` を時点と文書の URL に分ける。頭が違うか、時点が `stages`（archive の版が
+ * 定める時点。{@link screenshotStages}）に無いか、URL が空なら `undefined`。
  */
-export const parseScreenshotUri = (uri: string): { stage: string; url: string } | undefined => {
+export const parseScreenshotUri = (
+  uri: string,
+  stages: readonly string[],
+): { stage: string; url: string } | undefined => {
   if (!uri.startsWith(SCREENSHOT_URI)) return undefined;
   const rest = uri.slice(SCREENSHOT_URI.length);
-  const stage = SCREENSHOT_STAGES.find((s) => rest.startsWith(`${s}:`));
+  const stage = stages.find((s) => rest.startsWith(`${s}:`));
   if (stage === undefined) return undefined;
   const url = rest.slice(stage.length + 1);
   return url === "" ? undefined : { stage, url };

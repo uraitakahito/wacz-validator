@@ -2,13 +2,13 @@
  * Rule: browserhive/screenshots (error / warning · browserhive profile 限定)
  *
  * 取り込みが時点ごとに撮ったスクリーンショットを、package が決まりどおりに持っているか。BrowserHive WACZ Profile 1.24.0 は
- * `browserhive:capture.screenshots` に時点ごと（`after-load`・`after-behaviors`）の成り行き —— 持っている絵と、
+ * `browserhive:capture.screenshots` に時点ごと（`after-load` と、capture scripts の後の時点。後の時点の名は WACZ Profile 1.30.0 から `after-capture-scripts`、それより前の版は `after-behaviors`）の成り行き —— 持っている絵と、
  * 持たない理由 —— を並べさせ、絵に写りうる物を package に残さないと頼まれた取り込みには絵を持たせない。
  * BrowserHive WARC Profile 1.3.0 は、絵を `resource`（block は WebP の静止画）と、それを `WARC-Refers-To` で指す
  * `metadata` の組で書かせる。見るのは:
  *
  *   - `screenshots` が配列で、項目がどれもオブジェクト。時点の並びが `after-load` 1 つと、`settings.behaviors` が
- *     空でなければその後の `after-behaviors` 1 つで、ほかの項目は無い
+ *     空でなければその後の capture scripts の後の時点 1 つで、ほかの項目は無い
  *   - 絵を持たない項目（`skipped` を持つ）は `stage` と `skipped` だけを持ち、理由が `disabled`・`secret`・`withheld`・
  *     `task-budget`・`failed` のどれか。2 つ以上が当たるときは、この並びで先の物を書く決まりなので: `secret` は
  *     `settings.secrets` が空でないときだけ。空でなければ、どの項目も `disabled` か `secret`。下の「絵を持っては
@@ -69,8 +69,9 @@ import {
   parseScreenshotUri,
   readWebpStill,
   sameAspect,
+  screenshotStages,
 } from "../browserhive-screenshot.js";
-import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
+import { afterCaptureScriptsStage, isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import { readTraceLines } from "../browserhive-trace.js";
 import type { MsgParams } from "../../i18n/translate.js";
 import type { Issue, IssueLocation, ValidationRule } from "../domain.js";
@@ -308,10 +309,15 @@ export const browserhiveScreenshotsRule: ValidationRule = {
     const settings = isRecord(capture["settings"]) ? capture["settings"] : {};
     const behaviors = settings["behaviors"];
     if (Array.isArray(screenshots) && Array.isArray(behaviors) && items.length === screenshots.length) {
-      const expected = behaviors.length > 0 ? ["after-load", "after-behaviors"] : ["after-load"];
+      const after = afterCaptureScriptsStage(capture["conformsTo"]);
+      const expected = behaviors.length > 0 ? ["after-load", after] : ["after-load"];
       const found = JSON.stringify(items.map((item) => item["stage"]));
       if (found !== JSON.stringify(expected)) {
-        issue("stages", { found, expected: JSON.stringify(expected), behaviors: String(behaviors.length) }, inDatapackage);
+        issue(
+          "stages",
+          { found, expected: JSON.stringify(expected), behaviors: String(behaviors.length), after },
+          inDatapackage,
+        );
       }
     }
 
@@ -434,10 +440,11 @@ export const browserhiveScreenshotsRule: ValidationRule = {
 
     // ---- WARC のレコードの組 ----
     const paired = new Set<Metadata>();
+    const stages = screenshotStages(capture["conformsTo"]);
     for (const shot of shots) {
       const uri = getHeader(shot.record, "WARC-Target-URI") ?? "";
-      const parts = parseScreenshotUri(uri);
-      if (parts === undefined) issue("resource-uri", { url: uri }, at(shot));
+      const parts = parseScreenshotUri(uri, stages);
+      if (parts === undefined) issue("resource-uri", { url: uri, stages: stages.join(", ") }, at(shot));
       const contentType = getHeader(shot.record, "Content-Type");
       if (contentType?.trim().toLowerCase() !== "image/webp") {
         issue("content-type", { url: uri, found: shown(contentType) }, at(shot));

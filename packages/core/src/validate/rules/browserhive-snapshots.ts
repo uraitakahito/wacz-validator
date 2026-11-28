@@ -2,13 +2,13 @@
  * Rule: browserhive/snapshots (error · browserhive profile 限定)
  *
  * 取り込みが撮った DOM の写しを、archive のどこから読んでも同じ物が指されているか。BrowserHive WACZ Profile 1.17.0 は
- * `browserhive:capture.snapshots` に時点ごと（`after-load`・`after-behaviors`）の成り行き —— 撮った写しと、
+ * `browserhive:capture.snapshots` に時点ごと（`after-load` と、capture scripts の後の時点。後の時点の名は WACZ Profile 1.30.0 から `after-capture-scripts`、それより前の版は `after-behaviors`）の成り行き —— 撮った写しと、
  * 撮らなかった理由 —— を並べさせ、ページ一覧（`pages/pages.jsonl`）を写しごとの行にし、写しを索引に載せさせる。
  * BrowserHive WARC Profile 1.1.0 は、写しを `resource` と、それを `WARC-Refers-To` で指す `metadata` の組で書かせる。
  * 見るのは:
  *
  *   - `snapshots` が配列で、項目がどれもオブジェクト。時点の並びが `after-load` 1 つと、`settings.behaviors` が
- *     空でなければその後の `after-behaviors` 1 つで、ほかの項目は無い
+ *     空でなければその後の capture scripts の後の時点 1 つで、ほかの項目は無い
  *   - 撮らなかった項目（`skipped` を持つ）の理由が `withheld`・`too-large`・`task-budget`・`failed` のどれか
  *   - 撮った項目の `url` が `urn:browserhive:snapshot:<stage>:` で始まり、`record`（山括弧なし）の名指す `resource`
  *     が在り、`url`・`date`・`bytes` がその `WARC-Target-URI`・`WARC-Date`・`Content-Length` と同じ
@@ -49,7 +49,7 @@ import { ok } from "../../result.js";
 import { fieldRecord, parseWarcFieldsBody } from "../../wacz/named-fields.js";
 import { getHeader } from "../../wacz/warc-header.js";
 import { hasScriptElement } from "../browserhive-snapshot-html.js";
-import { isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
+import { afterCaptureScriptsStage, isRecord, profileAtLeast, readCapture } from "../browserhive-storage.js";
 import { datapackageOf } from "../datapackage-source.js";
 import type { Issue, IssueLocation, ValidationRule } from "../domain.js";
 import {
@@ -161,10 +161,15 @@ export const browserhiveSnapshotsRule: ValidationRule = {
     const settings = capture["settings"];
     const behaviors = isRecord(settings) ? settings["behaviors"] : undefined;
     if (Array.isArray(behaviors) && items.length === snapshots.length) {
-      const expected = behaviors.length > 0 ? ["after-load", "after-behaviors"] : ["after-load"];
+      const after = afterCaptureScriptsStage(capture["conformsTo"]);
+      const expected = behaviors.length > 0 ? ["after-load", after] : ["after-load"];
       const found = JSON.stringify(items.map((item) => item["stage"]));
       if (found !== JSON.stringify(expected)) {
-        issue("stages", { found, expected: JSON.stringify(expected), behaviors: String(behaviors.length) }, inDatapackage);
+        issue(
+          "stages",
+          { found, expected: JSON.stringify(expected), behaviors: String(behaviors.length), after },
+          inDatapackage,
+        );
       }
     }
 

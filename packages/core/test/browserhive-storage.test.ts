@@ -28,6 +28,12 @@ const INVENTORY = "browserhive/storage-inventory";
 const SHAPE = "browserhive/storage-shape";
 const V6 = { major: 6, minor: 0, patch: 0 };
 const DIGEST = `sha256:${"0".repeat(64)}`;
+/** capture scripts の後の時点の名が after-capture-scripts になった版と、その前の版。 */
+const WACZ_1_29 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.29.0/";
+const WACZ_1_30 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.30.0/";
+/** 時点の名が違うと言う 1 件の params（行を持つ storage-shape は line も）。 */
+const stageOf = (issues: Issue[], key: string): unknown[] =>
+  issues.filter((i) => i.messageKey === key).map((i) => i.params);
 
 /** profile どおりの目録。 */
 const goodInventory = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
@@ -128,6 +134,21 @@ describe("browserhive/storage-inventory", () => {
   it("知らない profile を報告する", async () => {
     const issues = await run({ storage: goodInventory({ profile: "browserhive:storage/99" }) });
     expect(issues.map((i) => i.messageKey)).toContain(`${INVENTORY}.unknown-profile`);
+  });
+
+  describe("stage の名は archive の版で決まる（WACZ Profile 1.30.0 から after-capture-scripts）", () => {
+    const KEY = `${INVENTORY}.unknown-stage`;
+    it("1.30.0 の archive の目録が after-capture-scripts なら何も言わない", async () => {
+      expect(await run({ conformsTo: WACZ_1_30, storage: goodInventory({ stage: "after-capture-scripts" }) })).toEqual([]);
+    });
+    it("1.30.0 の archive の目録が、前の名 after-behaviors なら報告する", async () => {
+      const issues = await run({ conformsTo: WACZ_1_30, storage: goodInventory() });
+      expect(stageOf(issues, KEY)).toEqual([{ found: '"after-behaviors"', expected: "after-capture-scripts" }]);
+    });
+    it("1.30.0 より前の archive の目録が、新しい名 after-capture-scripts なら報告する", async () => {
+      const issues = await run({ conformsTo: WACZ_1_29, storage: goodInventory({ stage: "after-capture-scripts" }) });
+      expect(stageOf(issues, KEY)).toEqual([{ found: '"after-capture-scripts"', expected: "after-behaviors" }]);
+    });
   });
 
   it("stage が規範の値でなければ報告する", async () => {
@@ -315,6 +336,29 @@ describe("browserhive/storage-shape", () => {
 
   it("値を持たないアーカイブには何も言わない", async () => {
     expect(await run({ storage: goodInventory() })).toEqual([]);
+  });
+
+  describe("行の stage の名は archive の版で決まる（WACZ Profile 1.30.0 から after-capture-scripts）", () => {
+    const KEY = `${SHAPE}.unknown-stage`;
+    const NEW = "after-capture-scripts";
+    const withLine = (conformsTo: string, stage: string): FixtureOptions => ({
+      conformsTo,
+      storage: goodInventory({ valuesRecorded: true, stage }),
+      storageValues: [goodLine({ stage })],
+    });
+    it("1.30.0 の archive の行が after-capture-scripts なら何も言わない", async () => {
+      expect(await run(withLine(WACZ_1_30, NEW))).toEqual([]);
+    });
+    it("1.30.0 の archive の行が、前の名 after-behaviors なら報告する", async () => {
+      expect(stageOf(await run(withLine(WACZ_1_30, "after-behaviors")), KEY)).toEqual([
+        { line: "1", found: '"after-behaviors"', expected: NEW },
+      ]);
+    });
+    it("1.30.0 より前の archive の行が、新しい名 after-capture-scripts なら報告する", async () => {
+      expect(stageOf(await run(withLine(WACZ_1_29, NEW)), KEY)).toEqual([
+        { line: "1", found: `"${NEW}"`, expected: "after-behaviors" },
+      ]);
+    });
   });
 
   it("valuesRecorded: true と値のファイルが揃っていれば何も言わない", async () => {

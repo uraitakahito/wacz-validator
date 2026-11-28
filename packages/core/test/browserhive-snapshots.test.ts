@@ -34,6 +34,8 @@ const RULE = "browserhive/snapshots";
 const WACZ_1_16 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.16.0/";
 const WACZ_1_17 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.17.0/";
 const WACZ_1_18 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.18.0/";
+/** capture scripts の後の時点の名が after-capture-scripts になった版（それより前は after-behaviors）。 */
+const WACZ_1_30 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.30.0/";
 const DATAPACKAGE: IssueLocation = { entry: "datapackage.json" };
 const PAGES = "pages/pages.jsonl";
 const INDEX = "indexes/index.cdxj";
@@ -45,7 +47,7 @@ const DOC_B = "https://site.test/results";
 
 /** 写し 1 枚の、archive のあちこちに現れる値。 */
 interface Shot {
-  readonly stage: "after-load" | "after-behaviors";
+  readonly stage: "after-load" | "after-behaviors" | "after-capture-scripts";
   /** resource と metadata の `WARC-Target-URI`。 */
   readonly url: string;
   readonly date: string;
@@ -77,6 +79,9 @@ const B: Shot = {
   secretsReplaced: 1,
   documentUri: `${DOC_B}#top`,
 };
+
+/** B を、WACZ Profile 1.30.0 からの時点の名で撮った物。 */
+const B30: Shot = { ...B, stage: "after-capture-scripts", url: `urn:browserhive:snapshot:after-capture-scripts:${DOC_B}` };
 
 const resourceOf = (s: Shot): WarcResourceSpec => ({ uri: s.url, date: s.date, recordId: `<${s.record}>`, body: s.body });
 const fieldsOf = (s: Shot): Record<string, string> => ({
@@ -190,6 +195,44 @@ describe("browserhive/snapshots", () => {
     return { issues: report.issues.filter((i) => i.rule === RULE), records };
   };
 
+  describe("capture scripts の後の時点の名は、archive の版で決まる", () => {
+    // 1.18.0 からの版は、頁の一覧の頭に文書の行（stage 無し）を持つ
+    const docRow = { id: "task-1", url: DOC_A, ts: "2026-11-02T01:20:03.502Z", title: "Shop" };
+    const archive30 = (shot: Shot, conformsTo: string): FixtureOptions =>
+      archive({
+        conformsTo,
+        warcResources: [resourceOf(A), resourceOf(shot)],
+        warcMetadata: [metadataOf(A), metadataOf(shot)],
+        ...(conformsTo === WACZ_1_30
+          ? { pageEntries: [docRow, pageOf(A), pageOf(shot)], mainPageUrlOverride: DOC_A }
+          : { pageEntries: [pageOf(A), pageOf(shot)] }),
+        snapshots: [entryOf(A), entryOf(shot)],
+      });
+    const stages = (found: Shot, expected: string): Issue =>
+      bad(
+        "stages",
+        {
+          found: JSON.stringify(["after-load", found.stage]),
+          expected: JSON.stringify(["after-load", expected]),
+          behaviors: "1",
+          after: expected,
+        },
+        DATAPACKAGE,
+      );
+
+    it("WACZ Profile 1.30.0 の archive が after-capture-scripts を撮っていれば、何も言わない", async () => {
+      expect(await run(archive30(B30, WACZ_1_30))).toEqual([]);
+    });
+
+    it("WACZ Profile 1.30.0 の archive が、前の名 after-behaviors を撮っていれば error", async () => {
+      expect(await run(archive30(B, WACZ_1_30))).toEqual([stages(B, "after-capture-scripts")]);
+    });
+
+    it("1.30.0 より前の archive が、新しい名 after-capture-scripts を撮っていれば error", async () => {
+      expect(await run(archive30(B30, WACZ_1_17))).toEqual([stages(B30, "after-behaviors")]);
+    });
+  });
+
   describe("通す形", () => {
     it("2 つの時点を撮った archive には何も言わない", async () => {
       expect(await run(archive())).toEqual([]);
@@ -228,13 +271,13 @@ describe("browserhive/snapshots", () => {
 
     it("スクリプトが走ったのに after-behaviors の項目が無ければ error", async () => {
       expect(await run(onlyAfterLoad({ settings: { behaviors: [{ name: "search" }] } }))).toEqual([
-        bad("stages", { found: '["after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1" }, DATAPACKAGE),
+        bad("stages", { found: '["after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 
     it("スクリプトが走っていないのに after-behaviors の項目があれば error", async () => {
       expect(await run(archive({ settings: { behaviors: [] } }))).toEqual([
-        bad("stages", { found: '["after-load","after-behaviors"]', expected: '["after-load"]', behaviors: "0" }, DATAPACKAGE),
+        bad("stages", { found: '["after-load","after-behaviors"]', expected: '["after-load"]', behaviors: "0", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 
@@ -246,7 +289,7 @@ describe("browserhive/snapshots", () => {
         mainPageUrlOverride: B.url,
       });
       expect(await run(options)).toEqual([
-        bad("stages", { found: '["after-behaviors","after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1" }, DATAPACKAGE),
+        bad("stages", { found: '["after-behaviors","after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 

@@ -495,6 +495,16 @@ describe("browserhive/document-withheld", () => {
       expect(issues).toEqual(leaked("url-policy"));
     });
 
+    // capture scripts の後の時点は、WACZ Profile 1.30.0 から after-capture-scripts。名で行を絞らないことを、新しい名でも見る
+    it("after-capture-scripts の行も document の文書から読むので、URL が違っても文字と題があれば error で落とす", async () => {
+      const issues = await run(
+        withheldWithRows("url-policy", noBody("*/landed"), [snapshotRow("after-capture-scripts", EARLIER)], {
+          conformsTo: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.30.0/",
+        }),
+      );
+      expect(issues).toEqual(leaked("url-policy"));
+    });
+
     it("写しの URL の形でない after-load の行は、文字と題があれば error で落とす（どの文書か読めない）", async () => {
       const issues = await run(
         withheldWithRows("url-policy", noBody("*/landed"), [
