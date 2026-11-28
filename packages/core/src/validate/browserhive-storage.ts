@@ -39,9 +39,6 @@ export const KNOWN_STORAGE_PROFILES_LABEL = KNOWN_STORAGE_PROFILES.join(" | ");
 export const isKnownStorageProfile = (value: unknown): boolean =>
   typeof value === "string" && KNOWN_STORAGE_PROFILES.includes(value as never);
 
-/** この版が規範として固定している stage。 */
-export const EXPECTED_STORAGE_STAGE = "after-behaviors";
-
 /** 目録が必ず持つ member。 */
 export const INVENTORY_MEMBERS = [
   "profile",
@@ -97,6 +94,17 @@ export const profileAtLeast = (conformsTo: unknown, major: number, minor: number
   const [found, foundMinor] = [Number(match[1]), Number(match[2])];
   return found > major || (found === major && foundMinor >= minor);
 };
+
+/**
+ * capture scripts（取り込みを頼む側が付けて、BrowserHive が頁の中で走らせるスクリプト）の後の時点の名。
+ * archive が名乗る WACZ Profile の版 (`conformsTo`) で決める: 1.30.0 から `after-capture-scripts`、それより前
+ * (名乗りが無いか読めないも) は `after-behaviors`。仕様は版ごとに値を決め、各版は後方互換ではないので、
+ * どちらの版でも、もう一方の名は誤り。1.30.0 の WACZ は BrowserHive WARC Profile 1.8.0 と対で出るので、
+ * WARC の本の中の名 (写しとスクリーンショットの URI・metadata の欄) も、この版で決める。
+ * storage の目録と値の行の `stage`、snapshots と screenshots の時点の並び、スクリーンショットの URI が、これを使う。
+ */
+export const afterCaptureScriptsStage = (conformsTo: unknown): string =>
+  profileAtLeast(conformsTo, 1, 30) ? "after-capture-scripts" : "after-behaviors";
 
 /**
  * BrowserHive WARC Profile の版の URL。版ごとの文書を指し、`latest/` は版ではないので通さない。

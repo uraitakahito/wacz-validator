@@ -12,7 +12,8 @@
  * 確かめるのは 5 つ:
  *
  *   1. member が在り、必須の 4 つを持っている
- *   2. profile がこの検証器の読める綴りのいずれかで、stage がこの版の綴りである
+ *   2. profile がこの検証器の読める綴りのいずれかで、stage が archive の名乗る WACZ Profile の版の綴りである
+ *      （1.30.0 から after-capture-scripts、それより前は after-behaviors）
  *   3. 各 origin が「両 area を持つ」か「unreadable」のどちらかである
  *      —— 空の area (keys: 0) と読めなかった origin は別物で、混ぜると
  *      この member が取り除こうとしている曖昧さが戻る
@@ -35,7 +36,7 @@ import {
   DIGEST_PATTERN,
   isKnownStorageProfile,
   KNOWN_STORAGE_PROFILES_LABEL,
-  EXPECTED_STORAGE_STAGE,
+  afterCaptureScriptsStage,
   INVENTORY_MEMBERS,
   isRecord,
   readCapture,
@@ -117,10 +118,12 @@ export const browserhiveStorageInventoryRule: ValidationRule = {
         expected: KNOWN_STORAGE_PROFILES_LABEL,
       });
     }
-    if (storage["stage"] !== EXPECTED_STORAGE_STAGE) {
+    // 時点の名は archive の版で決まる（1.30.0 から after-capture-scripts）
+    const expectedStage = afterCaptureScriptsStage(capture["conformsTo"]);
+    if (storage["stage"] !== expectedStage) {
       push(`${RULE}.unknown-stage`, {
         found: JSON.stringify(storage["stage"]),
-        expected: EXPECTED_STORAGE_STAGE,
+        expected: expectedStage,
       });
     }
     if (typeof storage["valuesRecorded"] !== "boolean") {

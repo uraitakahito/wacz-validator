@@ -25,6 +25,7 @@ import {
   parseScreenshotUri,
   readWebpStill,
   sameAspect,
+  screenshotStages,
 } from "../src/validate/browserhive-screenshot.js";
 import { parseReportSource, type Issue, type IssueLocation, type Report } from "../src/validate/domain.js";
 import { runValidation } from "../src/validate/engine.js";
@@ -45,6 +46,8 @@ import { firedWarc11Rules } from "./fixtures/warc11.js";
 const RULE = "browserhive/screenshots";
 const WACZ_1_23 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.23.0/";
 const WACZ_1_24 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.24.0/";
+/** capture scripts の後の時点の名が after-capture-scripts になった版（それより前は after-behaviors）。 */
+const WACZ_1_30 = "https://uraitakahito.github.io/browserhive-specs/wacz-profile/1.30.0/";
 const DATAPACKAGE: IssueLocation = { entry: "datapackage.json" };
 const INDEX = "indexes/index.cdxj";
 const MAIN = "archive/data.warc.gz";
@@ -86,7 +89,7 @@ const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a
 
 /** スクリーンショット 1 枚の、archive のあちこちに現れる値。 */
 interface Shot {
-  readonly stage: "after-load" | "after-behaviors";
+  readonly stage: "after-load" | "after-behaviors" | "after-capture-scripts";
   /** resource と metadata の `WARC-Target-URI`。 */
   readonly url: string;
   readonly date: string;
@@ -122,6 +125,9 @@ const B: Shot = {
   devicePixelRatio: "2",
   imageSize: "16x10",
 };
+
+/** B を、WACZ Profile 1.30.0 からの時点の名で撮った物。 */
+const B30: Shot = { ...B, stage: "after-capture-scripts", url: `urn:browserhive:screenshot:after-capture-scripts:${DOC_B}` };
 
 const resourceOf = (s: Shot): WarcResourceSpec => ({
   uri: s.url,
@@ -323,8 +329,27 @@ describe("スクリーンショットのレコードを読む部品", () => {
   });
 
   describe("parseScreenshotUri", () => {
+    const OLD = screenshotStages(WACZ_1_24);
+    const NEW = screenshotStages(WACZ_1_30);
     it("時点と文書の URL に分ける。URL の中のコロンは URL の物", () => {
-      expect(parseScreenshotUri(`urn:browserhive:screenshot:after-behaviors:${DOC_B}`)).toEqual({ stage: "after-behaviors", url: DOC_B });
+      expect(parseScreenshotUri(`urn:browserhive:screenshot:after-behaviors:${DOC_B}`, OLD)).toEqual({ stage: "after-behaviors", url: DOC_B });
+    });
+    it("WACZ Profile 1.30.0 からの版では、capture scripts の後の時点を after-capture-scripts で読む", () => {
+      expect(NEW).toEqual(["after-load", "after-capture-scripts"]);
+      expect(parseScreenshotUri(`urn:browserhive:screenshot:after-capture-scripts:${DOC_B}`, NEW)).toEqual({
+        stage: "after-capture-scripts",
+        url: DOC_B,
+      });
+    });
+    it("版の名乗りが無いか読めなければ、1.30.0 より前の名で読む", () => {
+      expect(screenshotStages(undefined)).toEqual(["after-load", "after-behaviors"]);
+      expect(screenshotStages("https://example.test/")).toEqual(["after-load", "after-behaviors"]);
+    });
+    it.each([
+      ["1.30.0 からの版の、前の名", `urn:browserhive:screenshot:after-behaviors:${DOC_B}`, NEW],
+      ["1.30.0 より前の版の、新しい名", `urn:browserhive:screenshot:after-capture-scripts:${DOC_B}`, OLD],
+    ])("%s は読めない", (_name, uri, stages) => {
+      expect(parseScreenshotUri(uri, stages)).toBeUndefined();
     });
     it.each([
       ["写しの URI", `urn:browserhive:snapshot:after-load:${DOC_A}`],
@@ -332,7 +357,7 @@ describe("スクリーンショットのレコードを読む部品", () => {
       ["時点の後ろのコロンが無い", "urn:browserhive:screenshot:after-load"],
       ["URL が空", "urn:browserhive:screenshot:after-load:"],
     ])("%s は読めない", (_name, uri) => {
-      expect(parseScreenshotUri(uri)).toBeUndefined();
+      expect(parseScreenshotUri(uri, OLD)).toBeUndefined();
     });
   });
 
@@ -394,6 +419,55 @@ describe("browserhive/screenshots", () => {
     return { issues: report.issues.filter((i) => i.rule === RULE), records };
   };
 
+  // 1.30.0 の WACZ と 1.8.0 の WARC は対で出る。時点の名は WACZ Profile の版（conformsTo）だけで決める。
+  describe("capture scripts の後の時点の名は、archive の版で決まる", () => {
+    const archive30 = (shot: Shot, conformsTo: string): FixtureOptions =>
+      archive({
+        conformsTo,
+        warcResources: [resourceOf(A), resourceOf(shot)],
+        warcMetadata: [metadataOf(A), metadataOf(shot)],
+        screenshots: [entryOf(A), entryOf(shot)],
+      });
+
+    it("WACZ Profile 1.30.0 の archive が after-capture-scripts の絵を持てば、何も言わない", async () => {
+      expect(await run(archive30(B30, WACZ_1_30))).toEqual([]);
+    });
+
+    it("WACZ Profile 1.30.0 の archive が、前の名 after-behaviors の絵を持てば error", async () => {
+      const { issues, records } = await runWith(archive30(B, WACZ_1_30));
+      expect(issues).toEqual([
+        bad(
+          "stages",
+          {
+            found: '["after-load","after-behaviors"]',
+            expected: '["after-load","after-capture-scripts"]',
+            behaviors: "1",
+            after: "after-capture-scripts",
+          },
+          DATAPACKAGE,
+        ),
+        bad("resource-uri", { url: B.url, stages: "after-load, after-capture-scripts" }, at(records, "resource", 1)),
+      ]);
+    });
+
+    it("1.30.0 より前の archive が、新しい名 after-capture-scripts の絵を持てば error", async () => {
+      const { issues, records } = await runWith(archive30(B30, WACZ_1_24));
+      expect(issues).toEqual([
+        bad(
+          "stages",
+          {
+            found: '["after-load","after-capture-scripts"]',
+            expected: '["after-load","after-behaviors"]',
+            behaviors: "1",
+            after: "after-behaviors",
+          },
+          DATAPACKAGE,
+        ),
+        bad("resource-uri", { url: B30.url, stages: "after-load, after-behaviors" }, at(records, "resource", 1)),
+      ]);
+    });
+  });
+
   describe("通す形", () => {
     it("2 つの時点の絵を持つ archive には何も言わない（lossless と lossy）", async () => {
       expect(await run(archive())).toEqual([]);
@@ -448,19 +522,19 @@ describe("browserhive/screenshots", () => {
 
     it("スクリプトが走ったのに after-behaviors の項目が無ければ error", async () => {
       expect(await run(onlyAfterLoad({ settings: settingsWith() }))).toEqual([
-        bad("stages", { found: '["after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1" }, DATAPACKAGE),
+        bad("stages", { found: '["after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 
     it("スクリプトが走っていないのに after-behaviors の項目があれば error", async () => {
       expect(await run(archive({ settings: settingsWith({ behaviors: [] }) }))).toEqual([
-        bad("stages", { found: '["after-load","after-behaviors"]', expected: '["after-load"]', behaviors: "0" }, DATAPACKAGE),
+        bad("stages", { found: '["after-load","after-behaviors"]', expected: '["after-load"]', behaviors: "0", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 
     it("after-behaviors が after-load より前に並べば error", async () => {
       expect(await run(archive({ screenshots: [entryOf(B), entryOf(A)] }))).toEqual([
-        bad("stages", { found: '["after-behaviors","after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1" }, DATAPACKAGE),
+        bad("stages", { found: '["after-behaviors","after-load"]', expected: '["after-load","after-behaviors"]', behaviors: "1", after: "after-behaviors" }, DATAPACKAGE),
       ]);
     });
 
@@ -469,7 +543,7 @@ describe("browserhive/screenshots", () => {
       expect(await run(skippedOnly("disabled", { screenshots }))).toEqual([
         bad(
           "stages",
-          { found: '["after-load","after-behaviors","full-page"]', expected: '["after-load","after-behaviors"]', behaviors: "1" },
+          { found: '["after-load","after-behaviors","full-page"]', expected: '["after-load","after-behaviors"]', behaviors: "1", after: "after-behaviors" },
           DATAPACKAGE,
         ),
       ]);
@@ -767,7 +841,7 @@ describe("browserhive/screenshots", () => {
     it("WARC-Target-URI の時点の後ろが空なら error", async () => {
       const shot: Shot = { ...A, url: "urn:browserhive:screenshot:after-load:" };
       const { issues, records } = await runWith(onlyAfterLoad({}, shot));
-      expect(issues).toEqual([bad("resource-uri", { url: shot.url }, at(records, "resource"))]);
+      expect(issues).toEqual([bad("resource-uri", { url: shot.url, stages: "after-load, after-behaviors" }, at(records, "resource"))]);
     });
 
     it("WARC-Target-URI の時点が、この版の定める 2 つでなければ error（項目の url の形も破れる）", async () => {
@@ -775,7 +849,7 @@ describe("browserhive/screenshots", () => {
       const { issues, records } = await runWith(onlyAfterLoad({}, shot));
       expect(issues).toEqual([
         bad("url", { stage: "after-load", url: shot.url }, DATAPACKAGE),
-        bad("resource-uri", { url: shot.url }, at(records, "resource")),
+        bad("resource-uri", { url: shot.url, stages: "after-load, after-behaviors" }, at(records, "resource")),
       ]);
     });
 

@@ -32,7 +32,7 @@
  */
 import { ok } from "../../result.js";
 import {
-  EXPECTED_STORAGE_STAGE,
+  afterCaptureScriptsStage,
   isRecord,
   profileAtLeast,
   readCapture,
@@ -143,6 +143,8 @@ export const browserhiveStorageShapeRule: ValidationRule = {
     // ここで重ねると 1 つの誤りが行数ぶんの issue になる。
     const inventoryProfile = isRecord(storage) ? storage["profile"] : undefined;
     const checkProfile = typeof inventoryProfile === "string";
+    // 時点の名は archive の版で決まる（1.30.0 から after-capture-scripts）
+    const expectedStage = afterCaptureScriptsStage(capture["conformsTo"]);
 
     for (const { lineNumber, parsed } of lines) {
       const line = String(lineNumber);
@@ -161,11 +163,11 @@ export const browserhiveStorageShapeRule: ValidationRule = {
           expected: inventoryProfile,
         });
       }
-      if (parsed["stage"] !== EXPECTED_STORAGE_STAGE) {
+      if (parsed["stage"] !== expectedStage) {
         push(`${RULE}.unknown-stage`, {
           line,
           found: JSON.stringify(parsed["stage"]),
-          expected: EXPECTED_STORAGE_STAGE,
+          expected: expectedStage,
         });
       }
 

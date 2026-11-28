@@ -18,7 +18,8 @@
  *    例外は after-load の写しの行で、その時点の文書から読む (WACZ Profile 1.17.0 から) ので、`document.url` と URL が
  *    違い、方針の当たらない文書の行は `text` と `title` を持てる —— 写した後でスクリプトが伏せる文書へ移った
  *    取り込みの形。方針は URL で照らすので、同じ文書が pushState で方針の当たる URL へ移った場合も同じ。
- *    ほかの行は見る: 文書の行と after-behaviors の行は `document` の文書から読み、方針の当たる文書は写さない。
+ *    ほかの行は見る: 文書の行と capture scripts の後の写しの行（WACZ Profile 1.30.0 から after-capture-scripts、それより前は
+ *    after-behaviors。どちらの名でも同じに見る）は `document` の文書から読み、方針の当たる文書は写さない。
  *    **ページの文字と題を見る rule はここだけなので、文書の行だけに絞らない。** 絞ると、伏せた文書の文字が
  *    写しの行に残る漏れを、どの rule も言わなくなる。
  *
