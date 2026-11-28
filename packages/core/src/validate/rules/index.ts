@@ -187,7 +187,7 @@ export const DEFAULT_RULES: readonly ValidationRule[] = [
   // 取り込みの trace trace/events.jsonl が在り、resources に載り、要約 (browserhive:capture.trace) と行の数が合い、
   // 各行が決まった member と値を持ち、record が archive/ の response を名指すか (WACZ Profile 1.23.0)。
   browserhiveTraceShapeRule,
-  // 乱数の控え random/values.jsonl・random/recorder.js が要約 (browserhive:capture.random) の recorded に合って在り、
+  // 乱数の記録 random/values.jsonl・random/recorder.js が要約 (browserhive:capture.random) の recorded に合って在り、
   // resources に載り、各行が決まった member と値を持ち、record が archive/ の response を名指すか (WACZ Profile 1.26.0)。
   browserhiveRandomShapeRule,
   // 要求者の申告 browserhive:capture.robotsOverride が、在るなら決まった member と値を持つか (WACZ Profile 1.29.0)。

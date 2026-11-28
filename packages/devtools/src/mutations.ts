@@ -121,7 +121,7 @@ const onTraceLines = (name: string, expects: string, mutate: (lines: Record<stri
 /**
  * `random/values.jsonl` の行を書き換える壊し方を包む。
  *
- * 相手は BrowserHive WACZ Profile 1.26.0 以上を名乗り、乱数を控えた（`browserhive:capture.random.recorded` が
+ * 相手は BrowserHive WACZ Profile 1.26.0 以上を名乗り、乱数を記録した（`browserhive:capture.random.recorded` が
  * true の）WACZ —— ほかの WACZ はこのエントリを持たず、break-wacz が「エントリがありません」で止める。
  */
 const onRandomLines = (name: string, expects: string, mutate: (lines: Record<string, unknown>[]) => string): Mutation =>

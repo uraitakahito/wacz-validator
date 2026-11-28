@@ -1,7 +1,7 @@
 /**
  * Rule: browserhive/random-shape (error · browserhive profile 限定)
  *
- * 乱数の控え（取り込みのページのスクリプトが受け取った乱数 `random/values.jsonl` と、それを控えたコード
+ * 乱数の記録（取り込みのページのスクリプトが受け取った乱数 `random/values.jsonl` と、それを記録したコード
  * `random/recorder.js`）と、その要約 `browserhive:capture.random` が、BrowserHive WACZ Profile 1.26.0 の
  * random・random-directory・random-lines の定めどおりか。指摘の種類（message key）は、WACZ Profile の決まり
  * 1 つにつき 1 つ —— WACZ Profile が決まりを 1 つ足し引きしたら、ここも 1 つ足し引きする。
@@ -54,7 +54,7 @@
  *   - `value-length`        `crypto.getRandomValues` の `value` が、ちょうど `bytes` バイトを言う
  *
  * **hash が合うかは見ない。** `datapackage/resource-hashes` が見る。`resources` に載っているかは、ここでも
- * error として見る —— `datapackage/resources-complete` は載せ忘れを warning にするだけで、控えを digest と
+ * error として見る —— `datapackage/resources-complete` は載せ忘れを warning にするだけで、乱数の記録を digest と
  * 署名の外に置いた package が検査を通ってしまう（`browserhive/trace-shape` と同じ）。
  *
  * **同じことを 2 度言わない。** `document` が `withheld` を持つ package のエントリは `withheld-entry` だけが言い、
@@ -75,7 +75,7 @@
  * 残したシークレットの値は記録には残り、行では `***` に置き換わる。隠すシークレットの値は、記録でも行でも
  * `***` になるので、同じ字で合う。
  *
- * **archive 自身の宣言 (`conformsTo`) で分ける。** 乱数の控えは WACZ Profile 1.26.0 で入ったので、それより前を
+ * **archive 自身の宣言 (`conformsTo`) で分ける。** 乱数の記録は WACZ Profile 1.26.0 で入ったので、それより前を
  * 名乗る archive と、名乗りが無いか読めない archive には当てない —— そのころの archive では、エントリの不在は
  * 何も述べない。
  *
@@ -170,7 +170,7 @@ export const browserhiveRandomShapeRule: ValidationRule = {
     const capture = await readCapture(wacz);
     if (capture === undefined || !profileAtLeast(capture["conformsTo"], 1, 26)) return ok([]);
 
-    // 行ごとの指摘は、長い控えでは行の数だけ出うる。同じエントリの同じ指摘は丸める。
+    // 行ごとの指摘は、長い乱数の記録では行の数だけ出うる。同じエントリの同じ指摘は丸める。
     const bucket = new WarcIssueBucket();
     const issue = (messageKey: string, params: MsgParams, location: IssueLocation): void => {
       bucket.push({ rule: RULE, severity: "error", messageKey: `${RULE}.${messageKey}`, params, location });
@@ -220,7 +220,7 @@ export const browserhiveRandomShapeRule: ValidationRule = {
     // ---- エントリ (#random-directory) ----
     const present = RANDOM_ENTRIES.filter((entry) => wacz.hasEntry(entry));
     if (withheld !== undefined) {
-      // 文書を伏せた package は、ページから読んだ物である控えを持たない。
+      // 文書を伏せた package は、ページから読んだ物である乱数の記録を持たない。
       for (const entry of present) issue("withheld-entry", { entry, withheld: json(withheld) }, { entry });
       if (present.length === 0 && recorded === true) issue("recorded-withheld", { withheld: json(withheld) }, inDatapackage);
       return ok(bucket.drain());

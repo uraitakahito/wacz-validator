@@ -1,5 +1,5 @@
 /**
- * `random/`（取り込みのページのスクリプトが受け取った乱数の控え `random/values.jsonl` と、それを控えたコード
+ * `random/`（取り込みのページのスクリプトが受け取った乱数の記録 `random/values.jsonl` と、それを記録したコード
  * `random/recorder.js`）を読むための共有部分。
  *
  * rule ではないので `rules/` には置かない —— docs の抽出器は `rules/` 配下の `.ts` をすべて rule と見なし、
@@ -10,10 +10,10 @@
 import { readJsonLines, type LogLine } from "./browserhive-logs.js";
 import type { WaczReader } from "../wacz/reader.js";
 
-/** 控えた値のエントリ。`browserhive:capture.random.recorded` が `true` の package だけが持つ（行が無くても）。 */
+/** 記録した乱数の値のエントリ。`browserhive:capture.random.recorded` が `true` の package だけが持つ（行が無くても）。 */
 export const RANDOM_ENTRY = "random/values.jsonl";
 
-/** 値を控えるためにページで評価したコード。`random/values.jsonl` と組で在る。 */
+/** 乱数の値を記録するためにページで評価したコード。`random/values.jsonl` と組で在る。 */
 export const RANDOM_RECORDER = "random/recorder.js";
 
 /** `random/` のエントリ。どちらも在るか、どちらも無いか。 */
