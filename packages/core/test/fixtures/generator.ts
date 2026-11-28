@@ -366,14 +366,14 @@ export interface FixtureOptions {
    */
   traceSummary?: unknown;
   /**
-   * `random/values.jsonl`（乱数の控え）の中身。オブジェクトの配列なら 1 行ずつ JSONL に、文字列ならそのまま書く
+   * `random/values.jsonl`（乱数の記録）の中身。オブジェクトの配列なら 1 行ずつ JSONL に、文字列ならそのまま書く
    * (JSON として読めない行や、空のファイルを作るため)。resources にも載る。undefined ならエントリごと作らない ——
    * WACZ Profile 1.26.0 で入り、`browserhive:capture.random.recorded` が true の package だけが持つ。
    *
    * 要約 (`browserhive:capture.random`) はここからは作らない。`randomSummary` で渡す。
    */
   randomValues?: Record<string, unknown>[] | string;
-  /** `random/recorder.js`（値を控えたコード）の中身。resources にも載る。undefined ならエントリごと作らない。 */
+  /** `random/recorder.js`（乱数の値を記録したコード）の中身。resources にも載る。undefined ならエントリごと作らない。 */
   randomRecorder?: string;
   /**
    * `browserhive:capture.random` をそのまま書き込む。undefined なら member ごと書かない —— WACZ Profile 1.26.0 で

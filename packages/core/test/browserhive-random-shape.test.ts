@@ -52,7 +52,7 @@ const goodResponses = (): WarcResponseSpec[] => [
 const HERO = "https://shop.test/assets/hero.js";
 
 /**
- * 正しい控え。行の番号（1 から）と中身:
+ * 正しい乱数の記録。行の番号（1 から）と中身:
  *
  *   1  文書 0（主のフレーム。response を名指す）
  *   2  文書 0 の値 0（Math.random）
@@ -102,11 +102,11 @@ const withoutEntries = (over: Partial<FixtureOptions> = {}): FixtureOptions => {
   return rest;
 };
 
-/** 控えた値を持たない package（`recorded: false`、エントリなし）。 */
+/** 記録した乱数の値を持たない package（`recorded: false`、エントリなし）。 */
 const notRecorded = (skipped: unknown, over: Partial<FixtureOptions> = {}): FixtureOptions =>
   withoutEntries({ randomSummary: { recorded: false, skipped }, ...over });
 
-/** 正しい控えの `index` 番目の行（0 から）を `patch` で崩す。`undefined` の値は member ごと消す。 */
+/** 正しい乱数の記録の `index` 番目の行（0 から）を `patch` で崩す。`undefined` の値は member ごと消す。 */
 const withLine = (index: number, patch: Line): Line[] =>
   goodLines().map((line, i) =>
     i === index ? Object.fromEntries(Object.entries({ ...line, ...patch }).filter(([, v]) => v !== undefined)) : line,
@@ -158,14 +158,14 @@ describe("browserhive/random-shape", () => {
     (await run(options)).map((i) => i.messageKey.slice(RULE.length + 1));
 
   describe("正しい archive", () => {
-    it("決まりどおりの控えなら何も言わず、rule は passed に数えられる", async () => {
+    it("決まりどおりの乱数の記録なら何も言わず、rule は passed に数えられる", async () => {
       const good = await reportFor(tmpDir, archive(), { name: "browserhive" });
       expect(good.issues.filter((i) => i.rule === RULE)).toEqual([]);
       // 2 つのエントリは resources に載っている（datapackage/resources-complete も何も言わない）。
       for (const path of [ENTRY, RECORDER]) {
         expect(good.entries.find((e) => e.path === path)).toMatchObject({ present: true, expectedBy: ["datapackage"], issues: [] });
       }
-      // 控えの 1 行だけを崩した同じ archive では、passed がこの rule の 1 つだけ減る。
+      // 乱数の記録の 1 行だけを崩した同じ archive では、passed がこの rule の 1 つだけ減る。
       const broken = await reportFor(tmpDir, archive({ randomValues: withLine(1, { caller: undefined }) }), { name: "browserhive" });
       expect(broken.issues.filter((i) => i.rule === RULE)).toHaveLength(1);
       expect(good.summary.passed).toBe(broken.summary.passed + 1);
@@ -177,7 +177,7 @@ describe("browserhive/random-shape", () => {
       expect(await run(archive({ randomValues: "", randomSummary: { recorded: true, documents: 0, draws: 0, truncated: false } }))).toEqual([]);
     });
 
-    it("控えを頼まれなかった package（recorded: false・not-requested）はエントリを持たない", async () => {
+    it("乱数の記録を頼まれなかった package（recorded: false・not-requested）はエントリを持たない", async () => {
       expect(await run(notRecorded("not-requested"))).toEqual([]);
       expect(await run(notRecorded("failed"))).toEqual([]);
     });
@@ -199,7 +199,7 @@ describe("browserhive/random-shape", () => {
     });
 
     it("value を省いた値の行と、別の文書の行に挟まった行は、そのままでよい", async () => {
-      // 正しい控えの 5 行目は文書 1 の行の後ろの文書 0 の行、8 行目は value の無い行。
+      // 正しい乱数の記録の 5 行目は文書 1 の行の後ろの文書 0 の行、8 行目は value の無い行。
       const lines = goodLines();
       expect(lines[4]?.["document"]).toBe(0);
       expect(lines[7]?.["value"]).toBeUndefined();
@@ -474,7 +474,7 @@ describe("browserhive/random-shape", () => {
   });
 
   describe("同じ指摘は丸める", () => {
-    /** 6 行とも caller の無い値の行の控え。 */
+    /** 6 行とも caller の無い値の行の乱数の記録。 */
     const repeated = (): FixtureOptions => {
       const draws = Array.from({ length: 6 }, (_, seq) => ({ profile: RANDOM, kind: "draw", document: 0, seq, api: "Math.random", value: 0.5 }));
       return archive(withLines([goodLines()[0] ?? {}, ...draws]));

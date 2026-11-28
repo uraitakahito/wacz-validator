@@ -32,7 +32,7 @@ const snapshots = (): Record<string, unknown>[] => [
   },
 ];
 
-/** tls・写しの項目と、乱数の控えを載せた resources。どの datapackage.json の壊し方も適用できる。 */
+/** tls・写しの項目と、乱数の記録を載せた resources。どの datapackage.json の壊し方も適用できる。 */
 const datapackageBytes = (member: TlsMember = tls(), items: unknown = snapshots()): Buffer =>
   Buffer.from(
     `${JSON.stringify({ resources: [{ path: "random/values.jsonl" }, { path: "random/recorder.js" }], "browserhive:capture": { tls: member, snapshots: items } }, null, 2)}\n`,

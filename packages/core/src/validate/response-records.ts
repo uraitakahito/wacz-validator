@@ -1,7 +1,7 @@
 /**
  * `archive/` の `response` の記録を `WARC-Record-ID` で引けるようにする、共有の読み手。
  *
- * 行の `record` で response を名指すエントリ（取り込みの trace `trace/events.jsonl` と、乱数の控え
+ * 行の `record` で response を名指すエントリ（取り込みの trace `trace/events.jsonl` と、乱数の記録
  * `random/values.jsonl`）を見る rule が使う。rule ではないので `rules/` には置かない —— docs の抽出器は
  * `rules/` 配下の `.ts` をすべて rule と見なす（`browserhive-trace.ts` と同じ理由）。
  */
