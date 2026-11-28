@@ -1,6 +1,6 @@
 {
   "name": "@wacz-validator/tui",
-  "version": "0.53.0",
+  "version": "0.54.0",
   "description": "Ink TUI for wacz-validator — a thin client that renders the WireReport served by @wacz-validator/daemon.",
   "license": "Unlicense",
   "type": "module",

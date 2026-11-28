@@ -381,6 +381,11 @@ export interface FixtureOptions {
    */
   randomSummary?: unknown;
   /**
+   * `browserhive:capture.robotsOverride` をそのまま書き込む。undefined なら member ごと書かない —— WACZ Profile
+   * 1.29.0 で入った任意の member で、要求が申告を持っていた package だけが持つ。中身は検査しない。
+   */
+  robotsOverride?: unknown;
+  /**
    * `storage/origins.jsonl` の中身。オブジェクトの配列なら 1 行ずつ JSONL に、
    * 文字列ならそのまま書く (JSON として読めない行を作るため)。
    */
@@ -1481,6 +1486,11 @@ export const buildWacz = async (options: FixtureOptions = {}): Promise<BuiltFixt
   if (options.randomSummary !== undefined) {
     const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
     capture["random"] = options.randomSummary;
+    datapackage["browserhive:capture"] = capture;
+  }
+  if (options.robotsOverride !== undefined) {
+    const capture = (datapackage["browserhive:capture"] ?? {}) as Record<string, unknown>;
+    capture["robotsOverride"] = options.robotsOverride;
     datapackage["browserhive:capture"] = capture;
   }
   const datapackageBytes = Buffer.from(`${JSON.stringify(datapackage, null, 2)}\n`, "utf-8");
